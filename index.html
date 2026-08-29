@@ -704,7 +704,7 @@
       location: "Osapa London, Lagos",
       beds: 1,
       rent: "₦3,600,000/mo",
-      caution: "Caution Fee: ₦100,000",
+      fees: ["Caution Fee: ₦100,000", "Agent Fee: 10% (₦360,000)", "Legal Fee: 5% (₦180,000)"],
       color: "from-brand-500/30 to-slate-900",
       badges: ["Cadastral Verified ✓", "Rent Alert"],
       features: ["1 Bedroom", "Private Pool", "Chef Available", "24/7 Power", "Secured Estate", "Housekeeping", "PS5 on Request", "Non-Flooding Area"],
@@ -734,11 +734,12 @@
         <div class="listing-img absolute inset-0 cadastral-grid opacity-40"></div>
         ${l.images && l.images.length ? `<img src="${l.images[0]}" alt="${l.title}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">` : ''}
         <span class="absolute top-3 left-3 text-[10px] font-mono font-semibold bg-brand-600 text-white px-2.5 py-1 rounded-full">100% AI VERIFIED</span>
-        <span class="absolute top-3 right-3 text-[10px] font-mono font-semibold bg-slate-950/80 text-brand-400 px-2.5 py-1 rounded-full">${l.rent}</span>
+        <span class="absolute top-3 right-3 text-[10px] font-mono font-bold bg-[#0F172A] text-[#10B981] border border-[#10B981]/40 px-2.5 py-1 rounded-full shadow-lg shadow-black/40">${l.rent}</span>
       </div>
       <div class="p-5">
         <h3 class="font-display font-semibold text-white">${l.title}</h3>
-        <p class="text-sm text-slate-500 mt-1">${l.location} · ${l.beds} Bed${l.beds > 1 ? 's' : ''}${l.caution ? ` · ${l.caution}` : ''}</p>
+        ${l.rent ? `<p class="mt-1 font-display font-bold text-lg text-white">${l.rent.replace('/mo', ' / month')}</p>` : ''}
+        <p class="text-sm text-slate-500 mt-1">${l.location} · ${l.beds} Bed${l.beds > 1 ? 's' : ''}${l.fees && l.fees.length ? ` · ${l.fees.join(' · ')}` : (l.caution ? ` · ${l.caution}` : '')}</p>
         ${badgesHtml ? `<div class="flex flex-wrap gap-1.5 mt-3">${badgesHtml}</div>` : ''}
         <div class="flex items-center gap-1.5 mt-2 text-xs text-brand-400">
           <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v3.5c0 .199.079.39.22.53l2.5 2.5a.75.75 0 101.06-1.06l-2.28-2.28V6.75z" clip-rule="evenodd"/></svg>
