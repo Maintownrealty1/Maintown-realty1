@@ -775,10 +775,10 @@
       const slide = document.createElement('div');
       slide.className = `photo-slide absolute inset-0 transition-opacity duration-500 ${i === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`;
       if (src) {
-        slide.classList.add('bg-gradient-to-br', fallbackColor || 'from-brand-600/30 to-slate-900');
+        slide.className += ` bg-gradient-to-br ${fallbackColor || 'from-brand-600/30 to-slate-900'}`;
         slide.innerHTML = `<img src="${src}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'">`;
       } else {
-        slide.classList.add('bg-gradient-to-br', placeholderSwatches[i % placeholderSwatches.length], 'cadastral-grid');
+        slide.className += ` bg-gradient-to-br ${placeholderSwatches[i % placeholderSwatches.length]} cadastral-grid`;
       }
       photoStage.insertBefore(slide, photoPrev);
     });
