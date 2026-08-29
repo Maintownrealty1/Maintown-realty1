@@ -300,14 +300,20 @@
   </div>
 </div>
 
-<!-- Photo Gallery Modal -->
-<div id="photoModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-  <div class="relative max-w-2xl w-full bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-    <button id="closePhotoModal" aria-label="Close gallery" class="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-slate-950/80 text-white flex items-center justify-center hover:bg-slate-800 transition">✕</button>
-    <div id="photoGalleryGrid" class="grid grid-cols-2 gap-1 p-1"></div>
-    <div class="p-5">
-      <h4 id="photoModalTitle" class="font-display font-semibold text-white">Photo Gallery</h4>
-      <p class="text-xs text-slate-500 mt-1">Placeholder imagery — live listings sync from verified landlord uploads.</p>
+<!-- Photo Gallery Lightbox -->
+<div id="photoModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-[#0F172A]/90 backdrop-blur-md p-4">
+  <div class="relative max-w-3xl w-full">
+    <button id="closePhotoModal" aria-label="Close gallery" class="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 z-20 w-9 h-9 rounded-full bg-slate-950 border border-white/10 text-white flex items-center justify-center hover:bg-slate-800 hover:border-brand-500/50 transition">✕</button>
+    <div class="rounded-2xl overflow-hidden border border-brand-500/30 bg-slate-900 shadow-2xl shadow-black/50">
+      <div id="photoStage" class="relative h-[55vh] sm:h-[65vh] bg-slate-950 select-none overflow-hidden touch-pan-y">
+        <button id="photoPrev" aria-label="Previous photo" class="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-slate-950/70 border border-white/10 text-white flex items-center justify-center hover:bg-brand-600/80 hover:border-brand-400/50 transition">‹</button>
+        <button id="photoNext" aria-label="Next photo" class="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-slate-950/70 border border-white/10 text-white flex items-center justify-center hover:bg-brand-600/80 hover:border-brand-400/50 transition">›</button>
+        <span id="photoCounter" class="absolute bottom-3 right-3 z-10 text-[11px] font-mono bg-slate-950/80 border border-white/10 text-brand-300 px-2.5 py-1 rounded-full">1 / 5</span>
+      </div>
+      <div class="p-5">
+        <h4 id="photoModalTitle" class="font-display font-semibold text-white">Photo Gallery</h4>
+        <p class="text-xs text-slate-500 mt-1">Auto-advances every 3s · hover or touch to pause · swipe on mobile.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -677,6 +683,23 @@
 <script>
   // ---------- Listings data ----------
   const listings = [
+    {
+      title: "Spacious 1-Bedroom Self-Compound Mansion",
+      location: "Osapa London, Lagos",
+      beds: 1,
+      rent: "₦3,600,000/mo",
+      caution: "Caution Fee: ₦100,000",
+      color: "from-brand-500/30 to-slate-900",
+      badges: ["Cadastral Verified ✓", "Rent Alert"],
+      features: ["1 Bedroom", "Private Pool", "Chef Available", "24/7 Power", "Secured Estate", "Housekeeping", "PS5 on Request", "Non-Flooding Area"],
+      images: [
+        "./images/osapa-exterior.jpg",
+        "./images/osapa-pool.jpg",
+        "./images/osapa-bedroom.jpg",
+        "./images/osapa-livingroom.jpg",
+        "./images/osapa-kitchen.jpg"
+      ]
+    },
     { title: "2-Bedroom Serviced Apartment", location: "Lekki Phase 1, Lagos", beds: 2, rent: "₦250,000/mo", color: "from-brand-600/30 to-slate-900" },
     { title: "Modern Studio Apartment", location: "Yaba, Lagos", beds: 1, rent: "₦140,000/mo", color: "from-brand-400/25 to-slate-900" },
     { title: "Suburban Family Home", location: "Ajah, Lagos", beds: 4, rent: "₦380,000/mo", color: "from-amber-500/25 to-slate-900" },
@@ -686,21 +709,27 @@
   listings.forEach((l, i) => {
     const card = document.createElement('div');
     card.className = "listing-card group rounded-2xl border border-white/10 bg-slate-850/50 overflow-hidden hover:border-brand-500/40 transition reveal";
+    const badgesHtml = (l.badges || []).map(b => `<span class="text-[10px] font-mono font-semibold ${b.toLowerCase().includes('alert') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-brand-500/15 text-brand-300 border border-brand-500/30'} px-2.5 py-1 rounded-full">${b}</span>`).join('');
+    const featuresHtml = (l.features || []).map(f => `<span class="text-[10px] text-slate-400 bg-slate-900/70 border border-white/5 px-2 py-1 rounded-md">${f}</span>`).join('');
+    const imagesData = JSON.stringify(l.images || []).replace(/'/g, "&#39;");
     card.innerHTML = `
-      <div class="relative h-48 overflow-hidden bg-gradient-to-br ${l.color}">
+      <div class="gallery-trigger relative h-48 overflow-hidden bg-gradient-to-br ${l.color} cursor-pointer" data-title="${l.title}" data-images='${imagesData}' data-color="${l.color}">
         <div class="listing-img absolute inset-0 cadastral-grid opacity-40"></div>
+        ${l.images && l.images.length ? `<img src="${l.images[0]}" alt="${l.title}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">` : ''}
         <span class="absolute top-3 left-3 text-[10px] font-mono font-semibold bg-brand-600 text-white px-2.5 py-1 rounded-full">100% AI VERIFIED</span>
         <span class="absolute top-3 right-3 text-[10px] font-mono font-semibold bg-slate-950/80 text-brand-400 px-2.5 py-1 rounded-full">${l.rent}</span>
       </div>
       <div class="p-5">
         <h3 class="font-display font-semibold text-white">${l.title}</h3>
-        <p class="text-sm text-slate-500 mt-1">${l.location} · ${l.beds} Bed${l.beds > 1 ? 's' : ''}</p>
+        <p class="text-sm text-slate-500 mt-1">${l.location} · ${l.beds} Bed${l.beds > 1 ? 's' : ''}${l.caution ? ` · ${l.caution}` : ''}</p>
+        ${badgesHtml ? `<div class="flex flex-wrap gap-1.5 mt-3">${badgesHtml}</div>` : ''}
         <div class="flex items-center gap-1.5 mt-2 text-xs text-brand-400">
           <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v3.5c0 .199.079.39.22.53l2.5 2.5a.75.75 0 101.06-1.06l-2.28-2.28V6.75z" clip-rule="evenodd"/></svg>
           Verified Landlord Badge
         </div>
+        ${featuresHtml ? `<div class="flex flex-wrap gap-1.5 mt-3">${featuresHtml}</div>` : ''}
         <div class="flex gap-2 mt-5">
-          <button class="photo-btn flex-1 text-xs font-semibold bg-slate-900 border border-white/10 hover:border-brand-500/50 text-slate-200 py-2.5 rounded-lg transition" data-title="${l.title}">View Photo Gallery</button>
+          <button class="gallery-trigger photo-btn flex-1 text-xs font-semibold bg-slate-900 border border-white/10 hover:border-brand-500/50 text-slate-200 py-2.5 rounded-lg transition" data-title="${l.title}" data-images='${imagesData}' data-color="${l.color}">View Photo Gallery</button>
           <button class="video-btn flex-1 text-xs font-semibold bg-brand-500 hover:bg-brand-400 text-slate-950 py-2.5 rounded-lg transition" data-title="${l.title}">Watch AI Walkthrough</button>
         </div>
       </div>`;
@@ -726,20 +755,107 @@
   });
   videoModal.addEventListener('click', (e) => { if (e.target === videoModal) document.getElementById('closeModal').click(); });
 
-  // Photo gallery modal
+  // ---------- Photo gallery lightbox (auto-sliding) ----------
   const photoModal = document.getElementById('photoModal');
-  const photoGrid = document.getElementById('photoGalleryGrid');
+  const photoStage = document.getElementById('photoStage');
   const photoTitle = document.getElementById('photoModalTitle');
-  const swatches = ['from-brand-600/30 to-slate-900', 'from-brand-400/25 to-slate-900', 'from-amber-500/25 to-slate-900', 'from-slate-700 to-slate-900'];
-  document.querySelectorAll('.photo-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      photoTitle.textContent = btn.dataset.title + " — Photo Gallery";
-      photoGrid.innerHTML = swatches.map(s => `<div class="aspect-square bg-gradient-to-br ${s} cadastral-grid"></div>`).join('');
-      photoModal.classList.remove('hidden');
-      photoModal.classList.add('flex');
+  const photoCounter = document.getElementById('photoCounter');
+  const photoPrev = document.getElementById('photoPrev');
+  const photoNext = document.getElementById('photoNext');
+  const placeholderSwatches = ['from-brand-600/30 to-slate-900', 'from-brand-400/25 to-slate-900', 'from-amber-500/25 to-slate-900', 'from-slate-700 to-slate-900'];
+
+  let gallerySlideCount = 0;
+  let galleryIndex = 0;
+  let galleryTimer = null;
+
+  function buildSlides(images, fallbackColor) {
+    photoStage.querySelectorAll('.photo-slide').forEach(s => s.remove());
+    const slideSources = images.length ? images : placeholderSwatches.map(() => null);
+    slideSources.forEach((src, i) => {
+      const slide = document.createElement('div');
+      slide.className = `photo-slide absolute inset-0 transition-opacity duration-500 ${i === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`;
+      if (src) {
+        slide.classList.add('bg-gradient-to-br', fallbackColor || 'from-brand-600/30 to-slate-900');
+        slide.innerHTML = `<img src="${src}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'">`;
+      } else {
+        slide.classList.add('bg-gradient-to-br', placeholderSwatches[i % placeholderSwatches.length], 'cadastral-grid');
+      }
+      photoStage.insertBefore(slide, photoPrev);
+    });
+    gallerySlideCount = slideSources.length;
+    galleryIndex = 0;
+    updateSlideUI();
+  }
+
+  function updateSlideUI() {
+    photoCounter.textContent = `${galleryIndex + 1} / ${gallerySlideCount}`;
+    const slides = photoStage.querySelectorAll('.photo-slide');
+    slides.forEach((s, i) => {
+      s.classList.toggle('opacity-100', i === galleryIndex);
+      s.classList.toggle('pointer-events-none', i !== galleryIndex);
+      s.classList.toggle('opacity-0', i !== galleryIndex);
+    });
+  }
+
+  function goToSlide(i) {
+    if (gallerySlideCount === 0) return;
+    galleryIndex = (i + gallerySlideCount) % gallerySlideCount;
+    updateSlideUI();
+  }
+  function nextSlide() { goToSlide(galleryIndex + 1); }
+  function prevSlide() { goToSlide(galleryIndex - 1); }
+
+  function startAutoSlide() {
+    stopAutoSlide();
+    galleryTimer = setInterval(nextSlide, 3000);
+  }
+  function stopAutoSlide() {
+    if (galleryTimer) clearInterval(galleryTimer);
+    galleryTimer = null;
+  }
+
+  function openGallery(title, images, color) {
+    photoTitle.textContent = title + " — Photo Gallery";
+    buildSlides(images, color);
+    photoModal.classList.remove('hidden');
+    photoModal.classList.add('flex');
+    startAutoSlide();
+  }
+
+  document.querySelectorAll('.gallery-trigger').forEach(el => {
+    el.addEventListener('click', () => {
+      let images = [];
+      try { images = JSON.parse(el.dataset.images || '[]'); } catch (e) { images = []; }
+      openGallery(el.dataset.title, images, el.dataset.color);
     });
   });
+
+  photoNext.addEventListener('click', () => { nextSlide(); startAutoSlide(); });
+  photoPrev.addEventListener('click', () => { prevSlide(); startAutoSlide(); });
+
+  // Pause on hover (desktop) and on touch (mobile), resume on release
+  photoStage.addEventListener('mouseenter', stopAutoSlide);
+  photoStage.addEventListener('mouseleave', startAutoSlide);
+
+  // Swipe support (mobile)
+  let touchStartX = 0;
+  let touchActive = false;
+  photoStage.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchActive = true;
+    stopAutoSlide();
+  }, { passive: true });
+  photoStage.addEventListener('touchend', (e) => {
+    if (touchActive) {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 40) { dx < 0 ? nextSlide() : prevSlide(); }
+    }
+    touchActive = false;
+    startAutoSlide();
+  });
+
   document.getElementById('closePhotoModal').addEventListener('click', () => {
+    stopAutoSlide();
     photoModal.classList.add('hidden');
     photoModal.classList.remove('flex');
   });
