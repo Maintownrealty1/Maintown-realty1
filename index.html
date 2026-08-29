@@ -519,7 +519,7 @@
 <section id="underwriting" class="py-24 border-b border-white/5 bg-slate-950/40">
   <div class="max-w-7xl mx-auto px-6">
     <div class="text-center max-w-2xl mx-auto mb-14">
-      <span class="text-xs font-mono uppercase tracking-widest text-brand-400">Live Demo</span>
+      <span class="text-xs font-mono uppercase tracking-widest text-brand-400">🧪 AI RISK MODEL — BETA DEMO</span>
       <h2 class="mt-3 font-display font-bold text-3xl sm:text-4xl text-white">AI Underwriting &amp; Pre-Arrival Housing Engine</h2>
       <p class="mt-4 text-slate-500">An illustrative simulation of the MainTown Risk Index — our alternative credit-scoring model built on Vertex AI.</p>
     </div>
@@ -562,7 +562,7 @@
           </select>
         </div>
         <button id="runUnderwriting" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 rounded-xl transition">Run AI Risk Assessment</button>
-        <p class="text-xs text-slate-600 font-mono">Illustrative demo only — not a real credit decision.</p>
+        <p class="text-xs text-slate-600 font-mono">Interactive simulation of MainTown's upcoming proprietary AI tenant risk scoring model. Currently in active development.</p>
       </div>
 
       <!-- Output -->
@@ -609,8 +609,8 @@
   <div class="max-w-7xl mx-auto px-6">
     <div class="text-center max-w-2xl mx-auto mb-14">
       <span class="text-xs font-mono uppercase tracking-widest text-brand-400">Under The Hood</span>
-      <h2 class="mt-3 font-display font-bold text-3xl sm:text-4xl text-white">How AI Powers MainTown Infrastructure</h2>
-      <p class="mt-4 text-slate-500">Four AI-driven systems working together to secure every transaction, end to end.</p>
+      <h2 class="mt-3 font-display font-bold text-3xl sm:text-4xl text-white">Building the Future of African PropTech</h2>
+      <p class="mt-4 text-slate-500">Our engineering team is actively training machine learning models to eliminate rental fraud, calculate automated risk scores, and enable seamless escrow payments.</p>
     </div>
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
       <div class="reveal rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
@@ -970,9 +970,9 @@
   // ---------- WhatsApp onboarding ----------
   const WA_NUMBER = "2348066611017";
   const onboardingCards = [
-    { title: "Local Tenant", desc: "Find verified rentals with flexible monthly payment plans.", msg: "Hi MainTown Realty, I'm a local tenant looking for a verified rental with a monthly rent plan.", accent: "600" },
-    { title: "Relocating Diaspora / Canada", desc: "Verify listings and secure pre-arrival housing before you land.", msg: "Hello MainTown, I want to inquire about the Relocating Diaspora / Canada service.", accent: "400", comingSoon: true, ctaText: "Inquire / Join Waitlist on WhatsApp →" },
-    { title: "Agent Onboarding", desc: "List verified properties and reach diaspora buyers.", msg: "Hi MainTown Realty, I'm an agent interested in onboarding my listings to your platform.", accent: "600" },
+    { title: "Local Tenant", desc: "Find verified rentals with flexible monthly payment plans.", msg: "Hi MainTown Realty, I'm a local tenant looking for a verified rental with a monthly rent plan.", accent: "600", statusTag: "⚙️ Core Platform — Active", statusStyle: "active" },
+    { title: "Relocating Diaspora / Canada", desc: "Pre-arrival verified housing and escrow support for diaspora relocations. Currently being built out — inquire on WhatsApp to join the early access waitlist.", msg: "Hello MainTown, I want to inquire about the Relocating Diaspora / Canada service.", accent: "400", statusTag: "⏳ Coming Soon — Join Waitlist", statusStyle: "coming-soon", ctaText: "Inquire / Join Waitlist on WhatsApp →" },
+    { title: "Agent Onboarding", desc: "List verified properties and reach diaspora buyers.", msg: "Hi MainTown Realty, I'm an agent interested in onboarding my listings to your platform.", accent: "600", statusTag: "⚙️ Core Platform — Active", statusStyle: "active" },
     { title: "Landlord Onboarding", desc: "Automate collections and payouts through escrow.", msg: "Hi MainTown Realty, I'm a landlord interested in onboarding my property for automated rent collection.", accent: "400" },
   ];
   const onboardingGrid = document.getElementById('onboardingGrid');
@@ -983,11 +983,14 @@
     el.target = "_blank";
     el.rel = "noopener";
     el.className = `reveal group relative rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-${c.accent}/50 transition flex flex-col`;
+    const tagClass = c.statusStyle === 'coming-soon'
+      ? 'text-amber-400 bg-slate-950 border border-amber-500/40 shadow-[0_0_16px_-2px_rgba(251,191,36,.6)]'
+      : 'text-slate-400 bg-slate-900/70 border border-white/10';
     el.innerHTML = `
-      ${c.comingSoon ? `<span class="absolute -top-2.5 -right-2.5 z-10 inline-flex items-center gap-1 text-[10px] font-mono font-semibold text-amber-400 bg-slate-950 border border-amber-500/40 px-2.5 py-1 rounded-full shadow-[0_0_16px_-2px_rgba(251,191,36,.6)]">⏳ COMING SOON</span>` : ''}
       <div class="w-10 h-10 rounded-lg bg-brand-${c.accent}/15 flex items-center justify-center mb-4">
         <svg class="w-5 h-5 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.3zM12 21.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.8-9.8 9.8z"/></svg>
       </div>
+      ${c.statusTag ? `<span class="inline-flex self-start items-center gap-1 text-[10px] font-mono font-semibold px-2.5 py-1 rounded-full mb-3 ${tagClass}">${c.statusTag}</span>` : ''}
       <h3 class="font-display font-semibold text-white mb-2">${c.title}</h3>
       <p class="text-sm text-slate-500 leading-relaxed flex-1">${c.desc}</p>
       <span class="mt-4 text-xs font-semibold text-brand-${c.accent} flex items-center gap-1">${c.ctaText || 'Chat on WhatsApp →'}</span>`;
