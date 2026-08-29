@@ -585,18 +585,18 @@
           <div class="text-xs font-mono uppercase text-slate-500 mt-1">MainTown Risk Index (0–800)</div>
         </div>
 
-        <div class="grid grid-cols-3 gap-3 w-full mt-8">
-          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-4 text-center">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mt-8">
+          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-3 sm:p-4 text-center">
             <div class="font-mono font-semibold text-lg text-brand-400" id="defaultProb">—</div>
-            <div class="text-[10px] text-slate-500 mt-1 uppercase tracking-wide">Default Probability</div>
+            <div class="text-xs font-semibold uppercase tracking-wider leading-tight text-center text-slate-500 mt-1">Default Probability</div>
           </div>
-          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-4 text-center">
+          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-3 sm:p-4 text-center">
             <div class="font-mono font-semibold text-lg text-brand-400" id="rentAllowance">—</div>
-            <div class="text-[10px] text-slate-500 mt-1 uppercase tracking-wide">Recommended Rent</div>
+            <div class="text-xs font-semibold uppercase tracking-wider leading-tight text-center text-slate-500 mt-1">Recommended Rent</div>
           </div>
-          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-4 text-center">
+          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-3 sm:p-4 text-center">
             <div class="font-mono font-semibold text-lg text-amber-400" id="escrowReq">—</div>
-            <div class="text-[10px] text-slate-500 mt-1 uppercase tracking-wide">Escrow Guarantee</div>
+            <div class="text-xs font-semibold uppercase tracking-wider leading-tight text-center text-slate-500 mt-1">Escrow Guarantee</div>
           </div>
         </div>
       </div>
@@ -686,13 +686,37 @@
 
 <!-- ================= FOOTER ================= -->
 <footer class="border-t border-white/5 py-10">
-  <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
-    <p>© 2026 MainTown Realty. Lagos, Nigeria.</p>
-    <div class="flex items-center gap-5 font-mono text-xs">
-      <span>maintownrealty.com</span>
-      <a href="https://wa.me/2348066611017" target="_blank" rel="noopener" class="hover:text-[#25D366] transition">WhatsApp: 0806 661 1017</a>
-      <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" class="hover:text-brand-400 transition">@Maintownrealty</a>
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-slate-400 font-mono">
+      <a href="https://maintownrealty.com" target="_blank" rel="noopener" class="flex items-center gap-2 hover:text-white transition whitespace-nowrap">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/>
+          <path stroke-linecap="round" d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3Z"/>
+        </svg>
+        <span>maintownrealty.com</span>
+      </a>
+      <a href="https://wa.me/2348066611017" target="_blank" rel="noopener" class="flex items-center gap-2 hover:text-[#25D366] transition whitespace-nowrap">
+        <svg class="w-4 h-4 shrink-0 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.3zM12 21.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.8-9.8 9.8z"/></svg>
+        <span class="whitespace-nowrap">+234 806 661 1017</span>
+      </a>
+      <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" class="flex items-center gap-2 hover:text-white transition whitespace-nowrap">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+          <defs>
+            <linearGradient id="igGradientFooter" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#FFDD55"/>
+              <stop offset="35%" stop-color="#FD1D1D"/>
+              <stop offset="70%" stop-color="#C13584"/>
+              <stop offset="100%" stop-color="#833AB4"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="20" height="20" rx="6" fill="none" stroke="url(#igGradientFooter)" stroke-width="2"/>
+          <circle cx="12" cy="12" r="4.2" fill="none" stroke="url(#igGradientFooter)" stroke-width="2"/>
+          <circle cx="17.2" cy="6.8" r="1.15" fill="url(#igGradientFooter)"/>
+        </svg>
+        <span>@Maintownrealty</span>
+      </a>
     </div>
+    <p class="mt-6 text-center text-xs text-slate-500">© 2026 MainTown Realty. Lagos, Nigeria. All rights reserved.</p>
   </div>
 </footer>
 
