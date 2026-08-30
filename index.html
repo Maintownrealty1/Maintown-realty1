@@ -180,14 +180,7 @@
     transition: border-color 0.2s ease, background 0.2s ease;
   }
   .kyc-item:hover { border-color: #334155; }
-  .kyc-item.uploaded { border-color: #10b981; background: rgba(16,185,129,0.08); cursor: pointer; }
-  .kyc-reupload-btn {
-    display: none; align-items: center; justify-content: center; width: 30px; height: 30px;
-    border-radius: 9px; border: none; background: rgba(16,185,129,0.15); color: #10b981;
-    cursor: pointer; flex-shrink: 0; transition: background 0.15s ease;
-  }
-  .kyc-reupload-btn:hover { background: rgba(16,185,129,0.28); }
-  .kyc-item.uploaded .kyc-reupload-btn { display: flex; }
+  .kyc-item.uploaded { border-color: #10b981; background: rgba(16,185,129,0.08); cursor: default; }
   .kyc-item-icon-wrap {
     width: 34px; height: 34px; border-radius: 10px; background: rgba(100,116,139,0.15);
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s ease;
@@ -587,27 +580,6 @@
   </div>
   <p id="kyc-upload-hint" class="role-hint">Tap each document to upload</p>
 
-  <div id="kyc-guarantor-section" style="display:none;">
-    <p class="s5-section-label"><i data-lucide="user-plus" class="w-4 h-4 text-purple-400"></i>Guarantor / Emergency Contact</p>
-
-    <button type="button" id="pick-contact-btn" class="s5-add-btn" style="margin-bottom:14px;">
-      <i data-lucide="user-plus" class="w-4 h-4"></i> Pick from Device Contacts
-    </button>
-
-    <div class="field">
-      <label class="field-label">Full Name</label>
-      <input class="field-input" id="guarantor-name" type="text" placeholder="Guarantor's full name">
-    </div>
-    <div class="field">
-      <label class="field-label">Relationship</label>
-      <input class="field-input" id="guarantor-relationship" type="text" placeholder="e.g. Sibling, Employer, Friend">
-    </div>
-    <div class="field">
-      <label class="field-label">Phone Number</label>
-      <input class="field-input" id="guarantor-phone" type="tel" placeholder="080X XXX XXXX">
-    </div>
-  </div>
-
   <button type="button" id="kyc-continue-btn" class="btn-primary" disabled>
     Proceed to Step 3: Legal Policy
   </button>
@@ -984,7 +956,8 @@
       items: [
         { text: 'Government-issued ID (NIN, Driver\'s License, or Passport)', icon: 'id-card' },
         { text: 'Proof of address (utility bill, not older than 3 months)', icon: 'landmark' },
-        { text: 'Employment or income verification', icon: 'file-text' }
+        { text: 'Employment or income verification', icon: 'file-text' },
+        { text: 'Next of kin / emergency contact details', icon: 'file-text' }
       ]
     },
     landlord: {
@@ -1011,74 +984,21 @@
   function updateKycContinueState() {
     const btn = document.getElementById('kyc-continue-btn');
     const hint = document.getElementById('kyc-upload-hint');
-    const docsDone = kycTotalDocs > 0 && kycUploadedCount >= kycTotalDocs;
-
-    let guarantorDone = true;
-    if ((selectedRole || 'tenant') === 'tenant') {
-      const name = document.getElementById('guarantor-name').value.trim();
-      const phone = document.getElementById('guarantor-phone').value.trim();
-      guarantorDone = !!name && !!phone;
-    }
-
-    btn.disabled = !(docsDone && guarantorDone);
-
-    if (!docsDone) {
-      hint.textContent = `Tap each document to upload (${kycUploadedCount}/${kycTotalDocs})`;
-    } else if (!guarantorDone) {
-      hint.textContent = 'Add your guarantor / emergency contact to continue';
-    } else {
-      hint.textContent = 'All documents uploaded';
-    }
+    const allDone = kycTotalDocs > 0 && kycUploadedCount >= kycTotalDocs;
+    btn.disabled = !allDone;
+    hint.textContent = allDone
+      ? 'All documents uploaded'
+      : `Tap each document to upload (${kycUploadedCount}/${kycTotalDocs})`;
   }
-
-  // ---- Guarantor / Emergency Contact: manual entry + native Contact Picker ----
-  document.getElementById('guarantor-name').addEventListener('input', updateKycContinueState);
-  document.getElementById('guarantor-phone').addEventListener('input', updateKycContinueState);
-
-  async function selectContact() {
-    const supportsContactPicker = 'contacts' in navigator && 'ContactsManager' in window;
-
-    if (!supportsContactPicker) {
-      showToast('Contact picker isn\'t supported here — please enter details manually');
-      return;
-    }
-
-    try {
-      const props = ['name', 'tel'];
-      const opts = { multiple: false };
-      const contacts = await navigator.contacts.select(props, opts);
-
-      if (!contacts || !contacts.length) return;
-
-      const contact = contacts[0];
-      const name = (contact.name && contact.name[0]) || '';
-      const tel = (contact.tel && contact.tel[0]) || '';
-
-      if (name) document.getElementById('guarantor-name').value = name;
-      if (tel) document.getElementById('guarantor-phone').value = tel;
-
-      updateKycContinueState();
-      showToast('Contact added from phonebook');
-    } catch (err) {
-      // User cancelled the picker, or the browser blocked access — fall back to manual entry seamlessly.
-      showToast('Contact selection cancelled — you can enter details manually');
-    }
-  }
-
-  document.getElementById('pick-contact-btn').addEventListener('click', selectContact);
 
   function simulateUpload(itemEl) {
-    if (itemEl.classList.contains('uploading')) return;
-    const isReupload = itemEl.classList.contains('uploaded');
-
-    itemEl.classList.remove('uploaded');
+    if (itemEl.classList.contains('uploaded') || itemEl.classList.contains('uploading')) return;
     itemEl.classList.add('uploading');
 
     const statusEl = itemEl.querySelector('.kyc-item-status');
     const fillEl = itemEl.querySelector('.kyc-progress-fill');
     const iconWrap = itemEl.querySelector('.kyc-item-icon-wrap');
-    statusEl.textContent = isReupload ? 'Replacing file...' : 'Uploading...';
-    fillEl.style.width = '0%';
+    statusEl.textContent = 'Uploading...';
 
     let progress = 0;
     const interval = setInterval(() => {
@@ -1088,14 +1008,10 @@
         clearInterval(interval);
         itemEl.classList.remove('uploading');
         itemEl.classList.add('uploaded');
-        statusEl.textContent = isReupload ? 'File replaced successfully' : 'Uploaded successfully';
+        statusEl.textContent = 'Uploaded successfully';
         iconWrap.innerHTML = `<i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>`;
         if (window.lucide) lucide.createIcons();
-        if (isReupload) {
-          showToast('Document replaced');
-        } else {
-          kycUploadedCount += 1;
-        }
+        kycUploadedCount += 1;
         updateKycContinueState();
       }
     }, 140);
@@ -1124,18 +1040,13 @@
           <p class="kyc-item-title">${docItem.text}</p>
           <p class="kyc-item-status">Tap to upload</p>
         </div>
-        <button type="button" class="kyc-reupload-btn" title="Re-upload / Replace">
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-        </button>
         <input type="file" hidden class="kyc-file-input" id="kyc-file-${i}">
         <div class="kyc-progress-track"><div class="kyc-progress-fill"></div></div>
       `;
       const fileInput = item.querySelector('.kyc-file-input');
 
-      // Clicking the card at any time (fresh upload OR already uploaded) opens the file picker,
-      // letting the user replace/change a previously uploaded document.
       item.addEventListener('click', () => {
-        if (item.classList.contains('uploading')) return;
+        if (item.classList.contains('uploaded') || item.classList.contains('uploading')) return;
         fileInput.click();
       });
       fileInput.addEventListener('change', () => simulateUpload(item));
@@ -1144,13 +1055,6 @@
 
       list.appendChild(item);
     });
-
-    // ---- Tenant-only: Guarantor / Emergency Contact section ----
-    const guarantorSection = document.getElementById('kyc-guarantor-section');
-    guarantorSection.style.display = role === 'tenant' ? 'block' : 'none';
-    document.getElementById('guarantor-name').value = '';
-    document.getElementById('guarantor-relationship').value = '';
-    document.getElementById('guarantor-phone').value = '';
 
     updateKycContinueState();
     if (window.lucide) lucide.createIcons();
