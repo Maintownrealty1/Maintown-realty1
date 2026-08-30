@@ -107,22 +107,24 @@
 <!-- ================= NAV ================= -->
 <header class="fixed top-0 inset-x-0 z-50 border-b border-white/5 bg-slate-900/80 backdrop-blur-md">
   <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-    <a href="#hero" class="flex items-center gap-2 font-display font-bold text-lg">
-      <img src="./logo.webp" alt="MainTown Realty" class="h-7 w-7 max-h-7 object-contain rounded-md shrink-0">
-      <span class="text-white">MainTown</span><span class="text-[#8B5CF6]">Realty</span>
-    </a>
-    <nav class="hidden md:flex items-center gap-8 text-sm text-slate-300">
-      <a href="#listings" class="hover:text-white transition">Listings</a>
-      <a href="#underwriting" class="hover:text-white transition">AI Underwriting</a>
-      <a href="#tech" class="hover:text-white transition">Technology</a>
-      <button type="button" id="openVisionModalDesktop" class="hover:text-white transition">Vision &amp; Mission</button>
-      <a href="#onboarding" class="hover:text-white transition">Get Started</a>
+    <div class="flex items-center space-x-2 shrink-0">
+      <a href="#hero" class="flex items-center gap-2 font-display font-bold text-lg">
+        <img src="./logo.webp" alt="MainTown Realty" class="h-7 w-7 max-h-7 object-contain rounded-md shrink-0">
+        <span class="text-xl font-extrabold text-white tracking-tight">MainTown <span class="text-purple-400">Realty</span></span>
+      </a>
+    </div>
+    <nav class="hidden md:flex items-center gap-6 lg:gap-8 ml-8 lg:ml-12">
+      <a href="#listings" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">Listings</a>
+      <a href="#underwriting" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">AI Underwriting</a>
+      <a href="#tech" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">Technology</a>
+      <button type="button" id="openVisionModalDesktop" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">Vision &amp; Mission</button>
+      <a href="#onboarding" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">Get Started</a>
     </nav>
-    <div class="hidden sm:flex items-center gap-3">
+    <div class="hidden sm:flex items-center gap-3 ml-auto">
       <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" aria-label="MainTown Realty on Instagram" class="w-9 h-9 rounded-full border border-white/10 text-slate-300 hover:text-white hover:border-brand-500/50 flex items-center justify-center transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.8"/><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none"/></svg>
       </a>
-      <a href="#onboarding" class="inline-flex items-center gap-2 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-full transition">
+      <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20would%20like%20to%20get%20started%20with%20onboarding%20and%20property%20listing." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-full transition">
         WhatsApp Onboarding
       </a>
     </div>
@@ -169,7 +171,7 @@
       <a href="#listings" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-3.5 rounded-xl transition-all duration-200 text-center shadow-lg shadow-purple-600/30">
         Explore Verified Listings
       </a>
-      <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20want%20to%20inquire%20about%20renting" target="_blank" rel="noopener" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-8 py-3.5 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-2">
+      <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20want%20to%20inquire%20about%20renting" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-8 py-3.5 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-2">
         <span>Get Started on WhatsApp</span>
       </a>
     </div>
@@ -681,7 +683,7 @@
         </svg>
         <span>maintownrealty.com</span>
       </a>
-      <a href="https://wa.me/2348066611017" target="_blank" rel="noopener" class="flex items-center gap-2 hover:text-[#25D366] transition whitespace-nowrap">
+      <a href="https://wa.me/2348066611017" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 hover:text-[#25D366] transition whitespace-nowrap">
         <svg class="w-4 h-4 shrink-0 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.3zM12 21.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.8-9.8 9.8z"/></svg>
         <span class="whitespace-nowrap">+234 806 661 1017</span>
       </a>
@@ -1042,9 +1044,10 @@
 
 <!-- ================= FLOATING WHATSAPP BUTTON ================= -->
 <a
-  href="https://wa.me/2340000000000?text=Hello%20MainTown%20Realty,%20I%20have%20an%20inquiry%20about%20your%20verified%20properties."
+  id="whatsapp-floating-btn"
+  href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20would%20like%20to%20get%20started%20with%20onboarding%20and%20property%20listing."
   target="_blank"
-  rel="noopener"
+  rel="noopener noreferrer"
   aria-label="Chat with MainTown Realty on WhatsApp"
   class="group fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#25D366] shadow-lg shadow-black/40 flex items-center justify-center transition-transform duration-200 hover:scale-105"
 >
