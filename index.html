@@ -155,13 +155,6 @@
   /* Screen transitions */
   .screen { animation: fadeIn 0.35s ease; }
   .screen.hidden-screen { display: none; }
-
-  /* ---- Screen 4 / Screen 5 strict isolation (screen-view / role-view) ---- */
-  .screen-view { display: flex; flex-direction: column; animation: fadeIn 0.35s ease; }
-  .screen-view.hidden { display: none; }
-  .role-view.hidden { display: none; }
-  .pb-24 { padding-bottom: 96px; } /* keeps content clear of the fixed bottom nav; overridden by Tailwind if CDN loads */
-
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
@@ -296,15 +289,10 @@
   .dash-list-text { flex: 1; }
   .dash-list-title { font-size: 13px; font-weight: 500; color: #fff; margin: 0 0 2px; }
   .dash-list-sub { font-size: 11.5px; color: #64748b; margin: 0; }
-  /* ---- Fixed bottom navigation bar (lives OUTSIDE #screen-4 / #screen-5) ---- */
-  #app-bottom-nav { display: flex; justify-content: center; padding: 0 20px 16px; pointer-events: none; }
-  #app-bottom-nav.hidden { display: none; } /* higher specificity than a plain .hidden rule, so this always wins */
-  #app-bottom-nav .dash-nav { pointer-events: auto; }
   .dash-nav {
     display: flex; justify-content: space-around; align-items: center;
-    width: 100%; max-width: 420px;
     background: rgba(15,23,42,0.95); border: 1px solid #1e293b; border-radius: 18px;
-    padding: 10px 8px; box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+    padding: 10px 8px; margin-top: auto;
   }
   .dash-nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #64748b; font-size: 10px; cursor: pointer; }
   .dash-nav-item.active { color: #c084fc; }
@@ -447,213 +435,191 @@
   .s5-hold-row strong { color: #fff; font-weight: 600; }
   .s5-hold-divider { height: 1px; background: #1e293b; margin: 8px 0; }
 
-  /* ===== Screen 6: Property Checkout, OTP Payment & Commission Split ===== */
-  .pay-option {
-    width: 100%; text-align: left; padding: 14px; border-radius: 14px;
-    border: 1px solid #1e293b; background: rgba(15,23,42,0.8);
-    display: flex; align-items: center; gap: 12px; cursor: pointer;
-    transition: all 0.15s ease; color: inherit; font: inherit;
+  /* ---- Site Header / Nav ---- */
+  .site-header {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(11,15,25,0.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid #1e293b;
   }
-  .pay-option:hover { border-color: #334155; }
-  .pay-option.selected { border-color: #a855f7; background: rgba(59,7,100,0.3); }
-  .pay-option-icon-wrap {
-    width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center;
-    justify-content: center; flex-shrink: 0;
+  .site-header-inner {
+    max-width: 1120px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
   }
-  .pay-option-text { flex: 1; min-width: 0; }
-  .pay-option-label { font-weight: 600; color: #fff; font-size: 13px; margin: 0 0 2px; }
-  .pay-option-detail { font-size: 11.5px; color: #94a3b8; margin: 0; }
-  .pay-option-check {
-    display: none; width: 20px; height: 20px; border-radius: 999px;
-    background: #9333ea; align-items: center; justify-content: center; flex-shrink: 0;
+  .site-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .site-brand-logo {
+    height: 28px; width: 28px; max-height: 28px; object-contain: contain;
+    object-fit: contain; border-radius: 8px; flex-shrink: 0; display: block;
   }
-  .pay-option.selected .pay-option-check { display: flex; }
-  .pay-option-check svg { width: 12px; height: 12px; color: #fff; }
-
-  .split-list { display: flex; flex-direction: column; gap: 10px; margin: 0 0 20px; }
-  .split-item {
-    display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
-    background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 14px;
+  .site-brand-name { font-weight: 600; color: #fff; font-size: 15px; white-space: nowrap; }
+  .site-nav-links { display: none; align-items: center; gap: 28px; }
+  .site-nav-links a {
+    color: #cbd5e1; font-size: 13.5px; font-weight: 500; text-decoration: none;
+    transition: color 0.15s ease; cursor: pointer;
   }
-  .split-icon {
-    width: 34px; height: 34px; border-radius: 10px; background: rgba(147,51,234,0.15);
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #c084fc; margin-top: 1px;
+  .site-nav-links a:hover { color: #c084fc; }
+  .site-nav-links a.nav-cta {
+    color: #fff; background: linear-gradient(90deg, #9333ea, #7e22ce);
+    padding: 9px 18px; border-radius: 999px; font-weight: 600;
+    box-shadow: 0 6px 16px rgba(147,51,234,0.3);
   }
-  .split-text { flex: 1; min-width: 0; }
-  .split-text p { margin: 0; font-size: 12px; color: #cbd5e1; line-height: 1.55; }
-  .split-text p strong { color: #fff; }
-
-  .s5-status-success { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.35); }
-
-  .resend-link.disabled { color: #475569; cursor: not-allowed; pointer-events: none; text-decoration: none; }
-
-  /* ===== Master Upgrade: shared components ===== */
-  .callout-box { display: flex; gap: 10px; background: rgba(88,28,135,0.18); border: 1px solid rgba(168,85,247,0.4); border-radius: 14px; padding: 14px; margin: 14px 0 20px; }
-  .callout-box svg { flex-shrink: 0; margin-top: 1px; }
-  .callout-box p { margin: 0; font-size: 12px; color: #e9d5ff; line-height: 1.55; }
-
-  .clause-block { margin: 14px 0; }
-  .clause-block h4 { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #e2e8f0; margin: 0 0 4px; }
-  .clause-block p { margin: 0; font-size: 12px; color: #94a3b8; line-height: 1.55; }
-
-  .rent-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); color: #34d399; font-size: 12px; font-weight: 600; padding: 8px 12px; border-radius: 10px; margin: 0 0 16px; }
-  .fee-preview-box { background: rgba(15,23,42,0.9); border: 1px solid #1e293b; border-radius: 14px; padding: 14px 16px; margin: 4px 0 18px; }
-  .fee-preview-box .row { display: flex; justify-content: space-between; font-size: 12.5px; color: #94a3b8; padding: 4px 0; }
-  .fee-preview-box .row strong { color: #c084fc; font-weight: 600; }
-
-  .dual-drop { display: flex; gap: 10px; margin-bottom: 4px; }
-  .dual-drop .s5-upload-box { flex: 1; margin-bottom: 0; padding: 18px 8px; }
-
-  .toggle-pill-row { display: flex; background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 12px; padding: 4px; gap: 4px; margin-bottom: 16px; }
-  .toggle-pill { flex: 1; text-align: center; padding: 9px 8px; border-radius: 9px; font-size: 12px; font-weight: 600; color: #94a3b8; background: none; border: none; cursor: pointer; transition: all .15s ease; }
-  .toggle-pill.active { background: #9333ea; color: #fff; }
-
-  .plan-option { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 6px; border-radius: 10px; border: 1px solid #1e293b; background: rgba(30,41,59,0.6); color: #cbd5e1; font-size: 12px; font-weight: 600; cursor: pointer; }
-  .plan-option.selected { background: rgba(147,51,234,0.2); border-color: #a855f7; color: #fff; }
-  .plan-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
-
-  .signoff-box { max-height: 200px; overflow-y: auto; background: rgba(15,23,42,0.9); border: 1px solid #1e293b; border-radius: 14px; padding: 14px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6; margin-bottom: 10px; }
-  .signoff-box::-webkit-scrollbar { width: 6px; }
-  .signoff-box::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
-  .signoff-box p { margin: 0 0 10px; }
-
-  .bell-btn { position: relative; width: 38px; height: 38px; border-radius: 12px; background: rgba(15,23,42,0.8); border: 1px solid #1e293b; display: flex; align-items: center; justify-content: center; color: #cbd5e1; cursor: pointer; flex-shrink: 0; }
-  .bell-dot { position: absolute; top: 6px; right: 7px; width: 8px; height: 8px; border-radius: 999px; background: #ef4444; display: none; }
-  .bell-dot.show { display: block; }
-
-  .thread-item { display: flex; align-items: center; gap: 12px; padding: 13px 14px; background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s ease; }
-  .thread-item:hover { border-color: #334155; }
-  .thread-item.archived { opacity: 0.55; }
-  .thread-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(147,51,234,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #c084fc; }
-  .thread-text { flex: 1; min-width: 0; }
-  .thread-title { font-size: 13px; font-weight: 600; color: #fff; margin: 0 0 2px; }
-  .thread-sub { font-size: 11.5px; color: #64748b; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .thread-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; flex-shrink: 0; }
-
-  .chat-bubble { max-width: 88%; padding: 10px 13px; border-radius: 14px; font-size: 12.5px; line-height: 1.5; margin-bottom: 10px; }
-  .chat-bubble.system { background: rgba(30,41,59,0.7); color: #94a3b8; border: 1px solid #1e293b; margin: 0 auto 10px; text-align: center; font-size: 11.5px; max-width: 100%; }
-  .chat-bubble.them { background: rgba(30,41,59,0.7); color: #e2e8f0; border: 1px solid #1e293b; }
-
-  .stage-track { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
-  .stage-item { display: flex; align-items: flex-start; gap: 12px; padding: 13px 14px; border-radius: 14px; border: 1px solid #1e293b; background: rgba(15,23,42,0.8); opacity: 0.4; transition: all .2s ease; }
-  .stage-item.active-stage { opacity: 1; }
-  .stage-dot { width: 12px; height: 12px; border-radius: 999px; margin-top: 3px; flex-shrink: 0; background: #475569; }
-  .stage-item.stage-green.active-stage { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.08); }
-  .stage-item.stage-green.active-stage .stage-dot { background: #10b981; }
-  .stage-item.stage-yellow.active-stage { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.08); }
-  .stage-item.stage-yellow.active-stage .stage-dot { background: #f59e0b; }
-  .stage-item.stage-red.active-stage { border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.08); }
-  .stage-item.stage-red.active-stage .stage-dot { background: #ef4444; }
-  .stage-title { font-size: 13px; font-weight: 600; color: #fff; margin: 0 0 2px; }
-  .stage-sub { font-size: 11.5px; color: #94a3b8; margin: 0; line-height: 1.5; }
-
-  .ticket-item { padding: 13px 14px; background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 14px; margin-bottom: 10px; }
-  .ticket-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-  .ticket-title { font-size: 13px; font-weight: 600; color: #fff; margin: 0; }
-  .receipt-box { background: rgba(15,23,42,0.9); border: 1px solid #1e293b; border-radius: 14px; padding: 14px 16px; margin: 10px 0; }
-
-  /* ===================================================================
-     MOBILE SCROLL / LAYOUT FIXES
-     =================================================================== */
-  html, body {
-    -webkit-overflow-scrolling: touch;
-    overflow-x: hidden;
+  .hamburger-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 10px; border: 1px solid #1e293b;
+    background: rgba(15,23,42,0.8); color: #fff; font-size: 20px; line-height: 1;
+    cursor: pointer;
   }
-  .app-shell { align-items: flex-start; } /* top-align content instead of any implicit vertical centering */
-  .pt-20 { padding-top: 80px !important; }
-  .pb-36 { padding-bottom: 144px !important; }
-  /* Give every tall scrollable screen room at the top (fixed header) and bottom (fixed nav / sticky CTA) */
-  .screen-view.pb-24, #screen-1.screen { -webkit-overflow-scrolling: touch; }
-  .pb-24 { padding-bottom: 140px; } /* extra clearance above the fixed bottom nav */
+  .hamburger-btn:hover { border-color: #334155; }
+  @media (min-width: 860px) {
+    .site-nav-links { display: flex; }
+    .hamburger-btn { display: none; }
+  }
 
-  /* Sticky/fixed glass CTA container pinned to the bottom of the viewport */
-  .sticky-cta-wrap {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-    display: flex; justify-content: center;
-    padding: 14px 20px calc(16px + env(safe-area-inset-bottom, 0px));
-    background: rgba(11,15,25,0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border-top: 1px solid #1e293b;
+  .mobile-menu-overlay {
+    display: none; position: fixed; inset: 0; z-index: 45;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(2px);
   }
-  .sticky-cta-wrap .btn-primary { max-width: 380px; margin: 0; }
-  .sticky-cta-inner { width: 100%; max-width: 380px; }
+  .mobile-menu-overlay.open { display: block; }
+  .mobile-menu-panel {
+    position: absolute; top: 0; right: 0; height: 100%; width: 78%; max-width: 320px;
+    background: #0B0F19; border-left: 1px solid #1e293b;
+    padding: 20px; display: flex; flex-direction: column; gap: 4px;
+    animation: slideInMenu 0.25s ease;
+  }
+  @keyframes slideInMenu { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  .mobile-menu-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .mobile-menu-close {
+    width: 34px; height: 34px; border-radius: 10px; border: 1px solid #1e293b;
+    background: rgba(15,23,42,0.8); color: #fff; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 18px;
+  }
+  .mobile-menu-panel a {
+    display: block; padding: 13px 10px; border-radius: 10px; color: #e2e8f0;
+    text-decoration: none; font-size: 14.5px; font-weight: 500;
+  }
+  .mobile-menu-panel a:hover { background: rgba(147,51,234,0.12); color: #c084fc; }
+  .mobile-menu-panel a.nav-cta {
+    margin-top: 10px; text-align: center; color: #fff;
+    background: linear-gradient(90deg, #9333ea, #7e22ce);
+  }
 
-  /* ===================================================================
-     INSPECTION CART ENGINE
-     =================================================================== */
-  .cart-fab {
-    position: relative; width: 38px; height: 38px; border-radius: 12px; background: rgba(15,23,42,0.8);
-    border: 1px solid #1e293b; display: flex; align-items: center; justify-content: center;
-    color: #cbd5e1; cursor: pointer; flex-shrink: 0; transition: border-color 0.15s ease;
+  /* ---- Hero ---- */
+  .hero-section { padding: 56px 20px 40px; text-align: center; max-width: 720px; margin: 0 auto; }
+  .hero-pill {
+    display: inline-flex; align-items: center; gap: 6px; background: rgba(147,51,234,0.15);
+    border: 1px solid rgba(147,51,234,0.4); color: #c084fc; font-size: 12px; font-weight: 500;
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 20px;
   }
-  .cart-fab:hover { border-color: #334155; }
-  .cart-fab-badge {
-    position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px;
-    border-radius: 999px; background: #9333ea; color: #fff; font-size: 10px; font-weight: 700;
-    display: none; align-items: center; justify-content: center; border: 2px solid #0B0F19;
-  }
-  .cart-fab-badge.show { display: flex; }
-  .cart-item {
-    background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 16px; padding: 14px; margin-bottom: 14px;
-  }
-  .cart-item-top { display: flex; gap: 12px; margin-bottom: 12px; }
-  .cart-item-img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: #1e293b; }
-  .cart-item-text { flex: 1; min-width: 0; }
-  .cart-item-title { font-size: 13.5px; font-weight: 600; color: #fff; margin: 0 0 2px; }
-  .cart-item-loc { font-size: 11.5px; color: #64748b; margin: 0 0 4px; display: flex; align-items: center; gap: 4px; }
-  .cart-item-fee { font-size: 12px; font-weight: 600; color: #c084fc; margin: 0; }
-  .cart-item-remove { background: none; border: none; color: #64748b; cursor: pointer; padding: 4px; flex-shrink: 0; }
-  .cart-item-remove:hover { color: #f87171; }
-  .cart-item-datetime { display: flex; gap: 8px; }
-  .cart-item-datetime .field-input { padding: 10px 12px; font-size: 12.5px; }
-  .cart-summary-card {
-    background: linear-gradient(135deg, #9333ea, #581c87); border-radius: 18px; padding: 18px;
-    margin-bottom: 20px; box-shadow: 0 12px 30px rgba(147,51,234,0.25);
-  }
-  .cart-summary-row { display: flex; justify-content: space-between; font-size: 12.5px; color: rgba(255,255,255,0.85); padding: 4px 0; }
-  .cart-summary-row strong { color: #fff; font-size: 15px; }
-  .cart-escrow-badge {
-    display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15);
-    color: #fff; font-size: 11px; font-weight: 600; padding: 6px 10px; border-radius: 999px; margin-top: 10px;
-  }
-  .cart-empty-state { text-align: center; padding: 40px 16px; color: #64748b; }
-  .cart-empty-state svg { margin: 0 auto 12px; opacity: 0.5; }
+  .hero-title { font-size: 32px; line-height: 1.2; font-weight: 700; color: #fff; margin: 0 0 16px; letter-spacing: -0.02em; }
+  .hero-sub { font-size: 15px; line-height: 1.6; color: #94a3b8; margin: 0 0 28px; }
+  @media (min-width: 640px) { .hero-title { font-size: 42px; } }
 
-  /* ===================================================================
-     INSPECTION SCHEDULES VIEW
-     =================================================================== */
-  .insp-mgmt-card { background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 16px; padding: 14px; margin-bottom: 14px; }
-  .insp-mgmt-top { display: flex; gap: 12px; margin-bottom: 12px; }
-  .insp-mgmt-img { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: #1e293b; }
-  .insp-mgmt-text { flex: 1; min-width: 0; }
-  .insp-mgmt-title { font-size: 13.5px; font-weight: 600; color: #fff; margin: 0 0 2px; }
-  .insp-mgmt-loc { font-size: 11.5px; color: #64748b; margin: 0 0 6px; display: flex; align-items: center; gap: 4px; }
-  .insp-mgmt-badges { display: flex; flex-wrap: wrap; gap: 6px; }
-  .insp-date-badge {
-    display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600;
-    padding: 4px 8px; border-radius: 999px; background: rgba(147,51,234,0.15); color: #c084fc;
-    border: 1px solid rgba(147,51,234,0.35);
+  /* ---- Vision & Mission Drawer ---- */
+  .vm-drawer-overlay {
+    display: none; position: fixed; inset: 0; z-index: 55;
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(3px); align-items: flex-end; justify-content: center;
   }
-  .insp-mgmt-actions { display: flex; gap: 8px; }
+  .vm-drawer-overlay.open { display: flex; }
+  .vm-drawer-panel {
+    background: #0f172a; border: 1px solid #1e293b; border-top-left-radius: 24px; border-top-right-radius: 24px;
+    width: 100%; max-width: 480px; max-height: 82vh; overflow-y: auto; padding: 24px 24px 32px;
+    animation: slideUpDrawer 0.3s ease;
+  }
+  @keyframes slideUpDrawer { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .vm-drawer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .vm-drawer-title { font-size: 18px; font-weight: 700; color: #fff; margin: 0; }
+  .vm-drawer-close {
+    width: 32px; height: 32px; border-radius: 999px; border: 1px solid #1e293b;
+    background: rgba(30,41,59,0.8); color: #fff; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px;
+  }
+  .vm-block { margin-bottom: 20px; }
+  .vm-block h3 { font-size: 13px; font-weight: 600; color: #c084fc; text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 8px; }
+  .vm-block p { font-size: 13.5px; line-height: 1.7; color: #cbd5e1; margin: 0; }
 
-  /* ===================================================================
-     DEV / ADMIN TESTING BYPASS
-     =================================================================== */
-  .s5-status-live { background: rgba(16,185,129,0.18); color: #34d399; border: 1px solid rgba(16,185,129,0.5); }
-  .dev-approve-btn {
-    display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700;
-    padding: 4px 9px; border-radius: 999px; background: rgba(245,158,11,0.15); color: #fbbf24;
-    border: 1px dashed rgba(245,158,11,0.5); cursor: pointer; margin-top: 6px; white-space: nowrap;
+  /* ---- Floating WhatsApp Button ---- */
+  .whatsapp-fab {
+    position: fixed; bottom: 24px; right: 24px; z-index: 50;
+    width: 56px; height: 56px; border-radius: 999px; background: #25D366;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 0 rgba(37,211,102,0.6);
+    text-decoration: none; transition: transform 0.15s ease, box-shadow 0.3s ease;
   }
-  .dev-approve-btn:hover { background: rgba(245,158,11,0.25); }
-  .s5-list-status-col { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
-  .auto-approve-row {
-    display: flex; align-items: center; gap: 8px; font-size: 12px; color: #94a3b8;
-    background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 12px; padding: 12px 14px; margin: 4px 0 16px;
+  .whatsapp-fab svg { width: 28px; height: 28px; }
+  .whatsapp-fab:hover {
+    transform: scale(1.06);
+    animation: whatsappPulse 1.4s ease-out infinite;
   }
-  .auto-approve-row input { width: 16px; height: 16px; accent-color: #9333ea; cursor: pointer; flex-shrink: 0; }
+  @keyframes whatsappPulse {
+    0% { box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 0 0 rgba(37,211,102,0.55); }
+    70% { box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 0 14px rgba(37,211,102,0); }
+    100% { box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 0 0 rgba(37,211,102,0); }
+  }
 </style>
 </head>
 <body>
+
+<!-- ===================== SITE HEADER / NAV ===================== -->
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="#top" class="site-brand">
+      <svg class="site-brand-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MainTown Realty logo">
+        <rect width="40" height="40" rx="10" fill="#9333ea"/>
+        <text x="20" y="27" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#ffffff" text-anchor="middle">M</text>
+      </svg>
+      <span class="site-brand-name">MainTown Realty</span>
+    </a>
+
+    <nav class="site-nav-links">
+      <a href="#listings">Listings</a>
+      <a href="#ai-underwriting">AI Underwriting</a>
+      <a href="#technology">Technology</a>
+      <a href="javascript:void(0)" id="nav-vm-desktop">Vision &amp; Mission</a>
+      <a href="#screen-1" class="nav-cta">Get Started</a>
+    </nav>
+
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">☰</button>
+  </div>
+</header>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu-overlay" id="mobile-menu-overlay">
+  <div class="mobile-menu-panel">
+    <div class="mobile-menu-header">
+      <span class="site-brand-name">Menu</span>
+      <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Close menu">✕</button>
+    </div>
+    <a href="#listings">Listings</a>
+    <a href="#ai-underwriting">AI Underwriting</a>
+    <a href="#technology">Technology</a>
+    <a href="javascript:void(0)" id="nav-vm-mobile">Vision &amp; Mission</a>
+    <a href="#screen-1" class="nav-cta">Get Started</a>
+  </div>
+</div>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero-section" id="top">
+  <span class="hero-pill">✦ Trusted by renters in Lagos &amp; the diaspora</span>
+  <h1 class="hero-title">Verified Homes. Flexible Payments. Smart Living.</h1>
+  <p class="hero-sub">Eliminating upfront rent burdens and securing cross-border escrow for local renters in Lagos, Nigeria and the global diaspora (Canada) — through human-vetted &amp; AI-verified properties.</p>
+</section>
+
+<!-- ===================== VISION & MISSION DRAWER ===================== -->
+<div class="vm-drawer-overlay" id="vm-drawer-overlay">
+  <div class="vm-drawer-panel">
+    <div class="vm-drawer-header">
+      <h2 class="vm-drawer-title">Our Vision &amp; Mission</h2>
+      <button class="vm-drawer-close" id="vm-drawer-close" aria-label="Close">✕</button>
+    </div>
+    <div class="vm-block">
+      <h3>Vision</h3>
+      <p>A rental market where no honest tenant loses money to fraud, and no landlord loses income to vacancy — where trust is verified, not assumed, across every border.</p>
+    </div>
+    <div class="vm-block">
+      <h3>Mission</h3>
+      <p>To eliminate upfront rent burdens and cross-border payment risk by combining human-vetted property verification with AI-powered underwriting, secure escrow, and flexible payment plans — built for local renters and the global diaspora alike.</p>
+    </div>
+  </div>
+</div>
 
 <div class="app-shell">
 
@@ -720,7 +686,7 @@
   </div>
 
   <!-- Registration Form -->
-  <form id="reg-form" class="pb-36">
+  <form id="reg-form">
 
     <div class="field">
       <label class="field-label">Full Name</label>
@@ -760,17 +726,11 @@
       </div>
     </div>
 
+    <button type="submit" id="continue-btn" class="btn-primary" disabled>
+      Continue to Verification
+    </button>
+    <p id="role-hint" class="role-hint">Select a role above to continue</p>
   </form>
-
-  <!-- Pinned CTA: always visible/clickable regardless of form height on small screens -->
-  <div class="sticky-cta-wrap">
-    <div class="sticky-cta-inner">
-      <button type="submit" form="reg-form" id="continue-btn" class="btn-primary" disabled>
-        Continue to Verification
-      </button>
-      <p id="role-hint" class="role-hint">Select a role above to continue</p>
-    </div>
-  </div>
 
 </div>
 <!-- ===================== END SCREEN 1 ===================== -->
@@ -889,20 +849,14 @@
 <!-- ===================== END SCREEN 3 ===================== -->
 
 <!-- ===================== SCREEN 4: Main App Dashboard ===================== -->
-<div id="screen-4" class="screen-view hidden pb-24" style="min-height: calc(100vh - 72px);">
+<div id="screen-4" class="screen hidden-screen" style="display: none; flex-direction: column; min-height: calc(100vh - 72px);">
 
   <div class="dash-header">
     <div>
       <p class="dash-greeting">Welcome back,</p>
       <p class="dash-name" id="dash-user-name">User</p>
     </div>
-    <div style="display:flex; align-items:center; gap:10px;">
-      <button type="button" class="bell-btn" id="dash-bell-btn">
-        <i data-lucide="bell" class="w-4 h-4"></i>
-        <span class="bell-dot" id="dash-bell-dot"></span>
-      </button>
-      <div class="dash-avatar" id="dash-avatar">U</div>
-    </div>
+    <div class="dash-avatar" id="dash-avatar">U</div>
   </div>
 
   <div class="dash-card">
@@ -921,11 +875,17 @@
     <!-- populated dynamically based on role -->
   </div>
 
+  <div class="dash-nav">
+    <div class="dash-nav-item active"><span class="nav-icon"><i data-lucide="home" class="w-[18px] h-[18px]"></i></span>Home</div>
+    <div class="dash-nav-item"><span class="nav-icon"><i data-lucide="search" class="w-[18px] h-[18px]"></i></span>Search</div>
+    <div class="dash-nav-item"><span class="nav-icon"><i data-lucide="message-square" class="w-[18px] h-[18px]"></i></span>Messages</div>
+    <div class="dash-nav-item"><span class="nav-icon"><i data-lucide="user" class="w-[18px] h-[18px]"></i></span>Profile</div>
+  </div>
 </div>
 <!-- ===================== END SCREEN 4 ===================== -->
 
 <!-- ===================== SCREEN 5: Property Listing & Inspection Hub ===================== -->
-<div id="screen-5" class="screen-view hidden pb-24">
+<div id="screen-5" class="screen hidden-screen" style="display: none; flex-direction: column;">
 
   <div class="s5-topbar">
     <button type="button" class="s5-back-btn" id="s5-back-btn">
@@ -938,10 +898,6 @@
         <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
       </button>
     </div>
-    <button type="button" class="cart-fab" id="s5-cart-btn">
-      <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-      <span class="cart-fab-badge" id="s5-cart-badge">0</span>
-    </button>
   </div>
 
   <div class="s5-role-header">
@@ -950,16 +906,9 @@
     <p class="s5-role-sub" id="s5-role-sub">Verified listings, local & diaspora-friendly.</p>
   </div>
 
-  <!-- ---- TENANT VIEW: Search & Book ---- -->
-  <div id="tenant-view" class="role-view hidden">
-    <div class="toggle-pill-row">
-      <button type="button" class="toggle-pill active" id="s5-tab-rent" data-listing-type="rent">For Rent</button>
-      <button type="button" class="toggle-pill" id="s5-tab-land" data-listing-type="land">Buy Land &amp; Properties</button>
-    </div>
-
-    <div id="s5-inspection-banner"></div>
-
-    <div class="s5-currency-toggle" id="s5-currency-toggle-wrap">
+  <!-- ---- TENANT VIEW ---- -->
+  <div id="s5-tenant-view">
+    <div class="s5-currency-toggle">
       <button type="button" class="s5-currency-btn active" data-currency="ngn">Local Rent (NGN)</button>
       <button type="button" class="s5-currency-btn" data-currency="usd">Diaspora Flex-Rent (USD/EUR)</button>
     </div>
@@ -969,8 +918,8 @@
     </div>
   </div>
 
-  <!-- ---- LANDLORD VIEW: My Properties & Title KYC ---- -->
-  <div id="landlord-view" class="role-view hidden">
+  <!-- ---- LANDLORD VIEW ---- -->
+  <div id="s5-landlord-view" style="display:none;">
     <button type="button" class="s5-add-btn" id="s5-add-property-btn">
       <i data-lucide="plus-circle" class="w-4 h-4"></i> Add New Property
     </button>
@@ -981,8 +930,8 @@
     </div>
   </div>
 
-  <!-- ---- AGENT VIEW: Upload Listing & Mandatory Landlord Mapping ---- -->
-  <div id="agent-view" class="role-view hidden">
+  <!-- ---- AGENT VIEW ---- -->
+  <div id="s5-agent-view" style="display:none;">
     <div class="s5-tabs">
       <div class="s5-tab active" id="s5-tab-new" data-tab="new">Upload New Listing</div>
       <div class="s5-tab" id="s5-tab-mine" data-tab="mine">My Listings</div>
@@ -990,7 +939,7 @@
 
     <!-- New Listing form -->
     <div id="s5-agent-new">
-      <form id="s5-listing-form" class="pb-36">
+      <form id="s5-listing-form">
         <div class="field">
           <label class="field-label">Listing Title</label>
           <input class="field-input" id="s5-listing-title" type="text" required placeholder="e.g. 2-Bed Flat, Lekki Phase 1">
@@ -1000,39 +949,14 @@
           <input class="field-input" id="s5-listing-address" type="text" required placeholder="Full property address">
         </div>
         <div class="field">
-          <label class="field-label">Listing Type</label>
-          <select class="field-input" id="s5-listing-type">
-            <option value="rent">For Rent (Flex-Rent)</option>
-            <option value="land">Buy — Land &amp; Property</option>
-          </select>
+          <label class="field-label">Rent Amount</label>
+          <input class="field-input" id="s5-listing-rent" type="text" required placeholder="e.g. ₦2,400,000 / year">
         </div>
 
-        <div class="field">
-          <label class="field-label">Annual Price (NGN)</label>
-          <input class="field-input" id="s5-listing-annual" type="number" required placeholder="e.g. 2400000">
-        </div>
-        <div class="rent-badge" id="s5-monthly-badge" style="display:none;">
-          <i data-lucide="calculator" class="w-3.5 h-3.5"></i><span id="s5-monthly-badge-text">Monthly Flex-Rent: ₦0 / month</span>
-        </div>
-
-        <div class="fee-preview-box">
-          <p class="s5-section-label" style="margin:0 0 8px;"><i data-lucide="calculator" class="w-4 h-4 text-purple-400"></i>Standardized Fee Structure Preview</p>
-          <div class="row"><span>Agency / Listing Commission (10%)</span><strong id="s5-fee-commission">₦0</strong></div>
-          <div class="row"><span>Legal &amp; Title Agreement Fee (5%)</span><strong id="s5-fee-legal">₦0</strong></div>
-        </div>
-
-        <p class="s5-section-label"><i data-lucide="image" class="w-4 h-4 text-purple-400"></i>Media Upload</p>
-        <div class="dual-drop">
-          <div class="s5-upload-box" id="s5-photo-upload">
-            <i data-lucide="image" class="w-5 h-5"></i>
-            <span id="s5-photo-upload-label">Property Photos</span>
-            <input type="file" id="s5-photo-file" hidden multiple accept="image/*">
-          </div>
-          <div class="s5-upload-box" id="s5-video-upload">
-            <i data-lucide="video" class="w-5 h-5"></i>
-            <span id="s5-video-upload-label">Video Walkthrough</span>
-            <input type="file" id="s5-video-file" hidden accept="video/*">
-          </div>
+        <div class="s5-upload-box" id="s5-media-upload">
+          <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+          <span id="s5-media-upload-label">Tap to upload photos or video</span>
+          <input type="file" id="s5-media-file" hidden multiple accept="image/*,video/*">
         </div>
 
         <p class="s5-section-label"><i data-lucide="user-check" class="w-4 h-4 text-purple-400"></i>Landlord Contact (Mandatory)</p>
@@ -1054,11 +978,6 @@
           <p>Submitting this listing automatically sends an instant SMS &amp; WhatsApp invite to the landlord. Escrow funds are locked until the landlord joins and confirms ownership.</p>
         </div>
 
-        <label class="auto-approve-row" for="s5-auto-approve">
-          <input type="checkbox" id="s5-auto-approve">
-          <span>Auto-approve listing for testing (Skip Landlord/Admin Queue)</span>
-        </label>
-
         <button type="submit" class="btn-primary">Submit Listing &amp; Notify Landlord</button>
       </form>
     </div>
@@ -1075,292 +994,7 @@
 </div>
 <!-- ===================== END SCREEN 5 ===================== -->
 
-<!-- ===================== SCREEN 6: Property Checkout, OTP Payment & Commission Split ===================== -->
-<div id="screen-6" class="screen-view hidden pb-24">
-
-  <div class="s5-topbar">
-    <button type="button" class="s5-back-btn" id="s6-back-btn">
-      <i data-lucide="arrow-left" class="w-4 h-4"></i>
-    </button>
-    <div class="s5-role-header" style="margin: 0;">
-      <p class="s5-role-eyebrow" style="margin: 0;"><i data-lucide="lock" class="w-3.5 h-3.5"></i><span>Secure Checkout</span></p>
-    </div>
-  </div>
-
-  <h1 class="s5-role-title" style="margin-bottom: 18px;">Confirm &amp; Pay</h1>
-
-  <!-- Property Summary Card -->
-  <div class="s5-card" style="margin-bottom: 20px;">
-    <div class="s5-card-img-wrap">
-      <img id="s6-property-img" src="" alt="">
-      <span class="s5-verified-badge"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>Inspection Verified</span>
-    </div>
-    <div class="s5-card-body">
-      <p class="s5-card-title" id="s6-property-title">—</p>
-      <p class="s5-card-location"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i><span id="s6-property-location">—</span></p>
-    </div>
-  </div>
-
-  <!-- ---- Payment section: breakdown + source + authorize (hidden after successful payment) ---- -->
-  <div id="s6-payment-section">
-
-    <div id="s6-landsignoff-section" style="display:none;">
-      <p class="s5-section-label" style="margin-top: 0;"><i data-lucide="pen-tool" class="w-4 h-4 text-purple-400"></i>Land Allocation &amp; Milestone Sign-Off</p>
-      <div class="signoff-box" id="s6-signoff-box">
-        <p>By proceeding with this Land &amp; Property purchase, you acknowledge and accept the following milestone terms in full:</p>
-        <p><strong>Clause A — Title Inspection Hold:</strong> Your down payment will be locked in MainTown Escrow for up to 14 days to allow independent survey and Land Registry (C of O / Gazette) title verification.</p>
-        <p><strong>Clause B — Installment Schedule &amp; Default:</strong> Installment payments carry a 30-day grace period. Defaults exceeding 60 days trigger automated contract restructuring or property forfeiture subject to administrative fees.</p>
-        <p><strong>Clause C — Allocation Milestone Payout:</strong> 50% of escrow funds release upon verified physical allocation; the remaining 50% releases upon signing the Deed of Assignment.</p>
-        <p>Scroll to the bottom of this box to unlock the signature field below.</p>
-      </div>
-      <div class="field">
-        <label class="field-label">Type to sign: "I agree to the Land Allocation &amp; Milestone Terms"</label>
-        <input class="field-input signature-input" id="s6-landsign-input" type="text" placeholder="Type the exact phrase above" disabled>
-      </div>
-    </div>
-
-    <p class="s5-section-label" id="s6-breakdown-label" style="margin-top: 0;"><i data-lucide="receipt" class="w-4 h-4 text-purple-400"></i>Rent Breakdown</p>
-    <div class="s5-hold-preview">
-      <div class="s5-hold-row"><span id="s6-row1-label">Rent Amount</span><strong id="s6-rent-amount">—</strong></div>
-      <div class="s5-hold-row"><span id="s6-row2-label">Caution Deposit</span><strong id="s6-deposit-amount">—</strong></div>
-      <div class="s5-hold-row"><span id="s6-row3-label">Service / Escrow Fee</span><strong id="s6-fee-amount">—</strong></div>
-      <div class="s5-hold-divider"></div>
-      <div class="s5-hold-row"><span>Total Amount Due</span><strong id="s6-total-amount" style="color: #c084fc; font-size: 15px;">—</strong></div>
-    </div>
-
-    <p class="s5-section-label"><i data-lucide="wallet" class="w-4 h-4 text-purple-400"></i>Payment Source</p>
-    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-      <button type="button" class="pay-option selected" id="s6-pay-wallet" data-source="wallet">
-        <div class="pay-option-icon-wrap bg-purple-500/10"><i data-lucide="wallet" class="w-5 h-5 text-purple-400"></i></div>
-        <div class="pay-option-text">
-          <p class="pay-option-label">Funded MainTown Wallet</p>
-          <p class="pay-option-detail">Available balance: <span id="s6-wallet-balance">₦2,500,000</span></p>
-        </div>
-        <div class="pay-option-check"><i data-lucide="check" class="w-3 h-3"></i></div>
-      </button>
-      <button type="button" class="pay-option" id="s6-pay-card" data-source="card">
-        <div class="pay-option-icon-wrap bg-blue-500/10"><i data-lucide="credit-card" class="w-5 h-5 text-blue-400"></i></div>
-        <div class="pay-option-text">
-          <p class="pay-option-label">Saved Debit/Credit Card</p>
-          <p class="pay-option-detail">Card ending in <span id="s6-card-last4">4321</span></p>
-        </div>
-        <div class="pay-option-check"><i data-lucide="check" class="w-3 h-3"></i></div>
-      </button>
-    </div>
-
-    <div class="s5-notice-box">
-      <i data-lucide="lock" class="w-5 h-5"></i>
-      <p>Funds are held securely in escrow and only released to the landlord after digital handover sign-off.</p>
-    </div>
-
-    <button type="button" id="s6-authorize-btn" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
-      <i data-lucide="shield-check" class="w-4 h-4"></i> Authorize &amp; Pay
-    </button>
-  </div>
-
-  <!-- ---- Success state: shown after OTP verification ---- -->
-  <div id="s6-success-panel" class="hidden">
-    <div class="dash-card" style="background: linear-gradient(135deg, #059669, #065f46); margin-bottom: 20px;">
-      <p class="dash-card-label" style="display: flex; align-items: center; gap: 5px;"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i>Status</p>
-      <p class="dash-card-value">Payment Successful</p>
-      <p class="dash-card-sub" id="s6-status-code">PAYMENT_SUCCESSFUL / FUNDS_IN_ESCROW</p>
-    </div>
-
-    <p class="s5-section-label" style="margin-top: 0;"><i data-lucide="key-round" class="w-4 h-4 text-amber-400"></i>Escrow &amp; Commission Split</p>
-    <div class="split-list" id="s6-split-list">
-      <!-- populated dynamically -->
-    </div>
-
-    <button type="button" id="s6-handover-btn" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
-      <i data-lucide="key-round" class="w-4 h-4"></i> Execute Handover &amp; Authorize Payout
-    </button>
-  </div>
-
 </div>
-<!-- ===================== END SCREEN 6 ===================== -->
-
-<!-- ===================== SCREEN 7: Post-Lease Management & Default Enforcement Hub ===================== -->
-<div id="screen-7" class="screen-view hidden pb-24">
-
-  <div class="s5-topbar">
-    <button type="button" class="s5-back-btn" id="s7-back-btn">
-      <i data-lucide="arrow-left" class="w-4 h-4"></i>
-    </button>
-    <div class="s5-role-header" style="margin: 0;">
-      <p class="s5-role-eyebrow" style="margin: 0;"><i data-lucide="key-round" class="w-3.5 h-3.5"></i><span>Post-Lease Hub</span></p>
-    </div>
-  </div>
-
-  <h1 class="s5-role-title" style="margin-bottom: 18px;">Manage Your Tenancy</h1>
-
-  <!-- Active Lease & Next Auto-Debit Card -->
-  <p class="s5-section-label" style="margin-top:0;"><i data-lucide="home" class="w-4 h-4 text-purple-400"></i>Active Lease</p>
-  <div class="dash-card">
-    <p class="dash-card-label" id="s7-lease-title">—</p>
-    <p class="dash-card-value" id="s7-lease-amount">—</p>
-    <p class="dash-card-sub" id="s7-lease-due">—</p>
-  </div>
-  <div class="s5-hold-preview">
-    <div class="s5-hold-row"><span>Linked Auto-Debit Card</span><strong id="s7-lease-card">—</strong></div>
-    <div class="s5-hold-row"><span>Status</span><strong id="s7-lease-status" style="color:#34d399;">Active</strong></div>
-  </div>
-
-  <!-- Section 8 Default & Grace Period Tracker -->
-  <p class="s5-section-label"><i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>Section 8: Default &amp; Grace Period Tracker</p>
-  <div class="stage-track" id="s7-stage-track">
-    <div class="stage-item stage-green" id="s7-stage-0">
-      <div class="stage-dot"></div>
-      <div>
-        <p class="stage-title">Stage 1 — Grace Period (Days 1–3)</p>
-        <p class="stage-sub">Payment is late but within the standard grace window. No penalties applied yet.</p>
-      </div>
-    </div>
-    <div class="stage-item stage-yellow" id="s7-stage-1">
-      <div class="stage-dot"></div>
-      <div>
-        <p class="stage-title">Stage 2 — Late Notice (Days 4–7)</p>
-        <p class="stage-sub">A 5% daily late penalty is now accruing on the outstanding rent balance.</p>
-      </div>
-    </div>
-    <div class="stage-item stage-red" id="s7-stage-2">
-      <div class="stage-dot"></div>
-      <div>
-        <p class="stage-title">Stage 3 — Legal Eviction Trigger (Day 8+)</p>
-        <p class="stage-sub">A Section 8 Notice has been dispatched. Legal eviction proceedings are now triggered.</p>
-      </div>
-    </div>
-  </div>
-  <button type="button" id="s7-simulate-default-btn" class="s5-add-btn" style="background: linear-gradient(90deg,#b91c1c,#991b1b); box-shadow: 0 8px 20px rgba(185,28,28,0.25);">
-    <i data-lucide="alert-triangle" class="w-4 h-4"></i> Simulate Tenant Payment Default
-  </button>
-
-  <!-- Maintenance & Repair Ticket Hub -->
-  <p class="s5-section-label"><i data-lucide="wrench" class="w-4 h-4 text-purple-400"></i>Maintenance &amp; Repair Ticket Hub</p>
-  <div class="field">
-    <label class="field-label">Category</label>
-    <select class="field-input" id="s7-ticket-category">
-      <option value="Plumbing">Plumbing</option>
-      <option value="Electrical">Electrical</option>
-      <option value="Structural">Structural</option>
-      <option value="Appliance">Appliance</option>
-      <option value="Other">Other</option>
-    </select>
-  </div>
-  <div class="field">
-    <label class="field-label">Describe the issue</label>
-    <input class="field-input" id="s7-ticket-desc" type="text" placeholder="e.g. Kitchen tap is leaking">
-  </div>
-  <div class="s5-upload-box" id="s7-ticket-upload">
-    <i data-lucide="upload-cloud" class="w-6 h-6"></i>
-    <span id="s7-ticket-upload-label">Tap to upload a photo of the issue</span>
-    <input type="file" id="s7-ticket-file" hidden accept="image/*">
-  </div>
-  <button type="button" id="s7-ticket-submit-btn" class="btn-primary" style="margin-bottom: 20px;">Submit Ticket</button>
-  <div id="s7-ticket-list"></div>
-
-  <!-- Digital Tenancy Agreement Vault -->
-  <p class="s5-section-label"><i data-lucide="file-text" class="w-4 h-4 text-purple-400"></i>Digital Tenancy Agreement Vault</p>
-  <div class="s5-list-item" style="margin-bottom: 20px;">
-    <div class="s5-list-icon"><i data-lucide="file-text" class="w-5 h-5"></i></div>
-    <div class="s5-list-text">
-      <p class="s5-list-title">Signed Tenancy Agreement.pdf</p>
-      <p class="s5-list-sub" id="s7-vault-timestamp">Digitally signed —</p>
-    </div>
-    <button type="button" id="s7-vault-download-btn" class="s5-back-btn" title="Download">
-      <i data-lucide="download" class="w-4 h-4"></i>
-    </button>
-  </div>
-
-</div>
-<!-- ===================== END SCREEN 7 ===================== -->
-
-<!-- ===================== SCREEN MESSAGES: Inspection Chats ===================== -->
-<div id="screen-messages" class="screen-view hidden pb-24">
-
-  <div class="s5-topbar">
-    <button type="button" class="s5-back-btn" id="msg-back-btn">
-      <i data-lucide="arrow-left" class="w-4 h-4"></i>
-    </button>
-    <div class="s5-role-header" style="margin: 0;">
-      <p class="s5-role-eyebrow" style="margin: 0;"><i data-lucide="message-square" class="w-3.5 h-3.5"></i><span>Messages</span></p>
-    </div>
-  </div>
-
-  <div id="msg-list-view">
-    <h1 class="s5-role-title" style="margin-bottom: 16px;">Inspection Chats</h1>
-    <div id="msg-thread-list"></div>
-    <p id="msg-empty-hint" class="role-hint" style="display:none;">No active conversations yet. Book an inspection to get started.</p>
-  </div>
-
-  <div id="msg-thread-detail" style="display:none;">
-    <h1 class="s5-role-title" id="msg-thread-title" style="margin-bottom: 4px;">Conversation</h1>
-    <p class="s5-role-sub" id="msg-thread-sub" style="margin-bottom: 18px;">—</p>
-    <div id="msg-chat-log" style="margin-bottom: 18px;"></div>
-    <button type="button" id="msg-complete-btn" class="btn-primary" style="display:flex; align-items:center; justify-content:center; gap:6px;">
-      <i data-lucide="check-circle" class="w-4 h-4"></i> Simulate Inspection Complete
-    </button>
-  </div>
-
-</div>
-<!-- ===================== END SCREEN MESSAGES ===================== -->
-
-<!-- ===================== SCREEN CART: Multi-Property Inspection Cart ===================== -->
-<div id="screen-cart" class="screen-view hidden pb-24">
-
-  <div class="s5-topbar">
-    <button type="button" class="s5-back-btn" id="cart-back-btn">
-      <i data-lucide="arrow-left" class="w-4 h-4"></i>
-    </button>
-    <div class="s5-role-header" style="margin: 0;">
-      <p class="s5-role-eyebrow" style="margin: 0;"><i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i><span>Inspection Cart</span></p>
-    </div>
-  </div>
-
-  <h1 class="s5-role-title" style="margin-bottom: 4px;">Your selected properties</h1>
-  <p class="s5-role-sub" style="margin-bottom: 18px;">Pick a date &amp; time for each inspection before checkout.</p>
-
-  <div id="cart-items-wrap"><!-- populated dynamically --></div>
-
-  <div id="cart-summary-wrap"><!-- populated dynamically --></div>
-
-  <button type="button" id="cart-confirm-btn" class="btn-primary" style="display:flex; align-items:center; justify-content:center; gap:6px;">
-    <i data-lucide="check-circle-2" class="w-4 h-4"></i> Confirm &amp; Pay Inspections
-  </button>
-
-</div>
-<!-- ===================== END SCREEN CART ===================== -->
-
-<!-- ===================== SCREEN INSPECTIONS: Dedicated Inspection Schedules View ===================== -->
-<div id="screen-inspections" class="screen-view hidden pb-24">
-
-  <div class="s5-topbar">
-    <button type="button" class="s5-back-btn" id="insp-back-btn">
-      <i data-lucide="arrow-left" class="w-4 h-4"></i>
-    </button>
-    <div class="s5-role-header" style="margin: 0;">
-      <p class="s5-role-eyebrow" style="margin: 0;"><i data-lucide="calendar" class="w-3.5 h-3.5"></i><span>Inspection Schedules</span></p>
-    </div>
-  </div>
-
-  <h1 class="s5-role-title" style="margin-bottom: 16px;">Scheduled Inspections</h1>
-
-  <div id="insp-schedule-list"><!-- populated dynamically --></div>
-  <p id="insp-empty-hint" class="role-hint" style="display:none;">No inspections scheduled yet. Add properties to your cart to get started.</p>
-
-</div>
-<!-- ===================== END SCREEN INSPECTIONS ===================== -->
-
-</div>
-<!-- ===================== FIXED BOTTOM NAVIGATION (outside #screen-4 and #screen-5) ===================== -->
-<nav id="app-bottom-nav" class="fixed bottom-0 left-0 right-0 z-50 hidden">
-  <div class="dash-nav">
-    <div class="dash-nav-item active" id="nav-home"><span class="nav-icon"><i data-lucide="home" class="w-[18px] h-[18px]"></i></span>Home</div>
-    <div class="dash-nav-item" id="nav-search"><span class="nav-icon"><i data-lucide="search" class="w-[18px] h-[18px]"></i></span>Search</div>
-    <div class="dash-nav-item" id="nav-messages"><span class="nav-icon"><i data-lucide="message-square" class="w-[18px] h-[18px]"></i></span>Messages</div>
-    <div class="dash-nav-item" id="nav-profile"><span class="nav-icon"><i data-lucide="user" class="w-[18px] h-[18px]"></i></span>Profile</div>
-  </div>
-</nav>
-<!-- ===================== END FIXED BOTTOM NAVIGATION ===================== -->
 
 <!-- OTP Modal -->
 <div id="otp-modal" class="modal-overlay">
@@ -1404,41 +1038,6 @@
       <input class="field-input" id="tv-address" type="text" placeholder="Full property address">
     </div>
 
-    <div class="field">
-      <label class="field-label">Listing Type</label>
-      <select class="field-input" id="tv-listing-type">
-        <option value="rent">For Rent (Flex-Rent)</option>
-        <option value="land">Buy — Land &amp; Property</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label class="field-label">Annual Price (NGN)</label>
-      <input class="field-input" id="tv-annual" type="number" placeholder="e.g. 2400000">
-    </div>
-    <div class="rent-badge" id="tv-monthly-badge" style="display:none;">
-      <i data-lucide="calculator" class="w-3.5 h-3.5"></i><span id="tv-monthly-badge-text">Monthly Flex-Rent: ₦0 / month</span>
-    </div>
-
-    <div class="fee-preview-box">
-      <p class="s5-section-label" style="margin:0 0 8px;"><i data-lucide="calculator" class="w-4 h-4 text-purple-400"></i>Standardized Fee Structure Preview</p>
-      <div class="row"><span>Agency / Listing Commission (10%)</span><strong id="tv-fee-commission">₦0</strong></div>
-      <div class="row"><span>Legal &amp; Title Agreement Fee (5%)</span><strong id="tv-fee-legal">₦0</strong></div>
-    </div>
-
-    <div class="dual-drop">
-      <div class="s5-upload-box" id="tv-photo-upload">
-        <i data-lucide="image" class="w-5 h-5"></i>
-        <span id="tv-photo-upload-label">Property Photos</span>
-        <input type="file" id="tv-photo-file" hidden multiple accept="image/*">
-      </div>
-      <div class="s5-upload-box" id="tv-video-upload">
-        <i data-lucide="video" class="w-5 h-5"></i>
-        <span id="tv-video-upload-label">Video Walkthrough</span>
-        <input type="file" id="tv-video-file" hidden accept="video/*">
-      </div>
-    </div>
-
     <div class="s5-upload-box" id="tv-upload-box">
       <i data-lucide="upload-cloud" class="w-6 h-6"></i>
       <span id="tv-upload-label">Upload C of O / Title Document</span>
@@ -1478,120 +1077,6 @@
   </div>
 </div>
 
-<!-- Checkout OTP / Payment Authorization Modal (Screen 6) -->
-<div id="checkout-otp-modal" class="modal-overlay">
-  <div class="modal-card">
-    <div class="modal-icon-wrap">
-      <i data-lucide="shield-check" class="w-8 h-8 text-purple-400"></i>
-    </div>
-    <h2 class="modal-title">Authorize Payment</h2>
-    <p class="modal-sub">Enter the 6-digit code sent via SMS to your registered phone number to release funds to escrow</p>
-
-    <div class="otp-boxes" id="checkout-otp-boxes">
-      <input maxlength="1" type="text" inputmode="numeric" class="otp-input">
-      <input maxlength="1" type="text" inputmode="numeric" class="otp-input">
-      <input maxlength="1" type="text" inputmode="numeric" class="otp-input">
-      <input maxlength="1" type="text" inputmode="numeric" class="otp-input">
-      <input maxlength="1" type="text" inputmode="numeric" class="otp-input">
-      <input maxlength="1" type="text" inputmode="numeric" class="otp-input">
-    </div>
-
-    <button type="button" id="checkout-verify-btn" class="btn-primary" style="margin-top:0; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:6px;">
-      <i data-lucide="check-circle" class="w-4 h-4"></i> Verify &amp; Release Payment
-    </button>
-    <button type="button" id="checkout-simulate-btn" class="btn-secondary" style="margin-bottom: 0;">Simulate Verification</button>
-    <button type="button" id="checkout-otp-close" class="btn-secondary">Cancel</button>
-    <p class="resend-line">Didn't get a code? <span class="resend-link" id="checkout-resend-btn">Resend OTP</span></p>
-  </div>
-</div>
-
-<!-- Land & Property Installment Selector Modal -->
-<div id="land-payment-modal" class="modal-overlay">
-  <div class="modal-card">
-    <div class="modal-icon-wrap"><i data-lucide="landmark" class="w-6 h-6 text-purple-400"></i></div>
-    <h2 class="modal-title">Payment Options</h2>
-    <p class="modal-sub" id="lp-property-name">Choose how you'd like to pay</p>
-
-    <div class="toggle-pill-row">
-      <button type="button" class="toggle-pill active" id="lp-mode-outright" data-mode="outright">Outright Purchase</button>
-      <button type="button" class="toggle-pill" id="lp-mode-installment" data-mode="installment">Installment Plan</button>
-    </div>
-
-    <div id="lp-outright-panel">
-      <div class="s5-hold-preview">
-        <div class="s5-hold-row"><span>Total Price</span><strong id="lp-out-total">—</strong></div>
-        <div class="s5-hold-row"><span>Title Transfer Processing Fee</span><strong id="lp-out-fee">—</strong></div>
-        <div class="s5-hold-divider"></div>
-        <div class="s5-hold-row"><span>Total Due</span><strong id="lp-out-grand" style="color:#c084fc;">—</strong></div>
-      </div>
-    </div>
-
-    <div id="lp-installment-panel" style="display:none;">
-      <p class="s5-section-label" style="margin-top:0;">Repayment Term</p>
-      <div class="plan-grid" id="lp-plan-grid">
-        <div class="plan-option" data-months="3">3 Months</div>
-        <div class="plan-option" data-months="6">6 Months</div>
-        <div class="plan-option" data-months="12">12 Months</div>
-        <div class="plan-option" data-months="24">24 Months</div>
-      </div>
-      <div class="s5-hold-preview">
-        <div class="s5-hold-row"><span>Down Payment (20%)</span><strong id="lp-down">—</strong></div>
-        <div class="s5-hold-row"><span>Monthly Repayment</span><strong id="lp-monthly">—</strong></div>
-        <div class="s5-hold-row"><span>First Scheduled Auto-Debit</span><strong id="lp-firstdate">—</strong></div>
-        <div class="s5-hold-divider"></div>
-        <div class="s5-hold-row"><span>Repayment Term</span><strong id="lp-term">—</strong></div>
-      </div>
-    </div>
-
-    <button type="button" id="lp-continue-btn" class="btn-primary" style="margin-top:0; margin-bottom:12px;">Continue to Checkout</button>
-    <button type="button" id="lp-cancel-btn" class="btn-secondary">Cancel</button>
-  </div>
-</div>
-
-<!-- Inspection Booking Modal (Calendar & Time Picker) -->
-<div id="inspection-booking-modal" class="modal-overlay">
-  <div class="modal-card">
-    <div class="modal-icon-wrap"><i data-lucide="calendar" class="w-6 h-6 text-purple-400"></i></div>
-    <h2 class="modal-title">Book Inspection</h2>
-    <p class="modal-sub" id="ib-property-name">Choose a date &amp; time for your physical visit</p>
-
-    <div class="field">
-      <label class="field-label">Date</label>
-      <input class="field-input" type="date" id="ib-date">
-    </div>
-    <div class="field">
-      <label class="field-label">Time</label>
-      <input class="field-input" type="time" id="ib-time">
-    </div>
-
-    <div class="rent-badge" id="ib-fee-badge"><i data-lucide="wallet" class="w-3.5 h-3.5"></i><span id="ib-fee-badge-text">Inspection Fee: ₦12,000</span></div>
-
-    <div class="s5-notice-box">
-      <i data-lucide="lock" class="w-5 h-5"></i>
-      <p id="ib-notice-text">Held in escrow. Agent listings: 100% released on satisfaction, or split 50/50 on cancellation.</p>
-    </div>
-
-    <button type="button" id="ib-confirm-btn" class="btn-primary" style="margin-top:0; margin-bottom:12px;" disabled>Confirm &amp; Lock Inspection Deposit</button>
-    <button type="button" id="ib-cancel-btn" class="btn-secondary">Cancel</button>
-  </div>
-</div>
-
-<!-- Post-Inspection Decision Modal -->
-<div id="inspection-decision-modal" class="modal-overlay">
-  <div class="modal-card">
-    <div class="modal-icon-wrap"><i data-lucide="clipboard-check" class="w-6 h-6 text-purple-400"></i></div>
-    <h2 class="modal-title">Inspection Complete</h2>
-    <p class="modal-sub">How did the inspection go?</p>
-    <button type="button" id="id-satisfied-btn" class="btn-primary" style="margin-top:0; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:6px;">
-      <i data-lucide="check-circle" class="w-4 h-4"></i> Satisfied — Proceed to Rent/Buy Checkout
-    </button>
-    <button type="button" id="id-notsatisfied-btn" class="btn-primary" style="margin-top:0; margin-bottom:12px; background: rgba(127,29,29,0.4); border:1px solid rgba(248,113,113,0.4); box-shadow:none; display:flex; align-items:center; justify-content:center; gap:6px;">
-      <i data-lucide="x-circle" class="w-4 h-4"></i> Not Satisfied — Request Cancellation
-    </button>
-    <button type="button" id="id-cancel-btn" class="btn-secondary">Cancel</button>
-  </div>
-</div>
-
 <!-- Toast Notification -->
 <div id="toast" class="toast">
   <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -1600,21 +1085,21 @@
 
 <script>
   // Role selection state
-  let currentUserRole = null;
+  let selectedRole = null;
   const roleCards = document.querySelectorAll('.role-card');
   const continueBtn = document.getElementById('continue-btn');
   const roleHint = document.getElementById('role-hint');
 
   function updateContinueState() {
-    continueBtn.disabled = !currentUserRole;
-    roleHint.style.display = currentUserRole ? 'none' : 'block';
+    continueBtn.disabled = !selectedRole;
+    roleHint.style.display = selectedRole ? 'none' : 'block';
   }
 
   roleCards.forEach(card => {
     card.addEventListener('click', () => {
       roleCards.forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
-      currentUserRole = card.dataset.role;
+      selectedRole = card.dataset.role;
       updateContinueState();
     });
   });
@@ -1639,15 +1124,15 @@
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (!currentUserRole) return;
+    if (!selectedRole) return;
     otpModal.classList.add('open');
-    document.querySelector('#otp-modal .otp-input').focus();
+    document.querySelector('.otp-input').focus();
   });
 
   closeModal.addEventListener('click', () => otpModal.classList.remove('open'));
 
   // OTP auto-focus behavior (typing a digit shifts focus to next box)
-  const otpInputs = document.querySelectorAll('#otp-modal .otp-input');
+  const otpInputs = document.querySelectorAll('.otp-input');
   otpInputs.forEach((input, index) => {
     input.addEventListener('input', () => {
       input.value = input.value.replace(/[^0-9]/g, '');
@@ -1712,7 +1197,7 @@
     const docsDone = kycTotalDocs > 0 && kycUploadedCount >= kycTotalDocs;
 
     let guarantorDone = true;
-    if ((currentUserRole || 'tenant') === 'tenant') {
+    if ((selectedRole || 'tenant') === 'tenant') {
       const name = document.getElementById('guarantor-name').value.trim();
       const phone = document.getElementById('guarantor-phone').value.trim();
       guarantorDone = !!name && !!phone;
@@ -1800,7 +1285,7 @@
   }
 
   function populateScreen2() {
-    const role = currentUserRole || 'tenant';
+    const role = selectedRole || 'tenant';
     const data = kycContent[role];
 
     document.getElementById('kyc-role-badge').innerHTML =
@@ -1874,111 +1359,6 @@
     showScreen(screen1, screen2);
   }
 
-  // ==================================================================
-  // ---- Strict Screen Isolation: #screen-4 vs #screen-5 ----
-  // Only ONE .screen-view and (when on screen-5) only ONE .role-view
-  // may ever be visible (i.e. missing the "hidden" class) at once.
-  // ==================================================================
-  const appBottomNav = document.getElementById('app-bottom-nav');
-
-  // ---- Hash-based history stack: lets the phone's native back button / swipe-back
-  // navigate screen-by-screen instead of reloading or exiting the app on Vercel ----
-  let navigationHistory = ['screen-4'];
-  let isPopStateNav = false; // guards against re-pushing history while handling a popstate event
-
-  function navigateTo(screenId, opts) {
-    opts = opts || {};
-
-    // Hide all main screens
-    document.querySelectorAll('.screen-view').forEach(el => el.classList.add('hidden'));
-
-    // Show target screen
-    document.getElementById(screenId).classList.remove('hidden');
-
-    // If opening Screen 5, activate only the active user's role sub-view
-    if (screenId === 'screen-5') {
-      document.querySelectorAll('.role-view').forEach(el => el.classList.add('hidden'));
-      const role = currentUserRole || 'tenant';
-      if (role === 'tenant') document.getElementById('tenant-view').classList.remove('hidden');
-      if (role === 'landlord') document.getElementById('landlord-view').classList.remove('hidden');
-      if (role === 'agent') document.getElementById('agent-view').classList.remove('hidden');
-      populateScreen5();
-      if (typeof updateCartBadge === 'function') updateCartBadge();
-    }
-
-    if (screenId === 'screen-4') {
-      populateScreen4();
-    }
-
-    if (screenId === 'screen-messages') {
-      renderThreadList();
-    }
-
-    if (screenId === 'screen-7') {
-      populateScreen7();
-    }
-
-    if (screenId === 'screen-cart') {
-      renderCartScreen();
-    }
-
-    if (screenId === 'screen-inspections') {
-      renderSchedulesScreen();
-    }
-
-    // Bottom nav: visible on screen-4 / screen-5 / screen-messages, with the matching tab highlighted
-    appBottomNav.classList.remove('hidden');
-    document.getElementById('nav-home').classList.toggle('active', screenId === 'screen-4');
-    document.getElementById('nav-search').classList.toggle('active', screenId === 'screen-5');
-    document.getElementById('nav-messages').classList.toggle('active', screenId === 'screen-messages');
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Refresh Lucide icons after DOM updates
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-
-    // ---- Browser/hash history sync ----
-    if (!isPopStateNav) {
-      if (navigationHistory[navigationHistory.length - 1] !== screenId) {
-        navigationHistory.push(screenId);
-      }
-      if (window.location.hash !== `#${screenId}`) {
-        window.location.hash = screenId;
-      }
-    }
-  }
-
-  // Native back button / swipe-back gesture: read the hash and activate that screen
-  // without pushing a new history entry or reloading the app.
-  window.addEventListener('popstate', () => {
-    const hash = window.location.hash.replace('#', '');
-    isPopStateNav = true;
-    try {
-      if (hash && document.getElementById(hash) && document.getElementById(hash).classList.contains('screen-view')) {
-        navigateTo(hash);
-        // Keep the internal stack roughly in sync with the browser's own history
-        const existingIdx = navigationHistory.lastIndexOf(hash);
-        if (existingIdx !== -1) {
-          navigationHistory = navigationHistory.slice(0, existingIdx + 1);
-        } else {
-          navigationHistory.push(hash);
-        }
-      } else {
-        navigateTo('screen-4');
-        navigationHistory = ['screen-4'];
-      }
-    } finally {
-      isPopStateNav = false;
-    }
-  });
-
-  document.getElementById('nav-home').addEventListener('click', () => navigateTo('screen-4'));
-  document.getElementById('nav-search').addEventListener('click', () => navigateTo('screen-5'));
-  document.getElementById('nav-messages').addEventListener('click', () => navigateTo('screen-messages'));
-  document.getElementById('nav-profile').addEventListener('click', () => showToast('Profile — coming soon'));
-  document.getElementById('dash-bell-btn').addEventListener('click', () => navigateTo('screen-messages'));
-  document.getElementById('msg-back-btn').addEventListener('click', () => navigateTo('screen-4'));
-
   document.getElementById('kyc-back-btn').addEventListener('click', () => {
     showScreen(screen2, screen1);
   });
@@ -1989,7 +1369,7 @@
       label: 'Tenant / Diaspora Renter',
       roleIcon: 'building-2',
       sections: [
-        { title: 'Section 1: Rental & Auto-Debit Terms', body: 'Full agreement on holding deposit schedules, flex-rent recurring auto-debit card authorization, tokenized payment security, and cross-border currency conversion rules.' },
+        { title: 'Section 1: Rental & Escrow Terms', body: 'Full agreement on holding deposit schedules, flex-rent payments, and cross-border currency conversion rules.' },
         { title: 'Section 2: Digital Handover & Inspection', body: 'Mandatory 24-hour post-inspection sign-off rules.' },
         { title: 'Section 3: Property Maintenance & Tenant Obligations', body: 'Duty to report structural damage via in-app tickets.' },
         { title: 'Section 4: Data & Identity Privacy', body: 'Agreement to biometric and NIN/Passport identity verification.' },
@@ -2027,7 +1407,7 @@
   };
 
   function populateScreen3() {
-    const role = currentUserRole || 'tenant';
+    const role = selectedRole || 'tenant';
     const data = legalContent[role];
 
     document.getElementById('legal-role-badge').innerHTML =
@@ -2044,37 +1424,6 @@
       }
       return `${heading}<p>${s.body}</p>`;
     }).join('');
-
-    if (role === 'tenant') {
-      box.innerHTML += `
-        <div class="callout-box">
-          <i data-lucide="credit-card" class="w-4 h-4 text-purple-400"></i>
-          <p>By accepting these terms, you authorize MainTown Realty to securely bind and tokenize your debit/credit card via PCI-DSS compliant gateways for scheduled monthly flex-rent auto-debits.</p>
-        </div>
-        <h3><i data-lucide="calendar-check" class="text-purple-400"></i>Inspection Fee Policy</h3>
-        <div class="clause-block">
-          <h4><i data-lucide="briefcase" class="w-3.5 h-3.5 text-purple-400"></i>Agent Listings</h4>
-          <p>₦12,000 holding deposit. If satisfied post-inspection, 100% is released to the Agent. If not satisfied, 50% (₦6,000) is automatically refunded to the Tenant Wallet and 50% (₦6,000) is disbursed to the Agent for field transport.</p>
-        </div>
-        <div class="clause-block">
-          <h4><i data-lucide="key-round" class="w-3.5 h-3.5 text-purple-400"></i>Direct Landlord Listings</h4>
-          <p>₦0 agent inspection fee. Only a flat ₦5,000 MainTown service fee applies.</p>
-        </div>
-        <h3><i data-lucide="landmark" class="text-purple-400"></i>Land &amp; Property Buyer Policy</h3>
-        <div class="clause-block">
-          <h4>Clause A — Title Inspection Hold</h4>
-          <p>Down payment locked in MainTown Escrow for up to 14 days to allow independent survey and Land Registry (C of O / Gazette) title verification.</p>
-        </div>
-        <div class="clause-block">
-          <h4>Clause B — Installment Schedule &amp; Default</h4>
-          <p>Installment payments carry a 30-day grace period. Defaults exceeding 60 days trigger automated contract restructuring or property forfeiture subject to administrative fees.</p>
-        </div>
-        <div class="clause-block">
-          <h4>Clause C — Allocation Milestone Payout</h4>
-          <p>50% of escrow funds release upon verified physical allocation; remaining 50% releases upon signing the Deed of Assignment.</p>
-        </div>
-      `;
-    }
 
     if (window.lucide) lucide.createIcons();
   }
@@ -2114,7 +1463,7 @@
       ],
       activity: [
         { icon: 'receipt', color: 'text-emerald-400', title: 'Rent payment received', sub: 'Aug 1 · ₦180,000' },
-        { icon: 'calendar-check', color: 'text-amber-400', title: 'Inspection scheduled', sub: '2-bed flat, Lekki Phase 1', action: 'inspections' }
+        { icon: 'calendar-check', color: 'text-amber-400', title: 'Inspection scheduled', sub: '2-bed flat, Lekki Phase 1' }
       ]
     },
     landlord: {
@@ -2154,7 +1503,7 @@
   const roleDisplayNames = { tenant: 'Tenant', landlord: 'Landlord', agent: 'Agent' };
 
   function populateScreen4() {
-    const role = currentUserRole || 'tenant';
+    const role = selectedRole || 'tenant';
     const data = dashboardContent[role];
     const name = (document.querySelector('#reg-form input[type="text"]')?.value || '').trim() || roleDisplayNames[role];
 
@@ -2173,7 +1522,7 @@
 
     const list = document.getElementById('dash-list');
     list.innerHTML = data.activity.map(item => `
-      <div class="dash-list-item" ${item.action ? `data-action="${item.action}" style="cursor:pointer;"` : ''}>
+      <div class="dash-list-item">
         <div class="dash-list-icon"><i data-lucide="${item.icon}" class="w-4 h-4 ${item.color}"></i></div>
         <div class="dash-list-text">
           <p class="dash-list-title">${item.title}</p>
@@ -2189,7 +1538,7 @@
     const tile = e.target.closest('.dash-tile');
     if (!tile) return;
     if (tile.dataset.action === 'browse') {
-      navigateTo('screen-5');
+      goToScreen5();
     } else {
       showToast(`${tile.dataset.label} — coming soon`);
     }
@@ -2206,29 +1555,12 @@
   };
 
   let currentCurrency = 'ngn';
-  let currentListingType = 'rent'; // 'rent' | 'land'
 
-  // ---- Global persistent listings feed (localStorage-backed Dynamic Feed Sync) ----
-  const DEFAULT_LISTINGS = [
-    { id: 1, type: 'rent', title: '2-Bed Flat, Lekki Phase 1', location: 'Lekki Phase 1, Lagos', ngn: '₦180,000 / mo', usd: '$220 / mo', img: 'https://picsum.photos/seed/mtr-lekki/400/240', listedBy: 'agent' },
-    { id: 2, type: 'rent', title: 'Studio Apartment, Yaba', location: 'Yaba, Lagos', ngn: '₦95,000 / mo', usd: '$115 / mo', img: 'https://picsum.photos/seed/mtr-yaba/400/240', listedBy: 'landlord' },
-    { id: 3, type: 'rent', title: '3-Bed Duplex, Ikeja GRA', location: 'Ikeja GRA, Lagos', ngn: '₦350,000 / mo', usd: '$430 / mo', img: 'https://picsum.photos/seed/mtr-ikeja/400/240', listedBy: 'agent' },
-    { id: 4, type: 'land', title: '450sqm Land, Ibeju-Lekki', location: 'Ibeju-Lekki, Lagos', totalPrice: 8500000, img: 'https://picsum.photos/seed/mtr-land-ibeju/400/240', listedBy: 'agent' },
-    { id: 5, type: 'land', title: '3-Bed Bungalow, Epe (Outright/Installment)', location: 'Epe, Lagos', totalPrice: 22000000, img: 'https://picsum.photos/seed/mtr-land-epe/400/240', listedBy: 'landlord' }
+  const tenantListings = [
+    { id: 1, title: '2-Bed Flat, Lekki Phase 1', location: 'Lekki Phase 1, Lagos', ngn: '₦180,000 / mo', usd: '$220 / mo', img: 'https://picsum.photos/seed/mtr-lekki/400/240' },
+    { id: 2, title: 'Studio Apartment, Yaba', location: 'Yaba, Lagos', ngn: '₦95,000 / mo', usd: '$115 / mo', img: 'https://picsum.photos/seed/mtr-yaba/400/240' },
+    { id: 3, title: '3-Bed Duplex, Ikeja GRA', location: 'Ikeja GRA, Lagos', ngn: '₦350,000 / mo', usd: '$430 / mo', img: 'https://picsum.photos/seed/mtr-ikeja/400/240' }
   ];
-
-  let listings = [];
-  try {
-    const stored = JSON.parse(localStorage.getItem('mtr_listings'));
-    listings = Array.isArray(stored) && stored.length ? stored : DEFAULT_LISTINGS.slice();
-  } catch (e) {
-    listings = DEFAULT_LISTINGS.slice();
-  }
-  function saveListings() {
-    try { localStorage.setItem('mtr_listings', JSON.stringify(listings)); } catch (e) {}
-  }
-  function rentListings() { return listings.filter(l => l.type === 'rent'); }
-  function landListingsList() { return listings.filter(l => l.type === 'land'); }
 
   let landlordProperties = [
     { id: 1, title: '2-Bed Flat, Lekki Phase 1', address: 'Lekki Phase 1, Lagos', status: 'occupied' },
@@ -2239,11 +1571,12 @@
   let selectedTimeslot = null;
 
   function goToScreen5() {
-    navigateTo('screen-5');
+    populateScreen5();
+    showScreen(screen4, screen5);
   }
 
   document.getElementById('s5-back-btn').addEventListener('click', () => {
-    navigateTo('screen-4');
+    showScreen(screen5, screen4);
   });
 
   document.getElementById('s5-filter-btn').addEventListener('click', () => {
@@ -2251,22 +1584,21 @@
   });
 
   function populateScreen5() {
-    const role = currentUserRole || 'tenant';
+    const role = selectedRole || 'tenant';
     const cfg = roleHeaderConfig[role];
 
     document.getElementById('s5-role-eyebrow').innerHTML = `<i data-lucide="${cfg.icon}" class="w-3.5 h-3.5"></i><span>${cfg.eyebrow}</span>`;
     document.getElementById('s5-role-title').textContent = cfg.title;
     document.getElementById('s5-role-sub').textContent = cfg.sub;
 
-    // Role sub-view visibility (tenant-view / landlord-view / agent-view) is owned
-    // exclusively by navigateTo() — populateScreen5() only fills in content.
+    document.getElementById('s5-tenant-view').style.display = role === 'tenant' ? 'block' : 'none';
+    document.getElementById('s5-landlord-view').style.display = role === 'landlord' ? 'block' : 'none';
+    document.getElementById('s5-agent-view').style.display = role === 'agent' ? 'block' : 'none';
 
     document.getElementById('s5-search-input').value = '';
 
     if (role === 'tenant') {
-      renderInspectionBanner();
-      document.getElementById('s5-currency-toggle-wrap').style.display = currentListingType === 'rent' ? 'flex' : 'none';
-      if (currentListingType === 'rent') renderTenantFeed(currentCurrency); else renderLandFeed();
+      renderTenantFeed(currentCurrency);
     } else if (role === 'landlord') {
       renderLandlordList();
     } else {
@@ -2275,22 +1607,6 @@
 
     if (window.lucide) lucide.createIcons();
   }
-
-  // ---- Tenant view: For Rent / Buy Land toggle ----
-  document.getElementById('s5-tab-rent').addEventListener('click', () => {
-    currentListingType = 'rent';
-    document.getElementById('s5-tab-rent').classList.add('active');
-    document.getElementById('s5-tab-land').classList.remove('active');
-    document.getElementById('s5-currency-toggle-wrap').style.display = 'flex';
-    renderTenantFeed(currentCurrency);
-  });
-  document.getElementById('s5-tab-land').addEventListener('click', () => {
-    currentListingType = 'land';
-    document.getElementById('s5-tab-land').classList.add('active');
-    document.getElementById('s5-tab-rent').classList.remove('active');
-    document.getElementById('s5-currency-toggle-wrap').style.display = 'none';
-    renderLandFeed();
-  });
 
   // ---- Tenant view: currency toggle + listing feed ----
   document.querySelectorAll('.s5-currency-btn').forEach(btn => {
@@ -2304,8 +1620,7 @@
 
   function renderTenantFeed(currency) {
     const feed = document.getElementById('s5-listing-feed');
-    const data = rentListings();
-    feed.innerHTML = data.map(p => `
+    feed.innerHTML = tenantListings.map(p => `
       <div class="s5-card" data-listing-id="${p.id}">
         <div class="s5-card-img-wrap">
           <img src="${p.img}" alt="${p.title}" loading="lazy">
@@ -2317,29 +1632,7 @@
           <p class="s5-card-price">${currency === 'usd' ? p.usd : p.ngn} <span>rent</span></p>
           <div class="s5-card-actions">
             <button type="button" class="s5-action-btn wt-btn" data-title="${p.title}"><i data-lucide="video" class="w-4 h-4"></i>Virtual Walkthrough</button>
-            <button type="button" class="s5-action-btn primary bv-btn" data-title="${p.title}"><i data-lucide="calendar" class="w-4 h-4"></i>Book Inspection</button>
-          </div>
-          <button type="button" class="s5-action-btn cart-add-btn" data-listing-id="${p.id}" style="width:100%; margin-top:8px;"><i data-lucide="shopping-bag" class="w-4 h-4"></i>Add to Inspection Cart</button>
-        </div>
-      </div>`).join('');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  function renderLandFeed() {
-    const feed = document.getElementById('s5-listing-feed');
-    const data = landListingsList();
-    feed.innerHTML = data.map(p => `
-      <div class="s5-card" data-listing-id="${p.id}">
-        <div class="s5-card-img-wrap">
-          <img src="${p.img}" alt="${p.title}" loading="lazy">
-          <span class="s5-verified-badge"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>Title Verified</span>
-        </div>
-        <div class="s5-card-body">
-          <p class="s5-card-title">${p.title}</p>
-          <p class="s5-card-location"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i>${p.location}</p>
-          <p class="s5-card-price">${formatMoney(p.totalPrice, 'ngn')} <span>total price</span></p>
-          <div class="s5-card-actions">
-            <button type="button" class="s5-action-btn primary land-pay-btn" data-listing-id="${p.id}" style="flex:1;"><i data-lucide="layers" class="w-4 h-4"></i>View Payment Options</button>
+            <button type="button" class="s5-action-btn primary bv-btn" data-title="${p.title}"><i data-lucide="calendar" class="w-4 h-4"></i>Book Visit</button>
           </div>
         </div>
       </div>`).join('');
@@ -2349,28 +1642,19 @@
   document.getElementById('s5-listing-feed').addEventListener('click', (e) => {
     const wtBtn = e.target.closest('.wt-btn');
     const bvBtn = e.target.closest('.bv-btn');
-    const landBtn = e.target.closest('.land-pay-btn');
-    const cartBtn = e.target.closest('.cart-add-btn');
     if (wtBtn) {
       openWalkthroughModal(wtBtn.dataset.title);
     } else if (bvBtn) {
-      openInspectionModal(bvBtn.dataset.title);
-    } else if (landBtn) {
-      const listing = landListingsList().find(l => String(l.id) === landBtn.dataset.listingId);
-      if (listing) openLandPaymentModal(listing);
-    } else if (cartBtn) {
-      const listing = rentListings().find(l => String(l.id) === cartBtn.dataset.listingId);
-      if (listing) addToCart(listing);
+      showToast(`Physical visit requested for ${bvBtn.dataset.title}`);
     }
   });
 
   document.getElementById('s5-search-input').addEventListener('input', (e) => {
-    if ((currentUserRole || 'tenant') !== 'tenant') return;
+    if ((selectedRole || 'tenant') !== 'tenant') return;
     const q = e.target.value.toLowerCase();
-    const source = currentListingType === 'rent' ? rentListings() : landListingsList();
     document.querySelectorAll('#s5-listing-feed .s5-card').forEach(card => {
-      const p = source.find(x => String(x.id) === card.dataset.listingId);
-      const match = !p || !q || p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q);
+      const p = tenantListings.find(x => String(x.id) === card.dataset.listingId);
+      const match = !q || p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q);
       card.style.display = match ? '' : 'none';
     });
   });
@@ -2378,11 +1662,9 @@
   // ---- Virtual Walkthrough modal ----
   const walkthroughModal = document.getElementById('walkthrough-modal');
   const wtConfirmBtn = document.getElementById('wt-confirm-btn');
-  let walkthroughListing = null;
 
   function openWalkthroughModal(title) {
     selectedTimeslot = null;
-    walkthroughListing = rentListings().find(p => p.title === title) || null;
     document.getElementById('wt-property-name').textContent = `Select a time slot for ${title}`;
     document.getElementById('wt-hold-amount').textContent = currentCurrency === 'usd' ? '$60' : '₦50,000';
     document.querySelectorAll('.s5-timeslot').forEach(s => s.classList.remove('selected'));
@@ -2403,253 +1685,8 @@
   wtConfirmBtn.addEventListener('click', () => {
     if (wtConfirmBtn.disabled) return;
     walkthroughModal.classList.remove('open');
-    showToast(`Inspection confirmed — ${selectedTimeslot}`);
-    openCheckout(walkthroughListing || rentListings()[0]);
-    navigateTo('screen-6');
+    showToast('Walkthrough booked — Escrow Checkout (Screen 6) is coming in the next update!');
   });
-
-  // ==================================================================
-  // ---- SCREEN 6: Property Checkout, OTP Payment & Commission Split ----
-  // ==================================================================
-
-  let checkoutListing = null;
-  let checkoutSource = 'wallet';
-  let checkoutOtpTimer = null;
-  let checkoutLandPayment = null; // { mode, months, downPayment, monthly, totalPrice, processingFee }
-
-  function formatMoney(amount, currency) {
-    const symbol = currency === 'usd' ? '$' : '₦';
-    return symbol + Math.round(amount).toLocaleString('en-US');
-  }
-
-  function selectPaySource(source) {
-    checkoutSource = source;
-    document.getElementById('s6-pay-wallet').classList.toggle('selected', source === 'wallet');
-    document.getElementById('s6-pay-card').classList.toggle('selected', source === 'card');
-  }
-
-  function updateAuthorizeState() {
-    const btn = document.getElementById('s6-authorize-btn');
-    if (!checkoutListing || checkoutListing.type !== 'land') { btn.disabled = false; return; }
-    const box = document.getElementById('s6-signoff-box');
-    const scrolledToBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 6;
-    const signInput = document.getElementById('s6-landsign-input');
-    signInput.disabled = !scrolledToBottom;
-    const signed = signInput.value.trim() === 'I agree to the Land Allocation & Milestone Terms';
-    btn.disabled = !(scrolledToBottom && signed);
-  }
-
-  function openCheckout(listing, landPayment) {
-    checkoutListing = listing;
-    checkoutLandPayment = landPayment || null;
-    selectPaySource('wallet');
-
-    document.getElementById('s6-property-img').src = listing.img;
-    document.getElementById('s6-property-img').alt = listing.title;
-    document.getElementById('s6-property-title').textContent = listing.title;
-    document.getElementById('s6-property-location').textContent = listing.location;
-
-    const signoffSection = document.getElementById('s6-landsignoff-section');
-    const signInput = document.getElementById('s6-landsign-input');
-    const signoffBox = document.getElementById('s6-signoff-box');
-
-    if (listing.type === 'land') {
-      signoffSection.style.display = 'block';
-      signInput.value = '';
-      signInput.disabled = true;
-      signoffBox.scrollTop = 0;
-
-      document.getElementById('s6-breakdown-label').innerHTML = '<i data-lucide="receipt" class="w-4 h-4 text-purple-400"></i>Purchase Breakdown';
-
-      if (checkoutLandPayment.mode === 'outright') {
-        document.getElementById('s6-row1-label').textContent = 'Total Price';
-        document.getElementById('s6-row2-label').textContent = 'Title Transfer Processing Fee';
-        document.getElementById('s6-row3-label').textContent = 'Repayment Plan';
-        document.getElementById('s6-rent-amount').textContent = formatMoney(checkoutLandPayment.totalPrice, 'ngn');
-        document.getElementById('s6-deposit-amount').textContent = formatMoney(checkoutLandPayment.processingFee, 'ngn');
-        document.getElementById('s6-fee-amount').textContent = 'Outright — N/A';
-        document.getElementById('s6-total-amount').textContent = formatMoney(checkoutLandPayment.totalPrice + checkoutLandPayment.processingFee, 'ngn');
-      } else {
-        document.getElementById('s6-row1-label').textContent = 'Down Payment (20%)';
-        document.getElementById('s6-row2-label').textContent = `Monthly Repayment (${checkoutLandPayment.months} months)`;
-        document.getElementById('s6-row3-label').textContent = 'First Scheduled Auto-Debit';
-        document.getElementById('s6-rent-amount').textContent = formatMoney(checkoutLandPayment.downPayment, 'ngn');
-        document.getElementById('s6-deposit-amount').textContent = formatMoney(checkoutLandPayment.monthly, 'ngn');
-        document.getElementById('s6-fee-amount').textContent = checkoutLandPayment.firstDate;
-        document.getElementById('s6-total-amount').textContent = formatMoney(checkoutLandPayment.downPayment, 'ngn') + ' due now';
-      }
-    } else {
-      signoffSection.style.display = 'none';
-      document.getElementById('s6-breakdown-label').innerHTML = '<i data-lucide="receipt" class="w-4 h-4 text-purple-400"></i>Rent Breakdown';
-      document.getElementById('s6-row1-label').textContent = 'Rent Amount';
-      document.getElementById('s6-row2-label').textContent = 'Caution Deposit';
-      document.getElementById('s6-row3-label').textContent = 'Service / Escrow Fee';
-
-      const rentRaw = currentCurrency === 'usd' ? listing.usd : listing.ngn;
-      const rentValue = parseFloat(rentRaw.replace(/[^0-9.]/g, '')) || 0;
-      const deposit = rentValue;
-      const fee = Math.round(rentValue * 0.05);
-      const total = rentValue + deposit + fee;
-
-      document.getElementById('s6-rent-amount').textContent = formatMoney(rentValue, currentCurrency);
-      document.getElementById('s6-deposit-amount').textContent = formatMoney(deposit, currentCurrency);
-      document.getElementById('s6-fee-amount').textContent = formatMoney(fee, currentCurrency);
-      document.getElementById('s6-total-amount').textContent = formatMoney(total, currentCurrency);
-    }
-
-    document.getElementById('s6-payment-section').classList.remove('hidden');
-    document.getElementById('s6-success-panel').classList.add('hidden');
-    updateAuthorizeState();
-
-    if (window.lucide) lucide.createIcons();
-  }
-
-  document.getElementById('s6-signoff-box').addEventListener('scroll', updateAuthorizeState);
-  document.getElementById('s6-landsign-input').addEventListener('input', updateAuthorizeState);
-
-  document.getElementById('s6-back-btn').addEventListener('click', () => navigateTo('screen-5'));
-  document.getElementById('s6-pay-wallet').addEventListener('click', () => selectPaySource('wallet'));
-  document.getElementById('s6-pay-card').addEventListener('click', () => selectPaySource('card'));
-
-  // ---- Checkout OTP modal ----
-  const checkoutOtpModal = document.getElementById('checkout-otp-modal');
-  const checkoutOtpInputs = document.querySelectorAll('#checkout-otp-modal .otp-input');
-  const checkoutVerifyBtn = document.getElementById('checkout-verify-btn');
-  const checkoutResendBtn = document.getElementById('checkout-resend-btn');
-  const checkoutSimulateBtn = document.getElementById('checkout-simulate-btn');
-
-  function startCheckoutResendTimer() {
-    let seconds = 30;
-    clearInterval(checkoutOtpTimer);
-    checkoutResendBtn.classList.add('disabled');
-    checkoutResendBtn.textContent = `Resend in ${seconds}s`;
-    checkoutOtpTimer = setInterval(() => {
-      seconds -= 1;
-      if (seconds <= 0) {
-        clearInterval(checkoutOtpTimer);
-        checkoutResendBtn.classList.remove('disabled');
-        checkoutResendBtn.textContent = 'Resend OTP';
-      } else {
-        checkoutResendBtn.textContent = `Resend in ${seconds}s`;
-      }
-    }, 1000);
-  }
-
-  document.getElementById('s6-authorize-btn').addEventListener('click', () => {
-    checkoutOtpInputs.forEach(i => (i.value = ''));
-    checkoutOtpModal.classList.add('open');
-    startCheckoutResendTimer();
-    checkoutOtpInputs[0].focus();
-  });
-
-  checkoutOtpInputs.forEach((input, index) => {
-    input.addEventListener('input', () => {
-      input.value = input.value.replace(/[^0-9]/g, '');
-      if (input.value && index < checkoutOtpInputs.length - 1) {
-        checkoutOtpInputs[index + 1].focus();
-      }
-    });
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && !input.value && index > 0) {
-        checkoutOtpInputs[index - 1].focus();
-      }
-    });
-  });
-
-  document.getElementById('checkout-otp-close').addEventListener('click', () => {
-    checkoutOtpModal.classList.remove('open');
-    clearInterval(checkoutOtpTimer);
-  });
-
-  checkoutResendBtn.addEventListener('click', () => {
-    if (checkoutResendBtn.classList.contains('disabled')) return;
-    showToast('OTP resent to your registered phone number');
-    startCheckoutResendTimer();
-  });
-
-  function renderCommissionSplit() {
-    let rows;
-    if (checkoutListing && checkoutListing.type === 'land') {
-      rows = [
-        { icon: 'landmark', label: 'Clause A — Title Inspection Hold', detail: 'Down payment locked in MainTown Escrow for up to 14 days for survey & Land Registry (C of O / Gazette) title verification.' },
-        { icon: 'layers', label: 'Clause C — Allocation Milestone Payout', detail: '50% of escrow funds release upon verified physical allocation; the remaining 50% releases upon signing the Deed of Assignment.' }
-      ];
-    } else {
-      const listedByAgent = checkoutListing && checkoutListing.listedBy === 'agent';
-      rows = listedByAgent
-        ? [
-            { icon: 'briefcase', label: 'Agent Commission Split', detail: '60% of agent commission to Agent, 40% retained by MainTown Realty.' },
-            { icon: 'key-round', label: 'Landlord Rent Hold', detail: '100% Net Rent held in Escrow pending key handover.' }
-          ]
-        : [
-            { icon: 'building-2', label: 'Direct Landlord Rental Fee', detail: '100% commission retained by MainTown Realty.' },
-            { icon: 'key-round', label: 'Landlord Rent Hold', detail: '100% Net Rent held in Escrow pending key handover.' }
-          ];
-    }
-
-    document.getElementById('s6-split-list').innerHTML = rows.map(r => `
-      <div class="split-item">
-        <div class="split-icon"><i data-lucide="${r.icon}" class="w-4 h-4"></i></div>
-        <div class="split-text"><p><strong>${r.label}:</strong> ${r.detail}</p></div>
-      </div>`).join('');
-  }
-
-  function approveCheckoutPayment() {
-    clearInterval(checkoutOtpTimer);
-    checkoutOtpModal.classList.remove('open');
-    showToast('Payment authorized — funds moved to escrow');
-    renderCommissionSplit();
-    document.getElementById('s6-status-code').textContent = checkoutListing && checkoutListing.type === 'land'
-      ? 'PAYMENT_SUCCESSFUL / FUNDS_IN_ESCROW (LAND)'
-      : 'PAYMENT_SUCCESSFUL / FUNDS_IN_ESCROW';
-    document.getElementById('s6-payment-section').classList.add('hidden');
-    document.getElementById('s6-success-panel').classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  checkoutVerifyBtn.addEventListener('click', () => {
-    const code = Array.from(checkoutOtpInputs).map(i => i.value).join('');
-    if (code.length < 6) {
-      showToast('Enter the full 6-digit code');
-      return;
-    }
-    if (code !== '123456') {
-      showToast('Incorrect code — for this demo, use 123456');
-      checkoutOtpInputs.forEach(i => (i.value = ''));
-      checkoutOtpInputs[0].focus();
-      return;
-    }
-    approveCheckoutPayment();
-  });
-
-  checkoutSimulateBtn.addEventListener('click', () => {
-    '123456'.split('').forEach((digit, idx) => (checkoutOtpInputs[idx].value = digit));
-    approveCheckoutPayment();
-  });
-
-  document.getElementById('s6-handover-btn').addEventListener('click', () => {
-    if (checkoutListing) {
-      if (checkoutListing.type === 'land') {
-        activeLease = {
-          title: checkoutListing.title,
-          amountLabel: checkoutLandPayment && checkoutLandPayment.mode === 'installment'
-            ? `${formatMoney(checkoutLandPayment.monthly, 'ngn')} / mo (installment)`
-            : 'Paid in Full (Outright)',
-          dueLabel: checkoutLandPayment && checkoutLandPayment.mode === 'installment' ? `Next debit: ${checkoutLandPayment.firstDate}` : 'No further payments due',
-          card: checkoutSource === 'card' ? `Card ending in ${document.getElementById('s6-card-last4').textContent}` : 'MainTown Funded Wallet'
-        };
-      } else {
-        activeLease = {
-          title: checkoutListing.title,
-          amountLabel: document.getElementById('s6-rent-amount').textContent + ' / mo',
-          dueLabel: 'Next auto-debit in 30 days',
-          card: checkoutSource === 'card' ? `Card ending in ${document.getElementById('s6-card-last4').textContent}` : 'MainTown Funded Wallet'
-        };
-      }
-    }
-    navigateTo('screen-7');
-  });
-  document.getElementById('s7-back-btn').addEventListener('click', () => navigateTo('screen-6'));
 
   // ---- Landlord view: property list + deferred title verification ----
   function renderLandlordList() {
@@ -2679,31 +1716,9 @@
   document.getElementById('s5-add-property-btn').addEventListener('click', () => {
     document.getElementById('tv-title').value = '';
     document.getElementById('tv-address').value = '';
-    document.getElementById('tv-listing-type').value = 'rent';
-    document.getElementById('tv-annual').value = '';
-    document.getElementById('tv-monthly-badge').style.display = 'none';
-    document.getElementById('tv-fee-commission').textContent = '₦0';
-    document.getElementById('tv-fee-legal').textContent = '₦0';
-    document.getElementById('tv-photo-upload').classList.remove('has-file');
-    document.getElementById('tv-photo-upload-label').textContent = 'Property Photos';
-    document.getElementById('tv-video-upload').classList.remove('has-file');
-    document.getElementById('tv-video-upload-label').textContent = 'Video Walkthrough';
     document.getElementById('tv-upload-box').classList.remove('has-file');
     document.getElementById('tv-upload-label').textContent = 'Upload C of O / Title Document';
     titleVerifyModal.classList.add('open');
-  });
-
-  document.getElementById('tv-photo-upload').addEventListener('click', () => document.getElementById('tv-photo-file').click());
-  document.getElementById('tv-photo-file').addEventListener('change', (e) => {
-    const box = document.getElementById('tv-photo-upload');
-    const label = document.getElementById('tv-photo-upload-label');
-    if (e.target.files.length) { box.classList.add('has-file'); label.textContent = `${e.target.files.length} photo(s) selected`; }
-  });
-  document.getElementById('tv-video-upload').addEventListener('click', () => document.getElementById('tv-video-file').click());
-  document.getElementById('tv-video-file').addEventListener('change', (e) => {
-    const box = document.getElementById('tv-video-upload');
-    const label = document.getElementById('tv-video-upload-label');
-    if (e.target.files.length) { box.classList.add('has-file'); label.textContent = e.target.files[0].name; }
   });
 
   document.getElementById('tv-upload-box').addEventListener('click', () => document.getElementById('tv-file').click());
@@ -2718,26 +1733,14 @@
   document.getElementById('tv-submit-btn').addEventListener('click', () => {
     const title = document.getElementById('tv-title').value.trim();
     const address = document.getElementById('tv-address').value.trim();
-    const type = document.getElementById('tv-listing-type').value;
-    const annual = parseFloat(document.getElementById('tv-annual').value) || 0;
-    if (!title || !address || !annual) {
-      showToast('Please fill in property title, address, and annual price');
+    if (!title || !address) {
+      showToast('Please fill in property title and address');
       return;
     }
     landlordProperties.unshift({ id: Date.now(), title, address, status: 'escrow' });
     renderLandlordList();
-
-    const newId = Date.now();
-    if (type === 'rent') {
-      const monthly = Math.round(annual / 12);
-      listings.unshift({ id: newId, type: 'rent', title, location: address, ngn: `${formatMoney(monthly, 'ngn')} / mo`, usd: `$${Math.round(monthly / 1600)} / mo`, img: `https://picsum.photos/seed/mtr-${newId}/400/240`, listedBy: 'landlord' });
-    } else {
-      listings.unshift({ id: newId, type: 'land', title, location: address, totalPrice: annual, img: `https://picsum.photos/seed/mtr-${newId}/400/240`, listedBy: 'landlord' });
-    }
-    saveListings();
-
     titleVerifyModal.classList.remove('open');
-    showToast('Property submitted — pending title verification, now live on the Search Feed');
+    showToast('Property submitted — pending title verification');
   });
 
   // ---- Agent view: upload listing form + mandatory landlord mapping ----
@@ -2759,124 +1762,59 @@
       wrap.innerHTML = `<p class="role-hint" style="text-align:left;">No listings submitted yet.</p>`;
       return;
     }
-    wrap.innerHTML = agentListings.map(l => {
-      const isLive = l.status === 'live';
-      return `
+    wrap.innerHTML = agentListings.map(l => `
       <div class="s5-list-item">
-        <div class="s5-list-icon"><i data-lucide="${isLive ? 'check-circle-2' : 'lock'}" class="w-5 h-5"></i></div>
+        <div class="s5-list-icon"><i data-lucide="lock" class="w-5 h-5"></i></div>
         <div class="s5-list-text">
           <p class="s5-list-title">${l.title}</p>
           <p class="s5-list-sub">${l.address} · Landlord: ${l.landlordName}</p>
         </div>
-        <div class="s5-list-status-col">
-          <span class="s5-status-badge ${isLive ? 's5-status-live' : 's5-status-pending'}">${isLive ? 'Live & Verified' : 'Pending'}</span>
-          ${isLive ? '' : `<button type="button" class="dev-approve-btn quick-approve-btn" data-id="${l.id}">⚡ Quick Approve (Dev Mode)</button>`}
-        </div>
-      </div>`;
-    }).join('');
+        <span class="s5-status-badge s5-status-pending">Pending</span>
+      </div>`).join('');
     if (window.lucide) lucide.createIcons();
   }
 
-  document.getElementById('s5-agent-listings').addEventListener('click', (e) => {
-    const btn = e.target.closest('.quick-approve-btn');
-    if (!btn) return;
-    const item = agentListings.find(a => String(a.id) === btn.dataset.id);
-    if (!item || item.status === 'live') return;
-    item.status = 'live';
-    listings.unshift(item.listingData);
-    saveListings();
-    renderAgentListings();
-    showToast('Property status set to Live! It is now visible in the tenant search feed.');
-  });
-
-  document.getElementById('s5-photo-upload').addEventListener('click', () => document.getElementById('s5-photo-file').click());
-  document.getElementById('s5-photo-file').addEventListener('change', (e) => {
-    const box = document.getElementById('s5-photo-upload');
-    const label = document.getElementById('s5-photo-upload-label');
-    if (e.target.files.length) { box.classList.add('has-file'); label.textContent = `${e.target.files.length} photo(s) selected`; }
-  });
-  document.getElementById('s5-video-upload').addEventListener('click', () => document.getElementById('s5-video-file').click());
-  document.getElementById('s5-video-file').addEventListener('change', (e) => {
-    const box = document.getElementById('s5-video-upload');
-    const label = document.getElementById('s5-video-upload-label');
-    if (e.target.files.length) { box.classList.add('has-file'); label.textContent = e.target.files[0].name; }
-  });
-
-  // ---- Auto-calculating Annual-to-Monthly Rent + Fee Structure Preview (Agent form) ----
-  function updateAnnualCalc(prefix) {
-    const raw = document.getElementById(`${prefix}-annual`).value;
-    const annual = parseFloat(raw) || 0;
-    const type = document.getElementById(`${prefix}-listing-type`) ? document.getElementById(`${prefix}-listing-type`).value : document.getElementById('tv-listing-type').value;
-    const monthlyBadge = document.getElementById(`${prefix}-monthly-badge`);
-    const monthlyText = document.getElementById(`${prefix}-monthly-badge-text`);
-    if (type === 'rent' && annual > 0) {
-      monthlyBadge.style.display = 'inline-flex';
-      monthlyText.textContent = `Monthly Flex-Rent: ${formatMoney(annual / 12, 'ngn')} / month`;
-    } else {
-      monthlyBadge.style.display = 'none';
+  document.getElementById('s5-media-upload').addEventListener('click', () => document.getElementById('s5-media-file').click());
+  document.getElementById('s5-media-file').addEventListener('change', (e) => {
+    const box = document.getElementById('s5-media-upload');
+    const label = document.getElementById('s5-media-upload-label');
+    if (e.target.files.length) {
+      box.classList.add('has-file');
+      label.textContent = `${e.target.files.length} file(s) selected`;
     }
-    document.getElementById(`${prefix}-fee-commission`).textContent = formatMoney(annual * 0.10, 'ngn');
-    document.getElementById(`${prefix}-fee-legal`).textContent = formatMoney(annual * 0.05, 'ngn');
-  }
-  document.getElementById('s5-listing-annual').addEventListener('input', () => updateAnnualCalc('s5'));
-  document.getElementById('s5-listing-type').addEventListener('change', () => updateAnnualCalc('s5'));
-  document.getElementById('tv-annual').addEventListener('input', () => updateAnnualCalc('tv'));
-  document.getElementById('tv-listing-type').addEventListener('change', () => updateAnnualCalc('tv'));
+  });
 
   document.getElementById('s5-listing-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const title = document.getElementById('s5-listing-title').value.trim();
     const address = document.getElementById('s5-listing-address').value.trim();
-    const type = document.getElementById('s5-listing-type').value;
-    const annual = parseFloat(document.getElementById('s5-listing-annual').value) || 0;
+    const rent = document.getElementById('s5-listing-rent').value.trim();
     const landlordName = document.getElementById('s5-landlord-name').value.trim();
     const landlordPhone = document.getElementById('s5-landlord-phone').value.trim();
     const landlordEmail = document.getElementById('s5-landlord-email').value.trim();
 
-    if (!title || !address || !annual || !landlordName || !landlordPhone || !landlordEmail) {
+    if (!title || !address || !rent || !landlordName || !landlordPhone || !landlordEmail) {
       showToast('Please fill in all required fields');
       return;
     }
 
-    // Build the listing payload, but only publish it to the global tenant search feed
-    // once it's Live/Verified (either via the auto-approve checkbox now, or Quick Approve later).
-    const newId = Date.now();
-    let listingData;
-    if (type === 'rent') {
-      const monthly = Math.round(annual / 12);
-      listingData = { id: newId, type: 'rent', title, location: address, ngn: `${formatMoney(monthly, 'ngn')} / mo`, usd: `$${Math.round(monthly / 1600)} / mo`, img: `https://picsum.photos/seed/mtr-${newId}/400/240`, listedBy: 'agent' };
-    } else {
-      listingData = { id: newId, type: 'land', title, location: address, totalPrice: annual, img: `https://picsum.photos/seed/mtr-${newId}/400/240`, listedBy: 'agent' };
-    }
-
-    const autoApprove = document.getElementById('s5-auto-approve').checked;
-    agentListings.unshift({ id: newId + 1, title, address, type, annual, landlordName, landlordPhone, landlordEmail, status: autoApprove ? 'live' : 'pending', listingData });
-
-    if (autoApprove) {
-      listings.unshift(listingData);
-      saveListings();
-    }
+    agentListings.unshift({ id: Date.now(), title, address, rent, landlordName, landlordPhone, landlordEmail });
 
     e.target.reset();
-    document.getElementById('s5-auto-approve').checked = false;
-    document.getElementById('s5-photo-upload').classList.remove('has-file');
-    document.getElementById('s5-photo-upload-label').textContent = 'Property Photos';
-    document.getElementById('s5-video-upload').classList.remove('has-file');
-    document.getElementById('s5-video-upload-label').textContent = 'Video Walkthrough';
-    document.getElementById('s5-monthly-badge').style.display = 'none';
-    document.getElementById('s5-fee-commission').textContent = '₦0';
-    document.getElementById('s5-fee-legal').textContent = '₦0';
+    document.getElementById('s5-media-upload').classList.remove('has-file');
+    document.getElementById('s5-media-upload-label').textContent = 'Tap to upload photos or video';
 
     document.getElementById('s5-tab-mine').click();
-    showToast(autoApprove
-      ? 'Property status set to Live! It is now visible in the tenant search feed.'
-      : 'Listing submitted — landlord notified. Pending verification before it appears in the tenant search feed.');
+    showToast('Listing submitted — landlord notified via SMS & WhatsApp');
   });
 
   document.getElementById('sign-btn').addEventListener('click', () => {
     if (signBtn.disabled) return;
+    populateScreen4();
     screen3.classList.add('hidden-screen');
-    navigateTo('screen-4'); // populates the dashboard, shows the fixed bottom nav, refreshes icons
+    screen4.classList.remove('hidden-screen');
+    screen4.style.display = 'flex';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     showToast('Agreement signed. Welcome to MainTown Realty!');
   });
 
@@ -2897,637 +1835,48 @@
     }, 700);
   });
 
-  // ==================================================================
-  // ---- Land & Property Installment Selector Modal ----
-  // ==================================================================
-  const landPaymentModal = document.getElementById('land-payment-modal');
-  let landModalListing = null;
-  let landModalMode = 'outright';
-  let landModalMonths = null;
-
-  function openLandPaymentModal(listing) {
-    landModalListing = listing;
-    landModalMode = 'outright';
-    landModalMonths = null;
-    document.getElementById('lp-property-name').textContent = listing.title;
-    document.getElementById('lp-mode-outright').classList.add('active');
-    document.getElementById('lp-mode-installment').classList.remove('active');
-    document.getElementById('lp-outright-panel').style.display = 'block';
-    document.getElementById('lp-installment-panel').style.display = 'none';
-    document.querySelectorAll('.plan-option').forEach(p => p.classList.remove('selected'));
-
-    const fee = Math.round(listing.totalPrice * 0.02);
-    document.getElementById('lp-out-total').textContent = formatMoney(listing.totalPrice, 'ngn');
-    document.getElementById('lp-out-fee').textContent = formatMoney(fee, 'ngn');
-    document.getElementById('lp-out-grand').textContent = formatMoney(listing.totalPrice + fee, 'ngn');
-
-    document.getElementById('lp-down').textContent = '—';
-    document.getElementById('lp-monthly').textContent = '—';
-    document.getElementById('lp-firstdate').textContent = '—';
-    document.getElementById('lp-term').textContent = '—';
-
-    landPaymentModal.classList.add('open');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  document.getElementById('lp-mode-outright').addEventListener('click', () => {
-    landModalMode = 'outright';
-    document.getElementById('lp-mode-outright').classList.add('active');
-    document.getElementById('lp-mode-installment').classList.remove('active');
-    document.getElementById('lp-outright-panel').style.display = 'block';
-    document.getElementById('lp-installment-panel').style.display = 'none';
-  });
-  document.getElementById('lp-mode-installment').addEventListener('click', () => {
-    landModalMode = 'installment';
-    document.getElementById('lp-mode-installment').classList.add('active');
-    document.getElementById('lp-mode-outright').classList.remove('active');
-    document.getElementById('lp-outright-panel').style.display = 'none';
-    document.getElementById('lp-installment-panel').style.display = 'block';
-  });
-
-  document.getElementById('lp-plan-grid').addEventListener('click', (e) => {
-    const opt = e.target.closest('.plan-option');
-    if (!opt || !landModalListing) return;
-    document.querySelectorAll('.plan-option').forEach(p => p.classList.remove('selected'));
-    opt.classList.add('selected');
-    landModalMonths = parseInt(opt.dataset.months, 10);
-
-    const total = landModalListing.totalPrice;
-    const down = Math.round(total * 0.20);
-    const remaining = total - down;
-    const monthly = Math.round(remaining / landModalMonths);
-    const firstDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    const firstDateStr = firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-    document.getElementById('lp-down').textContent = formatMoney(down, 'ngn');
-    document.getElementById('lp-monthly').textContent = formatMoney(monthly, 'ngn') + ' / mo';
-    document.getElementById('lp-firstdate').textContent = firstDateStr;
-    document.getElementById('lp-term').textContent = `${landModalMonths} months`;
-  });
-
-  document.getElementById('lp-cancel-btn').addEventListener('click', () => landPaymentModal.classList.remove('open'));
-
-  document.getElementById('lp-continue-btn').addEventListener('click', () => {
-    if (!landModalListing) return;
-    if (landModalMode === 'installment' && !landModalMonths) {
-      showToast('Select a repayment term to continue');
-      return;
-    }
-    const fee = Math.round(landModalListing.totalPrice * 0.02);
-    let payload;
-    if (landModalMode === 'outright') {
-      payload = { mode: 'outright', totalPrice: landModalListing.totalPrice, processingFee: fee };
-    } else {
-      const down = Math.round(landModalListing.totalPrice * 0.20);
-      const remaining = landModalListing.totalPrice - down;
-      const monthly = Math.round(remaining / landModalMonths);
-      const firstDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      payload = {
-        mode: 'installment', months: landModalMonths, downPayment: down, monthly,
-        firstDate: firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      };
-    }
-    landPaymentModal.classList.remove('open');
-    openCheckout(landModalListing, payload);
-    navigateTo('screen-6');
-  });
-
-  // ==================================================================
-  // ---- Inspection Booking Modal (Calendar & Time Picker + Fee Lock) ----
-  // ==================================================================
-  const inspectionBookingModal = document.getElementById('inspection-booking-modal');
-  let inspectionListing = null;
-
-  let inspections = [];
-  try {
-    const storedInsp = JSON.parse(localStorage.getItem('mtr_inspections'));
-    inspections = Array.isArray(storedInsp) ? storedInsp : [];
-  } catch (e) { inspections = []; }
-  function saveInspections() { try { localStorage.setItem('mtr_inspections', JSON.stringify(inspections)); } catch (e) {} }
-
-  function openInspectionModal(title) {
-    inspectionListing = rentListings().find(p => p.title === title) || null;
-    if (!inspectionListing) return;
-    document.getElementById('ib-property-name').textContent = `Choose a date & time to inspect ${title}`;
-    document.getElementById('ib-date').value = '';
-    document.getElementById('ib-time').value = '';
-    document.getElementById('ib-confirm-btn').disabled = true;
-
-    const isAgent = inspectionListing.listedBy === 'agent';
-    document.getElementById('ib-fee-badge-text').textContent = isAgent ? 'Inspection Fee: ₦12,000' : 'MainTown Service Fee: ₦5,000';
-    document.getElementById('ib-notice-text').textContent = isAgent
-      ? 'Held in escrow. If satisfied, 100% is released to the Agent. If not satisfied, 50% (₦6,000) is refunded to your Wallet and 50% (₦6,000) goes to the Agent for field transport.'
-      : 'Direct Landlord listing — ₦0 agent inspection fee applies, only the flat ₦5,000 MainTown service fee.';
-
-    inspectionBookingModal.classList.add('open');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  function checkInspectionFormValid() {
-    const d = document.getElementById('ib-date').value;
-    const t = document.getElementById('ib-time').value;
-    document.getElementById('ib-confirm-btn').disabled = !(d && t);
-  }
-  document.getElementById('ib-date').addEventListener('input', checkInspectionFormValid);
-  document.getElementById('ib-time').addEventListener('input', checkInspectionFormValid);
-  document.getElementById('ib-cancel-btn').addEventListener('click', () => inspectionBookingModal.classList.remove('open'));
-
-  document.getElementById('ib-confirm-btn').addEventListener('click', () => {
-    if (!inspectionListing) return;
-    const date = document.getElementById('ib-date').value;
-    const time = document.getElementById('ib-time').value;
-    const isAgent = inspectionListing.listedBy === 'agent';
-    const fee = isAgent ? 12000 : 5000;
-
-    inspections.unshift({
-      id: Date.now(),
-      listingTitle: inspectionListing.title,
-      listingImg: inspectionListing.img,
-      date, time,
-      feeType: isAgent ? 'agent' : 'landlord',
-      fee,
-      status: 'pending' // pending -> accepted -> completed
-    });
-    saveInspections();
-    inspectionBookingModal.classList.remove('open');
-    showToast('Inspection deposit locked in escrow — awaiting response');
-    renderInspectionBanner();
-  });
-
-  function renderInspectionBanner() {
-    const wrap = document.getElementById('s5-inspection-banner');
-    const pending = inspections.filter(i => i.status !== 'completed' && i.status !== 'archived');
-    if (!pending.length) { wrap.innerHTML = ''; return; }
-    wrap.innerHTML = pending.map(i => {
-      if (i.status === 'pending') {
-        return `
-        <div class="s5-notice-box" style="margin: 0 0 14px;">
-          <i data-lucide="clock" class="w-5 h-5"></i>
-          <p><strong>${i.listingTitle}</strong> — inspection requested for ${i.date || 'TBD'} ${i.time || ''}. Deposit ${formatMoney(i.fee, 'ngn')} locked in escrow, awaiting response.</p>
-        </div>
-        <button type="button" class="s5-add-btn simulate-accept-btn" data-id="${i.id}" style="margin-top:-6px;">
-          <i data-lucide="check-circle" class="w-4 h-4"></i> Simulate Agent/Landlord Accept
-        </button>`;
-      }
-      return `
-        <div class="s5-notice-box" style="margin: 0 0 14px; border-color: rgba(16,185,129,0.35); background: rgba(16,185,129,0.08);">
-          <i data-lucide="message-square" class="w-5 h-5" style="color:#34d399;"></i>
-          <p style="color:#6ee7b7;"><strong>${i.listingTitle}</strong> — inspection accepted. Check your Messages to continue.</p>
-        </div>`;
-    }).join('');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  document.getElementById('s5-inspection-banner').addEventListener('click', (e) => {
-    const btn = e.target.closest('.simulate-accept-btn');
-    if (!btn) return;
-    const inspection = inspections.find(i => String(i.id) === btn.dataset.id);
-    if (!inspection) return;
-    inspection.status = 'accepted';
-    saveInspections();
-
-    conversations.unshift({
-      id: Date.now(),
-      inspectionId: inspection.id,
-      listingTitle: inspection.listingTitle,
-      feeType: inspection.feeType,
-      fee: inspection.fee,
-      status: 'active',
-      messages: [
-        { from: 'system', text: `Inspection confirmed for ${inspection.listingTitle}` },
-        { from: 'them', text: `Hi! Your inspection for ${inspection.listingTitle} on ${inspection.date || 'the scheduled date'} at ${inspection.time || 'the scheduled time'} has been accepted. See you then!` }
-      ]
-    });
-    saveConversations();
-
-    document.getElementById('dash-bell-dot').classList.add('show');
-    showToast('Accepted — a new conversation has been unlocked in Messages');
-    renderInspectionBanner();
-  });
-
-  // ==================================================================
-  // ---- Inspection Cart Engine (Multi-Home Selection) ----
-  // ==================================================================
-  let cart = [];
-  try {
-    const storedCart = JSON.parse(localStorage.getItem('flexrent_cart'));
-    cart = Array.isArray(storedCart) ? storedCart : [];
-  } catch (e) { cart = []; }
-  function saveCart() { try { localStorage.setItem('flexrent_cart', JSON.stringify(cart)); } catch (e) {} }
-
-  let schedules = [];
-  try {
-    const storedSchedules = JSON.parse(localStorage.getItem('flexrent_schedules'));
-    schedules = Array.isArray(storedSchedules) ? storedSchedules : [];
-  } catch (e) { schedules = []; }
-  function saveSchedules() { try { localStorage.setItem('flexrent_schedules', JSON.stringify(schedules)); } catch (e) {} }
-
-  function updateCartBadge() {
-    const badge = document.getElementById('s5-cart-badge');
-    if (!badge) return;
-    badge.textContent = cart.length;
-    badge.classList.toggle('show', cart.length > 0);
-  }
-
-  function addToCart(listing) {
-    if (cart.some(c => String(c.listingId) === String(listing.id))) {
-      showToast('Already in your Inspection Cart');
-      return;
-    }
-    cart.push({
-      listingId: listing.id,
-      title: listing.title,
-      location: listing.location,
-      img: listing.img,
-      listedBy: listing.listedBy,
-      date: '',
-      time: ''
-    });
-    saveCart();
-    updateCartBadge();
-    showToast(`${listing.title} added to Inspection Cart`);
-  }
-
-  document.getElementById('s5-cart-btn').addEventListener('click', () => navigateTo('screen-cart'));
-  document.getElementById('cart-back-btn').addEventListener('click', () => navigateTo('screen-5'));
-  document.getElementById('insp-back-btn').addEventListener('click', () => navigateTo('screen-4'));
-
-  function cartFeeFor(item) { return item.listedBy === 'agent' ? 12000 : 5000; }
-
-  function renderCartScreen() {
-    const itemsWrap = document.getElementById('cart-items-wrap');
-    const summaryWrap = document.getElementById('cart-summary-wrap');
-    const confirmBtn = document.getElementById('cart-confirm-btn');
-
-    if (!cart.length) {
-      itemsWrap.innerHTML = `
-        <div class="cart-empty-state">
-          <i data-lucide="shopping-bag" class="w-10 h-10"></i>
-          <p>Your Inspection Cart is empty. Add properties from the Search tab.</p>
-        </div>`;
-      summaryWrap.innerHTML = '';
-      confirmBtn.style.display = 'none';
-      if (window.lucide) lucide.createIcons();
-      return;
-    }
-
-    confirmBtn.style.display = 'flex';
-    itemsWrap.innerHTML = cart.map((item, idx) => `
-      <div class="cart-item" data-idx="${idx}">
-        <div class="cart-item-top">
-          <img class="cart-item-img" src="${item.img}" alt="${item.title}">
-          <div class="cart-item-text">
-            <p class="cart-item-title">${item.title}</p>
-            <p class="cart-item-loc"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i>${item.location}</p>
-            <p class="cart-item-fee">${item.listedBy === 'agent' ? 'Agent Inspection Fee' : 'Direct Landlord Fee'}: ${formatMoney(cartFeeFor(item), 'ngn')}</p>
-          </div>
-          <button type="button" class="cart-item-remove" data-idx="${idx}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>
-        <div class="cart-item-datetime">
-          <input class="field-input cart-date-input" type="date" data-idx="${idx}" value="${item.date}">
-          <input class="field-input cart-time-input" type="time" data-idx="${idx}" value="${item.time}">
-        </div>
-      </div>`).join('');
-
-    const total = cart.reduce((sum, item) => sum + cartFeeFor(item), 0);
-    summaryWrap.innerHTML = `
-      <div class="cart-summary-card">
-        <div class="cart-summary-row"><span>Properties Selected</span><span>${cart.length}</span></div>
-        <div class="cart-summary-row"><span>Total Inspection Fees</span><strong>${formatMoney(total, 'ngn')}</strong></div>
-        <div class="cart-escrow-badge"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>100% Escrow Guarantee</div>
-      </div>`;
-
-    if (window.lucide) lucide.createIcons();
-  }
-
-  document.getElementById('cart-items-wrap').addEventListener('click', (e) => {
-    const removeBtn = e.target.closest('.cart-item-remove');
-    if (!removeBtn) return;
-    cart.splice(parseInt(removeBtn.dataset.idx, 10), 1);
-    saveCart();
-    updateCartBadge();
-    renderCartScreen();
-  });
-
-  document.getElementById('cart-items-wrap').addEventListener('input', (e) => {
-    const idx = e.target.dataset.idx;
-    if (idx === undefined) return;
-    if (e.target.classList.contains('cart-date-input')) cart[idx].date = e.target.value;
-    if (e.target.classList.contains('cart-time-input')) cart[idx].time = e.target.value;
-    saveCart();
-  });
-
-  document.getElementById('cart-confirm-btn').addEventListener('click', () => {
-    if (!cart.length) return;
-    const missing = cart.some(item => !item.date || !item.time);
-    if (missing) {
-      showToast('Please pick a date & time for every property in your cart');
-      return;
-    }
-
-    cart.forEach(item => {
-      const isAgent = item.listedBy === 'agent';
-      const fee = cartFeeFor(item);
-      const inspId = Date.now() + Math.floor(Math.random() * 1000);
-      const convId = inspId + 1;
-
-      inspections.unshift({
-        id: inspId, listingTitle: item.title, listingImg: item.img,
-        date: item.date, time: item.time, feeType: isAgent ? 'agent' : 'landlord', fee,
-        status: 'accepted'
-      });
-
-      conversations.unshift({
-        id: convId, inspectionId: inspId, listingTitle: item.title,
-        feeType: isAgent ? 'agent' : 'landlord', fee, status: 'active',
-        messages: [
-          { from: 'system', text: `Inspection confirmed for ${item.title}` },
-          { from: 'them', text: `Hi! Your inspection for ${item.title} on ${item.date} at ${item.time} has been confirmed. See you then!` }
-        ]
-      });
-
-      schedules.unshift({
-        id: inspId, title: item.title, img: item.img, location: item.location,
-        date: item.date, time: item.time, feeType: isAgent ? 'agent' : 'landlord', fee,
-        status: 'Confirmed', conversationId: convId, inspectionId: inspId
-      });
-    });
-
-    saveInspections();
-    saveConversations();
-    saveSchedules();
-
-    cart = [];
-    saveCart();
-    updateCartBadge();
-
-    showToast('Inspections confirmed & paid — 100% Escrow Guarantee');
-    navigateTo('screen-inspections');
-  });
-
-  function renderSchedulesScreen() {
-    const list = document.getElementById('insp-schedule-list');
-    const emptyHint = document.getElementById('insp-empty-hint');
-    if (!schedules.length) {
-      list.innerHTML = '';
-      emptyHint.style.display = 'block';
-      return;
-    }
-    emptyHint.style.display = 'none';
-    list.innerHTML = schedules.map(s => `
-      <div class="insp-mgmt-card">
-        <div class="insp-mgmt-top">
-          <img class="insp-mgmt-img" src="${s.img}" alt="${s.title}">
-          <div class="insp-mgmt-text">
-            <p class="insp-mgmt-title">${s.title}</p>
-            <p class="insp-mgmt-loc"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i>${s.location}</p>
-            <div class="insp-mgmt-badges">
-              <span class="insp-date-badge"><i data-lucide="calendar" class="w-3 h-3"></i>${s.date || 'TBD'}</span>
-              <span class="insp-date-badge"><i data-lucide="clock" class="w-3 h-3"></i>${s.time || 'TBD'}</span>
-              <span class="s5-status-badge s5-status-live"><i data-lucide="check-circle-2" class="w-3 h-3"></i>${s.status}</span>
-            </div>
-          </div>
-        </div>
-        <div class="insp-mgmt-actions">
-          <button type="button" class="s5-action-btn insp-chat-btn" data-conv-id="${s.conversationId}"><i data-lucide="message-square" class="w-4 h-4"></i>Chat Manager</button>
-          <button type="button" class="s5-action-btn primary insp-complete-btn" data-conv-id="${s.conversationId}"><i data-lucide="check-circle-2" class="w-4 h-4"></i>Complete Inspection</button>
-        </div>
-      </div>`).join('');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  document.getElementById('insp-schedule-list').addEventListener('click', (e) => {
-    const chatBtn = e.target.closest('.insp-chat-btn');
-    const completeBtn = e.target.closest('.insp-complete-btn');
-    if (chatBtn) {
-      const convId = parseInt(chatBtn.dataset.convId, 10);
-      navigateTo('screen-messages');
-      openThreadDetail(convId);
-    } else if (completeBtn) {
-      const convId = parseInt(completeBtn.dataset.convId, 10);
-      activeThreadId = convId;
-      inspectionDecisionModal.classList.add('open');
-    }
-  });
-
-  // Dashboard "Inspection scheduled" activity card -> jump straight into Schedules view
-  document.getElementById('dash-list').addEventListener('click', (e) => {
-    const item = e.target.closest('.dash-list-item');
-    if (item && item.dataset.action === 'inspections') navigateTo('screen-inspections');
-  });
-
-  // ==================================================================
-  // ---- Messages Screen: Chat Unlock, Inspection Complete, 50/50 Split ----
-  // ==================================================================
-  let conversations = [];
-  try {
-    const storedConv = JSON.parse(localStorage.getItem('mtr_conversations'));
-    conversations = Array.isArray(storedConv) ? storedConv : [];
-  } catch (e) { conversations = []; }
-  function saveConversations() { try { localStorage.setItem('mtr_conversations', JSON.stringify(conversations)); } catch (e) {} }
-
-  let activeThreadId = null;
-
-  function renderThreadList() {
-    document.getElementById('msg-list-view').style.display = 'block';
-    document.getElementById('msg-thread-detail').style.display = 'none';
-    const list = document.getElementById('msg-thread-list');
-    const emptyHint = document.getElementById('msg-empty-hint');
-
-    if (!conversations.length) {
-      list.innerHTML = '';
-      emptyHint.style.display = 'block';
-      return;
-    }
-    emptyHint.style.display = 'none';
-
-    list.innerHTML = conversations.map(c => {
-      const archived = c.status === 'archived';
-      const badge = archived
-        ? '<span class="thread-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8;">Archived</span>'
-        : '<span class="thread-badge" style="background:rgba(16,185,129,0.15); color:#34d399;">Active</span>';
-      const lastMsg = c.messages[c.messages.length - 1];
-      return `
-      <div class="thread-item ${archived ? 'archived' : ''}" data-id="${c.id}">
-        <div class="thread-icon"><i data-lucide="message-square" class="w-4 h-4"></i></div>
-        <div class="thread-text">
-          <p class="thread-title">${c.listingTitle}</p>
-          <p class="thread-sub">${lastMsg ? lastMsg.text : ''}</p>
-        </div>
-        ${badge}
-      </div>`;
-    }).join('');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  document.getElementById('msg-thread-list').addEventListener('click', (e) => {
-    const item = e.target.closest('.thread-item');
-    if (!item) return;
-    openThreadDetail(parseInt(item.dataset.id, 10));
-  });
-
-  function renderChatLog(conv) {
-    document.getElementById('msg-chat-log').innerHTML = conv.messages.map(m => `
-      <div class="chat-bubble ${m.from === 'system' ? 'system' : 'them'}">${m.text}</div>
-    `).join('');
-  }
-
-  function openThreadDetail(id) {
-    const conv = conversations.find(c => c.id === id);
-    if (!conv) return;
-    activeThreadId = id;
-    document.getElementById('msg-list-view').style.display = 'none';
-    document.getElementById('msg-thread-detail').style.display = 'block';
-    document.getElementById('msg-thread-title').textContent = conv.listingTitle;
-    document.getElementById('msg-thread-sub').textContent = conv.status === 'archived' ? 'Archived conversation' : 'Active inspection conversation';
-    renderChatLog(conv);
-    document.getElementById('msg-complete-btn').style.display = conv.status === 'archived' ? 'none' : 'flex';
-    if (window.lucide) lucide.createIcons();
-  }
-
-  const inspectionDecisionModal = document.getElementById('inspection-decision-modal');
-  document.getElementById('msg-complete-btn').addEventListener('click', () => {
-    inspectionDecisionModal.classList.add('open');
-  });
-  document.getElementById('id-cancel-btn').addEventListener('click', () => inspectionDecisionModal.classList.remove('open'));
-
-  document.getElementById('id-satisfied-btn').addEventListener('click', () => {
-    const conv = conversations.find(c => c.id === activeThreadId);
-    if (!conv) return;
-    inspectionDecisionModal.classList.remove('open');
-
-    conv.messages.push({ from: 'system', text: `Inspection marked satisfied. 100% of the ${formatMoney(conv.fee, 'ngn')} deposit has been released to the ${conv.feeType === 'agent' ? 'Agent' : 'Landlord'}. Proceeding to checkout.` });
-    const insp = inspections.find(i => i.id === conv.inspectionId);
-    if (insp) insp.status = 'completed';
-    saveInspections();
-    saveConversations();
-    renderChatLog(conv);
-    showToast('Satisfied — proceeding to Rent/Buy checkout');
-
-    const listing = rentListings().find(l => l.title === conv.listingTitle) || landListingsList().find(l => l.title === conv.listingTitle);
-    if (listing) {
-      openCheckout(listing);
-      navigateTo('screen-6');
-    }
-  });
-
-  document.getElementById('id-notsatisfied-btn').addEventListener('click', () => {
-    const conv = conversations.find(c => c.id === activeThreadId);
-    if (!conv) return;
-    inspectionDecisionModal.classList.remove('open');
-
-    let receiptHtml;
-    if (conv.feeType === 'agent') {
-      const half = Math.round(conv.fee / 2);
-      receiptHtml = `
-        <div class="receipt-box">
-          <p class="s5-section-label" style="margin:0 0 8px;"><i data-lucide="receipt" class="w-4 h-4 text-purple-400"></i>Itemized Refund Receipt</p>
-          <div class="s5-hold-row"><span>Total Inspection Deposit</span><strong>${formatMoney(conv.fee, 'ngn')}</strong></div>
-          <div class="s5-hold-row"><span>Refunded to Tenant Wallet</span><strong>${formatMoney(half, 'ngn')}</strong></div>
-          <div class="s5-hold-row"><span>Disbursed to Agent (field transport)</span><strong>${formatMoney(half, 'ngn')}</strong></div>
-        </div>`;
-    } else {
-      receiptHtml = `
-        <div class="receipt-box">
-          <p class="s5-section-label" style="margin:0 0 8px;"><i data-lucide="receipt" class="w-4 h-4 text-purple-400"></i>Refund Receipt</p>
-          <div class="s5-hold-row"><span>MainTown Service Fee</span><strong>${formatMoney(conv.fee, 'ngn')}</strong></div>
-          <div class="s5-hold-row"><span>Refund Status</span><strong>Non-refundable flat fee</strong></div>
-        </div>`;
-    }
-
-    conv.messages.push({ from: 'system', text: 'Inspection marked not satisfied. Cancellation requested — this thread has been archived.' });
-    conv.status = 'archived';
-    const insp = inspections.find(i => i.id === conv.inspectionId);
-    if (insp) insp.status = 'archived';
-    saveInspections();
-    saveConversations();
-
-    renderChatLog(conv);
-    document.getElementById('msg-chat-log').innerHTML += receiptHtml;
-    document.getElementById('msg-complete-btn').style.display = 'none';
-    document.getElementById('msg-thread-sub').textContent = 'Archived conversation';
-    showToast('Cancellation processed — 50/50 split executed');
-    renderInspectionBanner();
-    if (window.lucide) lucide.createIcons();
-  });
-
-  // ==================================================================
-  // ---- SCREEN 7: Post-Lease Management & Default Enforcement Hub ----
-  // ==================================================================
-  let activeLease = null;
-  let defaultStage = 0; // 0 = green, 1 = yellow, 2 = red
-  let tickets = [];
-
-  function renderStageTracker() {
-    ['s7-stage-0', 's7-stage-1', 's7-stage-2'].forEach((id, idx) => {
-      document.getElementById(id).classList.toggle('active-stage', idx === defaultStage);
-    });
-    const statusEl = document.getElementById('s7-lease-status');
-    if (defaultStage === 0) { statusEl.textContent = 'Active'; statusEl.style.color = '#34d399'; }
-    else if (defaultStage === 1) { statusEl.textContent = 'Late Notice — 5%/day penalty'; statusEl.style.color = '#fbbf24'; }
-    else { statusEl.textContent = 'Section 8 — Eviction Triggered'; statusEl.style.color = '#f87171'; }
-  }
-
-  document.getElementById('s7-simulate-default-btn').addEventListener('click', () => {
-    defaultStage = (defaultStage + 1) % 3;
-    renderStageTracker();
-    if (defaultStage === 0) showToast('Payment recorded — grace period reset (Stage 1)');
-    else if (defaultStage === 1) showToast('Day 4 reached — 5% daily late penalty now accruing (Stage 2)');
-    else showToast('Day 8 reached — Section 8 Notice dispatched, eviction triggered (Stage 3)');
-  });
-
-  document.getElementById('s7-ticket-upload').addEventListener('click', () => document.getElementById('s7-ticket-file').click());
-  document.getElementById('s7-ticket-file').addEventListener('change', (e) => {
-    const box = document.getElementById('s7-ticket-upload');
-    const label = document.getElementById('s7-ticket-upload-label');
-    if (e.target.files.length) { box.classList.add('has-file'); label.textContent = e.target.files[0].name; }
-  });
-
-  function renderTicketList() {
-    const wrap = document.getElementById('s7-ticket-list');
-    if (!tickets.length) { wrap.innerHTML = ''; return; }
-    wrap.innerHTML = tickets.map(t => `
-      <div class="ticket-item">
-        <div class="ticket-top">
-          <p class="ticket-title">${t.category}</p>
-          <span class="s5-status-badge ${t.status === 'Open' ? 's5-status-pending' : 's5-status-vacant'}">${t.status}</span>
-        </div>
-        <p class="s5-list-sub">${t.desc}</p>
-      </div>`).join('');
-  }
-
-  document.getElementById('s7-ticket-submit-btn').addEventListener('click', () => {
-    const category = document.getElementById('s7-ticket-category').value;
-    const desc = document.getElementById('s7-ticket-desc').value.trim();
-    if (!desc) { showToast('Please describe the issue'); return; }
-    tickets.unshift({ id: Date.now(), category, desc, status: 'Open' });
-    document.getElementById('s7-ticket-desc').value = '';
-    document.getElementById('s7-ticket-upload').classList.remove('has-file');
-    document.getElementById('s7-ticket-upload-label').textContent = 'Tap to upload a photo of the issue';
-    renderTicketList();
-    showToast('Maintenance ticket submitted');
-  });
-
-  document.getElementById('s7-vault-download-btn').addEventListener('click', () => {
-    showToast('Downloading Signed Tenancy Agreement.pdf');
-  });
-
-  function populateScreen7() {
-    const fallback = { title: rentListings()[0] ? rentListings()[0].title : 'Your Active Lease', amountLabel: '₦180,000 / mo', dueLabel: 'Next auto-debit in 30 days', card: 'Card ending in 4321' };
-    const lease = activeLease || fallback;
-    document.getElementById('s7-lease-title').textContent = lease.title;
-    document.getElementById('s7-lease-amount').textContent = lease.amountLabel;
-    document.getElementById('s7-lease-due').textContent = lease.dueLabel;
-    document.getElementById('s7-lease-card').textContent = lease.card;
-    document.getElementById('s7-vault-timestamp').textContent = `Digitally signed — ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-    renderStageTracker();
-    renderTicketList();
-    if (window.lucide) lucide.createIcons();
-  }
-
   // ---- Initial icon render (Screen 1 role cards, OTP modal, etc.) ----
   if (window.lucide) lucide.createIcons();
+
+  // ---- Mobile hamburger menu ----
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+  const mobileMenuClose = document.getElementById('mobile-menu-close');
+
+  hamburgerBtn.addEventListener('click', () => mobileMenuOverlay.classList.add('open'));
+  mobileMenuClose.addEventListener('click', () => mobileMenuOverlay.classList.remove('open'));
+  mobileMenuOverlay.addEventListener('click', (e) => {
+    if (e.target === mobileMenuOverlay) mobileMenuOverlay.classList.remove('open');
+  });
+  mobileMenuOverlay.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => mobileMenuOverlay.classList.remove('open'));
+  });
+
+  // ---- Vision & Mission drawer ----
+  const vmDrawerOverlay = document.getElementById('vm-drawer-overlay');
+  document.getElementById('nav-vm-desktop').addEventListener('click', () => vmDrawerOverlay.classList.add('open'));
+  document.getElementById('nav-vm-mobile').addEventListener('click', () => {
+    mobileMenuOverlay.classList.remove('open');
+    vmDrawerOverlay.classList.add('open');
+  });
+  document.getElementById('vm-drawer-close').addEventListener('click', () => vmDrawerOverlay.classList.remove('open'));
+  vmDrawerOverlay.addEventListener('click', (e) => {
+    if (e.target === vmDrawerOverlay) vmDrawerOverlay.classList.remove('open');
+  });
 </script>
+
+<!-- ===================== FLOATING WHATSAPP CHAT BUTTON ===================== -->
+<a
+  href="https://wa.me/2340000000000?text=Hello%20MainTown%20Realty,%20I%20have%20an%20inquiry%20about%20your%20verified%20properties."
+  target="_blank"
+  rel="noopener noreferrer"
+  class="whatsapp-fab"
+  aria-label="Chat with us on WhatsApp"
+>
+  <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="#ffffff">
+    <path d="M16.004 3C9.383 3 4 8.373 4 14.994c0 2.24.61 4.42 1.77 6.33L4 29l7.86-1.73a12.9 12.9 0 0 0 4.144.71h.005C22.62 27.98 28 22.61 28 15.99 28 9.373 22.62 3 16.004 3Zm0 23.06h-.004a10.66 10.66 0 0 1-3.63-.65l-.383-.14-4.664 1.28 1.256-4.63-.148-.336a10.63 10.63 0 0 1-1.63-5.6C6.804 9.55 10.834 5.51 16.006 5.51c5.05.006 9.18 4.14 9.184 9.19-.003 5.06-4.14 9.36-9.186 9.36Zm5.34-6.87c-.294-.147-1.74-.858-2.01-.955-.27-.098-.467-.147-.664.147-.196.294-.76.955-.933 1.152-.172.196-.343.22-.637.073-.294-.147-1.24-.457-2.362-1.456-.874-.78-1.464-1.744-1.636-2.038-.172-.294-.018-.453.13-.6.133-.132.294-.343.44-.514.147-.172.196-.294.294-.49.098-.196.05-.368-.024-.514-.073-.147-.664-1.6-.91-2.192-.24-.577-.484-.5-.664-.51-.172-.008-.368-.01-.564-.01-.196 0-.514.073-.784.368-.27.294-1.03 1.006-1.03 2.455s1.055 2.85 1.202 3.046c.147.196 2.077 3.172 5.033 4.448.703.303 1.252.484 1.68.62.706.224 1.348.192 1.856.117.566-.084 1.74-.712 1.985-1.4.245-.69.245-1.28.172-1.4-.073-.122-.27-.196-.564-.343Z"/>
+  </svg>
+</a>
 
 </body>
 </html>
