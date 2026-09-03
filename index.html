@@ -99,6 +99,54 @@
 
   .listing-card:hover .listing-img { transform: scale(1.06); }
   .listing-img { transition: transform .6s cubic-bezier(.22,1,.36,1); }
+
+  /* ---------- Waitlist modal / Zoho form ---------- */
+  .maintown-waitlist-container {
+    max-width: none !important;
+    margin: 0 !important;
+    font-family: inherit !important;
+  }
+  .maintown-waitlist-container label {
+    color: #CBD5E1 !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    margin-bottom: 6px !important;
+  }
+  .maintown-waitlist-container input,
+  .maintown-waitlist-container textarea {
+    background: #0B1120 !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    color: #F1F5F9 !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.95rem !important;
+    border-radius: 8px !important;
+    transition: border-color 0.15s ease;
+  }
+  .maintown-waitlist-container input::placeholder,
+  .maintown-waitlist-container textarea::placeholder {
+    color: rgba(203,213,225,0.4);
+  }
+  .maintown-waitlist-container input:focus,
+  .maintown-waitlist-container textarea:focus {
+    border-color: #A855F7 !important;
+    outline: none;
+  }
+  .maintown-waitlist-container textarea {
+    resize: vertical;
+    min-height: 78px;
+  }
+  .maintown-waitlist-container button.formsubmit {
+    background: linear-gradient(135deg, #7C3AED, #A855F7) !important;
+    color: #ffffff !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.95rem !important;
+    border-radius: 10px !important;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  .maintown-waitlist-container button.formsubmit:hover { opacity: 0.92; }
+  .maintown-waitlist-container button.formsubmit:active { transform: translateY(1px); }
+  .maintown-waitlist-container button.formsubmit:disabled { opacity: 0.7; cursor: progress; }
 </style>
 </head>
 
@@ -317,6 +365,128 @@
       <div class="p-5">
         <h4 id="videoTourTitle" class="font-display font-semibold text-white">Property Video Tour</h4>
         <p class="text-xs text-slate-500 mt-1">Full walkthrough — tap ✕ or click outside to close.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= WAITLIST MODAL (Zoho CRM Form) ================= -->
+<div id="waitlistModal" class="fixed inset-0 z-[90] hidden items-center justify-center bg-[#0F172A]/90 backdrop-blur-md p-4">
+  <div class="relative w-full max-w-md">
+    <button id="closeWaitlistModal" aria-label="Close" class="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 z-20 w-9 h-9 rounded-full bg-slate-950 border border-white/10 text-white flex items-center justify-center hover:bg-slate-800 hover:border-brand-500/50 transition">✕</button>
+    <div class="rounded-2xl overflow-hidden border border-brand-500/30 bg-slate-900 shadow-2xl shadow-black/50 max-h-[88vh] overflow-y-auto">
+      <div class="p-7">
+        <span id="waitlistModalTag" class="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2.5 py-1 rounded-full mb-3 text-slate-400 bg-slate-900/70 border border-white/10">Join the waitlist</span>
+        <h3 id="waitlistModalTitle" class="font-display font-semibold text-xl text-white mb-2">Local Tenant</h3>
+        <p id="waitlistModalSub" class="text-sm text-slate-500 mb-6">Tell us a bit about you — we'll pick this up on WhatsApp right after.</p>
+
+        <!-- MainTown Realty - Zoho Waitlist Form Integration -->
+        <div id="crmWebToEntityForm" class="maintown-waitlist-container">
+          <form id="webform7591631000000619496" action="https://crm.zoho.com/crm/WebToLeadForm" name="WebToLeads7591631000000619496" method="POST" onSubmit="javascript:document.charset='UTF-8'; return checkMandatory7591631000000619496()" accept-charset="UTF-8">
+
+            <!-- Zoho Internal Tracking Tokens (Required) -->
+            <input type="text" style="display:none;" name="xnQsjsdp" value="ee7aeb61ff5b58aae60b056515df85a5868df9d701abc4d319b28c399e49d606">
+            <input type="hidden" name="zc_gad" id="zc_gad" value="">
+            <input type="text" style="display:none;" name="xmIwtLD" value="1a2350e5ea211354b37e5fd80b009c19cbbad6c67c66d11b117b96ad0332d1779243e2f79245079cc8da13a358b54093">
+            <input type="text" style="display:none;" name="actionType" value="TGVhZHM=">
+            <input type="text" style="display:none;" id="waitlistReturnURL" name="returnURL" value="https://wa.me/2348066611017">
+            <input type="text" style="display:none;" name="aG9uZXlwb3Q" value=""/>
+
+            <!-- Hidden Default Defaults for Required Zoho CRM Fields -->
+            <input type="hidden" id="Company" name="Company" value="N/A">
+
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+
+              <!-- First Name -->
+              <div>
+                <label for="First_Name" style="display: block; font-weight: 600; margin-bottom: 6px;">Full Name *</label>
+                <input type="text" id="First_Name" name="First Name" required placeholder="John Doe" style="width: 100%; padding: 10px; border-radius: 6px; box-sizing: border-box;">
+              </div>
+
+              <!-- Hidden Last Name Field (Auto-populated by script if blank) -->
+              <input type="hidden" id="Last_Name" name="Last Name" value="User">
+
+              <!-- Email -->
+              <div>
+                <label for="Email" style="display: block; font-weight: 600; margin-bottom: 6px;">Email Address *</label>
+                <input type="email" ftype="email" id="Email" name="Email" required placeholder="john@example.com" style="width: 100%; padding: 10px; border-radius: 6px; box-sizing: border-box;">
+              </div>
+
+              <!-- Phone -->
+              <div>
+                <label for="Phone" style="display: block; font-weight: 600; margin-bottom: 6px;">Phone / WhatsApp *</label>
+                <input type="tel" id="Phone" name="Phone" required placeholder="+234..." style="width: 100%; padding: 10px; border-radius: 6px; box-sizing: border-box;">
+              </div>
+
+              <!-- Description / Role -->
+              <div>
+                <label for="Description" style="display: block; font-weight: 600; margin-bottom: 6px;">A bit more detail</label>
+                <textarea id="Description" style="font-family: inherit; width: 100%; padding: 10px; border-radius: 6px; box-sizing: border-box;" rows="3" name="Description" placeholder="e.g., Looking for a 2-bedroom in Lekki"></textarea>
+              </div>
+
+              <!-- Submit Button -->
+              <div>
+                <button type="submit" class="formsubmit" style="width: 100%; padding: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px;">
+                  Continue to WhatsApp →
+                </button>
+              </div>
+
+            </div>
+          </form>
+        </div>
+
+        <p class="text-xs text-slate-600 mt-4">By continuing, you agree to be contacted on WhatsApp about MainTown Realty listings.</p>
+
+        <!-- Zoho Validation Script -->
+        <script>
+          function validateEmail7591631000000619496() {
+            var form = document.forms['WebToLeads7591631000000619496'];
+            var emailFld = form.querySelectorAll('[ftype=email]');
+            for (var i = 0; i < emailFld.length; i++) {
+              var emailVal = emailFld[i].value;
+              if (emailVal.replace(/^\s+|\s+$/g, '').length != 0) {
+                var atpos = emailVal.indexOf('@');
+                var dotpos = emailVal.lastIndexOf('.');
+                if (atpos < 1 || dotpos < atpos + 2 || dotpos + 2 >= emailVal.length) {
+                  alert('Please enter a valid email address.');
+                  emailFld[i].focus();
+                  return false;
+                }
+              }
+            }
+            return true;
+          }
+
+          function checkMandatory7591631000000619496() {
+            var form = document.forms['WebToLeads7591631000000619496'];
+
+            // Auto-fill Last Name with First Name input if left blank
+            var firstNameVal = form['First Name'].value;
+            if (firstNameVal.trim() !== '') {
+              form['Last Name'].value = firstNameVal;
+            }
+
+            if (!validateEmail7591631000000619496()) {
+              return false;
+            }
+
+            var urlparams = new URLSearchParams(window.location.search);
+            if (urlparams.has('service') && (urlparams.get('service') === 'smarturl')) {
+              var webform = document.getElementById('webform7591631000000619496');
+              var smarturlfield = document.createElement('input');
+              smarturlfield.setAttribute('type', 'hidden');
+              smarturlfield.setAttribute('value', urlparams.get('service'));
+              smarturlfield.setAttribute('name', 'service');
+              webform.appendChild(smarturlfield);
+            }
+            var submitBtn = document.querySelector('.crmWebToEntityForm .formsubmit, .maintown-waitlist-container .formsubmit');
+            submitBtn.setAttribute('disabled', true);
+            submitBtn.textContent = 'Redirecting to WhatsApp…';
+          }
+        </script>
+
+        <!-- Zoho Webform Analytics Script -->
+        <script id="wf_anal" src="https://crm.zohopublic.com/crm/WebFormAnalyticsServeServlet?rid=90bc62f70b1937a4f3a3fd0e64b013811cb067bd4c118761c62566e468bffad2cd9930c02ccb5e18d82697a01916c293gid7c7034fd6ef0687f77038a1cdf825ecf536562719ca64236a521be887f8e5d55gid6597f837365e9b5640600b3c8c6c6120c131170a5d1fd837dab564a9ee8e2840gid3663c8824af802b04e0f93e7cc1c22a14aa5d8c7cf18eb453e30deb93870a8f9&tw=9297c5eacbb5a4b3f0c864911f93c97638898cb508378a2d854181b77ec0bd53&version=v2"></script>
       </div>
     </div>
   </div>
@@ -964,12 +1134,9 @@
   ];
   const onboardingGrid = document.getElementById('onboardingGrid');
   onboardingCards.forEach(c => {
-    const link = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(c.msg)}`;
-    const el = document.createElement('a');
-    el.href = link;
-    el.target = "_blank";
-    el.rel = "noopener";
-    el.className = `reveal group relative rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-${c.accent}/50 transition flex flex-col`;
+    const el = document.createElement('button');
+    el.type = "button";
+    el.className = `reveal group relative rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-${c.accent}/50 transition flex flex-col text-left w-full`;
     const tagClass = c.statusStyle === 'coming-soon'
       ? 'text-amber-400 bg-slate-950 border border-amber-500/40 shadow-[0_0_16px_-2px_rgba(251,191,36,.6)]'
       : 'text-slate-400 bg-slate-900/70 border border-white/10';
@@ -981,7 +1148,37 @@
       <h3 class="font-display font-semibold text-white mb-2">${c.title}</h3>
       <p class="text-sm text-slate-500 leading-relaxed flex-1">${c.desc}</p>
       <span class="mt-4 text-xs font-semibold text-brand-${c.accent} flex items-center gap-1">${c.ctaText || 'Chat on WhatsApp →'}</span>`;
+    el.addEventListener('click', () => openWaitlistModal(c));
     onboardingGrid.appendChild(el);
+  });
+
+  // ---------- Waitlist modal (Zoho form) ----------
+  const waitlistModal = document.getElementById('waitlistModal');
+  const waitlistModalTag = document.getElementById('waitlistModalTag');
+  const waitlistModalTitle = document.getElementById('waitlistModalTitle');
+  const waitlistModalSub = document.getElementById('waitlistModalSub');
+  const waitlistReturnURL = document.getElementById('waitlistReturnURL');
+  const waitlistDescription = document.getElementById('Description');
+
+  function openWaitlistModal(card) {
+    waitlistModalTag.textContent = card.statusTag || 'Join the waitlist';
+    waitlistModalTitle.textContent = card.title;
+    waitlistModalSub.textContent = `Tell us a bit about you — we'll pick this up on WhatsApp as ${card.title.toLowerCase()}.`;
+    waitlistDescription.value = card.msg;
+    waitlistReturnURL.value = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(card.msg)}`;
+    waitlistModal.classList.remove('hidden');
+    waitlistModal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeWaitlistModalFn() {
+    waitlistModal.classList.add('hidden');
+    waitlistModal.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('closeWaitlistModal').addEventListener('click', closeWaitlistModalFn);
+  waitlistModal.addEventListener('click', (e) => { if (e.target === waitlistModal) closeWaitlistModalFn(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !waitlistModal.classList.contains('hidden')) closeWaitlistModalFn();
   });
 
   // ---------- Scroll reveal ----------
