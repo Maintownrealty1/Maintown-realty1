@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — MainTown Realty</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          slate: { 950: '#0B1120', 900: '#0F172A', 850: '#141E33', 800: '#1B2740', 700: '#28395C' },
+          brand: { 300: '#C4B5FD', 400: '#A855F7', 500: '#8B5CF6', 600: '#7C3AED', 700: '#6D28D9' },
+          amber: { 400: '#FBBF24', 500: '#F59E0B' },
+        },
+        fontFamily: {
+          display: ['"Space Grotesk"', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
+      }
+    }
+  }
+</script>
+
+<style>
+  body { background-color: #0B1120; font-family: 'Inter', sans-serif; }
+  input, select, textarea {
+    background: #141E33; border: 1px solid #28395C; color: #fff; border-radius: 10px;
+    padding: 10px 12px; font-size: 14px; width: 100%; outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: #8B5CF6; }
+  label { font-size: 12.5px; font-weight: 600; color: #94A3B8; display: block; margin-bottom: 6px; }
+  .field { margin-bottom: 16px; }
+  .btn-primary {
+    background: linear-gradient(90deg, #8B5CF6, #7C3AED); color: #fff; font-weight: 600;
+    padding: 12px 20px; border-radius: 10px; transition: opacity 0.15s ease; font-size: 14px;
+  }
+  .btn-primary:hover { opacity: 0.92; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary {
+    background: #1B2740; border: 1px solid #28395C; color: #E2E8F0; font-weight: 500;
+    padding: 10px 16px; border-radius: 10px; font-size: 13.5px;
+  }
+  .btn-secondary:hover { border-color: #8B5CF6; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;
+    background: #1B2740; border: 1px solid #28395C; color: #C4B5FD; padding: 6px 10px; border-radius: 999px;
+    cursor: pointer; transition: all 0.15s ease; user-select: none;
+  }
+  .chip.active { background: rgba(139,92,246,0.2); border-color: #8B5CF6; color: #fff; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #141E33; border: 1px solid #28395C; color: #fff; padding: 12px 20px; border-radius: 10px;
+    font-size: 13.5px; opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { border-color: #EF4444; }
+</style>
+</head>
+<body class="text-white min-h-screen">
+
+<!-- ================= LOGIN GATE ================= -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center px-6">
+  <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-8">
+    <h1 class="font-display font-bold text-xl text-white mb-1">MainTown Admin</h1>
+    <p class="text-sm text-slate-500 mb-6">Sign in to manage live listings.</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="you@maintownrealty.com" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button id="loginBtn" class="btn-primary w-full">Sign In</button>
+    <p id="loginError" class="text-xs text-red-400 mt-3 hidden"></p>
+  </div>
+</div>
+
+<!-- ================= ADMIN PANEL (hidden until logged in) ================= -->
+<div id="adminScreen" class="hidden min-h-screen">
+  <header class="border-b border-slate-800 bg-slate-950/60">
+    <div class="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div>
+        <h1 class="font-display font-bold text-lg text-white">MainTown Admin</h1>
+        <p class="text-xs text-slate-500" id="loggedInAs"></p>
+      </div>
+      <button id="logoutBtn" class="btn-secondary">Log Out</button>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-6 py-10">
+
+    <!-- ---- Add Listing Form ---- -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-10">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">Add a New Listing</h2>
+      <p class="text-sm text-slate-500 mb-6">This publishes straight to your live site — no code, no re-upload.</p>
+
+      <div class="grid sm:grid-cols-2 gap-x-5">
+        <div class="field">
+          <label>Listing Title</label>
+          <input type="text" id="f-title" placeholder="e.g. Master's Studio">
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <input type="text" id="f-location" placeholder="e.g. Osapa London, Lekki, Lagos">
+        </div>
+        <div class="field">
+          <label>Bedrooms</label>
+          <input type="number" id="f-beds" min="0" value="1">
+        </div>
+        <div class="field">
+          <label>Monthly Rent (₦)</label>
+          <input type="number" id="f-rent" placeholder="e.g. 150000">
+        </div>
+      </div>
+
+      <!-- Live annual + suggested fee preview -->
+      <div id="feePreview" class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 mb-5 text-sm text-slate-400 hidden">
+        <p>Annual: <strong class="text-white" id="fp-annual">—</strong></p>
+        <p class="mt-1">Suggested Agent Fee (10%): <strong class="text-white" id="fp-agent">—</strong></p>
+        <p class="mt-1">Suggested Legal Fee (5%): <strong class="text-white" id="fp-legal">—</strong></p>
+      </div>
+
+      <div class="field">
+        <label>Fees (one per line — edit or replace the suggested ones above)</label>
+        <textarea id="f-fees" rows="3" placeholder="Agent Fee: 10% (₦180,000)&#10;Legal Fee: 5% (₦90,000)"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Features</label>
+        <div id="featureChips" class="flex flex-wrap gap-2 mb-2"></div>
+        <input type="text" id="f-feature-custom" placeholder="Type a feature and press Enter to add a custom one">
+      </div>
+
+      <div class="field">
+        <label>Card Color Tint</label>
+        <select id="f-color">
+          <option value="from-brand-500/30 to-slate-900">Purple (default)</option>
+          <option value="from-brand-400/25 to-slate-900">Light Purple</option>
+          <option value="from-brand-600/30 to-slate-900">Deep Purple</option>
+          <option value="from-amber-500/25 to-slate-900">Amber</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Photos (you can select multiple)</label>
+        <input type="file" id="f-images" accept="image/*" multiple class="!p-2">
+        <div id="imagePreview" class="flex flex-wrap gap-2 mt-3"></div>
+      </div>
+
+      <div class="field">
+        <label>Video Walkthrough (optional)</label>
+        <input type="file" id="f-video" accept="video/*" class="!p-2">
+        <p id="videoFileName" class="text-xs text-slate-500 mt-1"></p>
+      </div>
+
+      <button id="submitBtn" class="btn-primary w-full sm:w-auto mt-2">Publish Listing</button>
+      <div id="uploadProgress" class="text-xs text-slate-500 mt-3 hidden"></div>
+    </section>
+
+    <!-- ---- Existing Listings ---- -->
+    <section>
+      <h2 class="font-display font-semibold text-lg text-white mb-4">Live Listings</h2>
+      <div id="existingList" class="space-y-3"></div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  // ==================================================================
+  // Supabase connection — same project as index.html.
+  // ==================================================================
+  const SUPABASE_URL = 'https://obtggomfwvravjcnypid.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_GaTnU4FmPc2slbn8BisXXg_DmxH1vl8';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const MEDIA_BUCKET = 'listing-media';
+
+  const loginScreen = document.getElementById('loginScreen');
+  const adminScreen = document.getElementById('adminScreen');
+  const toastEl = document.getElementById('toast');
+
+  function showToast(msg, isError) {
+    toastEl.textContent = msg;
+    toastEl.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { toastEl.classList.remove('show'); }, 3200);
+  }
+
+  // ---------- Auth ----------
+  async function checkSession() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      loginScreen.classList.add('hidden');
+      adminScreen.classList.remove('hidden');
+      document.getElementById('loggedInAs').textContent = session.user.email;
+      loadExistingListings();
+    } else {
+      loginScreen.classList.remove('hidden');
+      adminScreen.classList.add('hidden');
+    }
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginError');
+    errEl.classList.add('hidden');
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      errEl.textContent = error.message;
+      errEl.classList.remove('hidden');
+      return;
+    }
+    checkSession();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    checkSession();
+  });
+
+  checkSession();
+
+  // ---------- Feature chips ----------
+  const PRESET_FEATURES = ["Fully Furnished", "Personal Kitchen", "Smart TV", "DSTV", "Air Conditioner", "WiFi", "Standing Fan", "Water Heater", "Clean Water", "Standby Generator", "Housekeeping", "Serviced Court"];
+  let selectedFeatures = [];
+  const featureChipsEl = document.getElementById('featureChips');
+
+  function renderFeatureChips() {
+    featureChipsEl.innerHTML = PRESET_FEATURES.map(f =>
+      `<span class="chip ${selectedFeatures.includes(f) ? 'active' : ''}" data-feature="${f}">${f}</span>`
+    ).join('') + selectedFeatures.filter(f => !PRESET_FEATURES.includes(f)).map(f =>
+      `<span class="chip active" data-feature="${f}">${f} ✕</span>`
+    ).join('');
+  }
+  renderFeatureChips();
+
+  featureChipsEl.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const f = chip.dataset.feature;
+    if (selectedFeatures.includes(f)) {
+      selectedFeatures = selectedFeatures.filter(x => x !== f);
+    } else {
+      selectedFeatures.push(f);
+    }
+    renderFeatureChips();
+  });
+
+  document.getElementById('f-feature-custom').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = e.target.value.trim();
+      if (val && !selectedFeatures.includes(val)) {
+        selectedFeatures.push(val);
+        renderFeatureChips();
+      }
+      e.target.value = '';
+    }
+  });
+
+  // ---------- Live fee preview ----------
+  const rentInput = document.getElementById('f-rent');
+  const feesTextarea = document.getElementById('f-fees');
+  rentInput.addEventListener('input', () => {
+    const monthly = parseInt(rentInput.value, 10);
+    const feePreview = document.getElementById('feePreview');
+    if (!monthly) { feePreview.classList.add('hidden'); return; }
+    const annual = monthly * 12;
+    const agent = Math.round(annual * 0.10);
+    const legal = Math.round(annual * 0.05);
+    feePreview.classList.remove('hidden');
+    document.getElementById('fp-annual').textContent = '₦' + annual.toLocaleString('en-US');
+    document.getElementById('fp-agent').textContent = '₦' + agent.toLocaleString('en-US');
+    document.getElementById('fp-legal').textContent = '₦' + legal.toLocaleString('en-US');
+    // Only auto-fill the fees box if the user hasn't typed their own fees yet.
+    if (!feesTextarea.dataset.touched) {
+      feesTextarea.value = `Agent Fee: 10% (₦${agent.toLocaleString('en-US')})\nLegal Fee: 5% (₦${legal.toLocaleString('en-US')})`;
+    }
+  });
+  feesTextarea.addEventListener('input', () => { feesTextarea.dataset.touched = '1'; });
+
+  // ---------- Photo/video previews ----------
+  document.getElementById('f-images').addEventListener('change', (e) => {
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    Array.from(e.target.files).forEach(file => {
+      const url = URL.createObjectURL(file);
+      const img = document.createElement('img');
+      img.src = url;
+      img.className = 'w-16 h-16 object-cover rounded-lg border border-slate-700';
+      preview.appendChild(img);
+    });
+  });
+  document.getElementById('f-video').addEventListener('change', (e) => {
+    document.getElementById('videoFileName').textContent = e.target.files[0] ? e.target.files[0].name : '';
+  });
+
+  // ---------- Upload helper ----------
+  async function uploadFile(file) {
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '-');
+    const path = `${Date.now()}-${safeName}`;
+    const { error } = await sb.storage.from(MEDIA_BUCKET).upload(path, file, { cacheControl: '3600', upsert: false });
+    if (error) throw error;
+    const { data } = sb.storage.from(MEDIA_BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  // ---------- Publish ----------
+  document.getElementById('submitBtn').addEventListener('click', async () => {
+    const submitBtn = document.getElementById('submitBtn');
+    const progressEl = document.getElementById('uploadProgress');
+    const title = document.getElementById('f-title').value.trim();
+    const location = document.getElementById('f-location').value.trim();
+    const beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
+    const rentNum = parseInt(rentInput.value, 10);
+    const color = document.getElementById('f-color').value;
+    const fees = feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+    const imageFiles = Array.from(document.getElementById('f-images').files);
+    const videoFile = document.getElementById('f-video').files[0];
+
+    if (!title || !location || !rentNum) {
+      showToast('Please fill in Title, Location, and Rent at minimum.', true);
+      return;
+    }
+
+    submitBtn.disabled = true;
+    progressEl.classList.remove('hidden');
+    try {
+      progressEl.textContent = 'Uploading photos...';
+      const imageUrls = [];
+      for (let i = 0; i < imageFiles.length; i++) {
+        progressEl.textContent = `Uploading photo ${i + 1} of ${imageFiles.length}...`;
+        imageUrls.push(await uploadFile(imageFiles[i]));
+      }
+
+      let videoUrl = null;
+      if (videoFile) {
+        progressEl.textContent = 'Uploading video (this can take a minute)...';
+        videoUrl = await uploadFile(videoFile);
+      }
+
+      progressEl.textContent = 'Saving listing...';
+      const { error } = await sb.from('listings').insert({
+        title, location, beds,
+        rent: `₦${rentNum.toLocaleString('en-US')}/mo`,
+        fees, color,
+        features: selectedFeatures,
+        images: imageUrls,
+        video: videoUrl,
+      });
+      if (error) throw error;
+
+      showToast('Listing published! It\'s live on your site now.');
+      resetForm();
+      loadExistingListings();
+    } catch (err) {
+      console.error(err);
+      showToast('Something went wrong: ' + err.message, true);
+    } finally {
+      submitBtn.disabled = false;
+      progressEl.classList.add('hidden');
+    }
+  });
+
+  function resetForm() {
+    ['f-title', 'f-location', 'f-rent'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-beds').value = 1;
+    feesTextarea.value = '';
+    delete feesTextarea.dataset.touched;
+    document.getElementById('feePreview').classList.add('hidden');
+    document.getElementById('f-images').value = '';
+    document.getElementById('f-video').value = '';
+    document.getElementById('imagePreview').innerHTML = '';
+    document.getElementById('videoFileName').textContent = '';
+    selectedFeatures = [];
+    renderFeatureChips();
+  }
+
+  // ---------- Existing listings + delete ----------
+  async function loadExistingListings() {
+    const listEl = document.getElementById('existingList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
+    const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false });
+    if (error) {
+      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load listings: ${error.message}</p>`;
+      return;
+    }
+    if (!data.length) {
+      listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet — add your first one above.</p>';
+      return;
+    }
+    listEl.innerHTML = data.map(l => `
+      <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-white truncate">${l.title}</p>
+          <p class="text-xs text-slate-500 truncate">${l.location} · ${l.rent}</p>
+        </div>
+        <button class="delete-listing-btn btn-secondary shrink-0 ml-3" data-id="${l.id}" data-title="${l.title}">Delete</button>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('existingList').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.delete-listing-btn');
+    if (!btn) return;
+    if (!confirm(`Delete "${btn.dataset.title}"? This can't be undone.`)) return;
+    btn.disabled = true;
+    btn.textContent = 'Deleting...';
+    const { error } = await sb.from('listings').delete().eq('id', btn.dataset.id);
+    if (error) {
+      showToast('Could not delete: ' + error.message, true);
+      btn.disabled = false;
+      btn.textContent = 'Delete';
+      return;
+    }
+    showToast('Listing deleted.');
+    loadExistingListings();
+  });
+</script>
+
+</body>
+</html>

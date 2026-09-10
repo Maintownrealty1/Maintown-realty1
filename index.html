@@ -148,6 +148,7 @@
   .maintown-waitlist-container button.formsubmit:active { transform: translateY(1px); }
   .maintown-waitlist-container button.formsubmit:disabled { opacity: 0.7; cursor: progress; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body class="bg-grain font-body text-slate-200 antialiased selection:bg-brand-600 selection:text-white">
@@ -313,6 +314,18 @@
     </div>
 
     <div class="grid md:grid-cols-3 gap-6" id="listingsGrid"></div>
+
+    <!-- Multi-listing slide navigation: pages through the listings grid
+         3 at a time instead of dumping every listing on one long page. -->
+    <div class="flex items-center justify-center gap-5 mt-10">
+      <button id="listingsPrevBtn" aria-label="Previous listings" class="flex items-center gap-1.5 text-sm font-semibold text-slate-200 bg-slate-900 border border-white/10 hover:border-brand-500/50 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-white/10 px-4 py-2.5 rounded-lg transition">
+        <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
+      </button>
+      <span id="listingsPageIndicator" class="text-xs font-mono text-slate-500">1 / 1</span>
+      <button id="listingsNextBtn" aria-label="Next listings" class="flex items-center gap-1.5 text-sm font-semibold text-slate-200 bg-slate-900 border border-white/10 hover:border-brand-500/50 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-white/10 px-4 py-2.5 rounded-lg transition">
+        Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
+      </button>
+    </div>
   </div>
 </section>
 
@@ -880,7 +893,10 @@
 
 <script>
   // ---------- Listings data ----------
-  const listings = [
+  // Fallback only — shown instantly on load, then replaced the moment the
+  // live fetch from Supabase resolves. Kept so the page never looks empty
+  // and still works if the database is briefly unreachable.
+  const FALLBACK_LISTINGS = [
     {
       title: "Spacious 1-Bedroom Self-Compound Mansion",
       location: "Osapa London, Lagos",
@@ -964,7 +980,31 @@
     },
   ];
 
+  // ---------- Live listings from Supabase ----------
+  // Listings now live in your Supabase "listings" table (added via
+  // admin.html) instead of being hardcoded here, so anything you add in
+  // the admin panel shows up on the site automatically — no re-upload.
+  const SUPABASE_URL = 'https://obtggomfwvravjcnypid.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_GaTnU4FmPc2slbn8BisXXg_DmxH1vl8';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let listings = FALLBACK_LISTINGS;
+
   const listingsGrid = document.getElementById('listingsGrid');
+  const listingsPrevBtn = document.getElementById('listingsPrevBtn');
+  const listingsNextBtn = document.getElementById('listingsNextBtn');
+  const listingsPageIndicator = document.getElementById('listingsPageIndicator');
+  const LISTINGS_PER_PAGE = 3;
+  let listingsPage = 0;
+
+  // Scroll-reveal observer for listing cards — declared up here (rather than
+  // further down the script) so it's already available the first time
+  // renderListingsPage() runs, and so every newly-built page of cards gets
+  // observed again on each Next/Previous click.
+  const listingsRevealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('in'); listingsRevealObserver.unobserve(entry.target); } });
+  }, { threshold: 0.15 });
+
   // Derives "₦X,XXX,XXX / year" from a monthly rent string like "₦80,000/mo"
   // — used so every listing card shows the full annual commitment first,
   // before the smaller monthly breakdown underneath it.
@@ -975,7 +1015,13 @@
     const annual = monthly * 12;
     return '₦' + annual.toLocaleString('en-US') + ' / year';
   }
-  listings.forEach((l, i) => {
+
+  function renderListingsPage(page) {
+    const listingsPageCount = Math.max(1, Math.ceil(listings.length / LISTINGS_PER_PAGE));
+    listingsPage = Math.max(0, Math.min(page, listingsPageCount - 1));
+    listingsGrid.innerHTML = '';
+    const start = listingsPage * LISTINGS_PER_PAGE;
+    listings.slice(start, start + LISTINGS_PER_PAGE).forEach((l) => {
     const card = document.createElement('div');
     card.className = "listing-card group rounded-2xl border border-white/10 bg-slate-850/50 overflow-hidden hover:border-brand-500/40 transition reveal";
     const badgesHtml = (l.badges || []).map(b => `<span class="text-[10px] font-mono font-semibold ${b.toLowerCase().includes('alert') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-brand-500/15 text-brand-300 border border-brand-500/30'} px-2.5 py-1 rounded-full">${b}</span>`).join('');
@@ -1003,20 +1049,59 @@
           <button class="video-btn flex-1 text-xs font-semibold bg-brand-500 hover:bg-brand-400 text-slate-950 py-2.5 rounded-lg transition" data-title="${l.title}">Watch AI Walkthrough</button>
         </div>
       </div>`;
-    listingsGrid.appendChild(card);
+      listingsGrid.appendChild(card);
+      listingsRevealObserver.observe(card);
+    });
+
+    if (listingsPageIndicator) listingsPageIndicator.textContent = `${listingsPage + 1} / ${listingsPageCount}`;
+    if (listingsPrevBtn) listingsPrevBtn.disabled = listingsPage === 0;
+    if (listingsNextBtn) listingsNextBtn.disabled = listingsPage === listingsPageCount - 1;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  renderListingsPage(0);
+
+  // Pulls the live listings from Supabase (added via admin.html) and
+  // swaps them in, replacing the fallback array above. Falls back silently
+  // to the hardcoded listings if the fetch fails for any reason.
+  async function fetchListings() {
+    try {
+      const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      if (data && data.length) {
+        listings = data;
+        renderListingsPage(0);
+      }
+    } catch (err) {
+      console.warn('Could not load live listings from Supabase, showing fallback listings.', err);
+    }
+  }
+  fetchListings();
+
+  if (listingsPrevBtn) listingsPrevBtn.addEventListener('click', () => {
+    renderListingsPage(listingsPage - 1);
+    listingsGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  if (listingsNextBtn) listingsNextBtn.addEventListener('click', () => {
+    renderListingsPage(listingsPage + 1);
+    listingsGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
   // Video modal
   const videoModal = document.getElementById('videoModal');
   const modalVideo = document.getElementById('modalVideo');
   const modalTitle = document.getElementById('modalTitle');
-  document.querySelectorAll('.video-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      modalTitle.textContent = btn.dataset.title + " — Walkthrough";
-      videoModal.classList.remove('hidden');
-      videoModal.classList.add('flex');
-      modalVideo.play();
-    });
+  // Event delegation (rather than binding to each .video-btn individually):
+  // listing cards are rebuilt on every Prev/Next click, so listeners bound
+  // once at load time would go stale on later pages. Delegating to a
+  // stable ancestor means clicks on any page's cards are always caught.
+  listingsGrid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.video-btn');
+    if (!btn) return;
+    modalTitle.textContent = btn.dataset.title + " — Walkthrough";
+    videoModal.classList.remove('hidden');
+    videoModal.classList.add('flex');
+    modalVideo.play();
   });
   document.getElementById('closeModal').addEventListener('click', () => {
     modalVideo.pause();
@@ -1039,14 +1124,14 @@
     videoTourModal.classList.remove('flex');
   }
 
-  document.querySelectorAll('.videotour-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      videoTourTitle.textContent = btn.dataset.title + " — Video Tour";
-      videoTourPlayer.src = btn.dataset.video;
-      videoTourModal.classList.remove('hidden');
-      videoTourModal.classList.add('flex');
-      videoTourPlayer.play().catch(() => {});
-    });
+  listingsGrid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.videotour-btn');
+    if (!btn) return;
+    videoTourTitle.textContent = btn.dataset.title + " — Video Tour";
+    videoTourPlayer.src = btn.dataset.video;
+    videoTourModal.classList.remove('hidden');
+    videoTourModal.classList.add('flex');
+    videoTourPlayer.play().catch(() => {});
   });
 
   document.getElementById('closeVideoTourModal').addEventListener('click', closeVideoTour);
@@ -1122,12 +1207,12 @@
     startAutoSlide();
   }
 
-  document.querySelectorAll('.gallery-trigger').forEach(el => {
-    el.addEventListener('click', () => {
-      let images = [];
-      try { images = JSON.parse(el.dataset.images || '[]'); } catch (e) { images = []; }
-      openGallery(el.dataset.title, images, el.dataset.color);
-    });
+  listingsGrid.addEventListener('click', (e) => {
+    const el = e.target.closest('.gallery-trigger');
+    if (!el) return;
+    let images = [];
+    try { images = JSON.parse(el.dataset.images || '[]'); } catch (err) { images = []; }
+    openGallery(el.dataset.title, images, el.dataset.color);
   });
 
   photoNext.addEventListener('click', () => { nextSlide(); startAutoSlide(); });
