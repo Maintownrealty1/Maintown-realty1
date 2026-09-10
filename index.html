@@ -1027,11 +1027,14 @@
     const badgesHtml = (l.badges || []).map(b => `<span class="text-[10px] font-mono font-semibold ${b.toLowerCase().includes('alert') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-brand-500/15 text-brand-300 border border-brand-500/30'} px-2.5 py-1 rounded-full">${b}</span>`).join('');
     const featuresHtml = (l.features || []).map(f => `<span class="text-[10px] text-slate-400 bg-slate-900/70 border border-white/5 px-2 py-1 rounded-md">${f}</span>`).join('');
     const imagesData = JSON.stringify(l.images || []).replace(/'/g, "&#39;");
+    const isUnavailable = l.status && l.status !== 'available';
+    if (isUnavailable) card.classList.add('opacity-60');
     card.innerHTML = `
       <div class="gallery-trigger relative h-48 overflow-hidden bg-gradient-to-br ${l.color} cursor-pointer" data-title="${l.title}" data-images='${imagesData}' data-color="${l.color}">
         <div class="listing-img absolute inset-0 cadastral-grid opacity-40"></div>
         ${l.images && l.images.length ? `<img src="${l.images[0]}" alt="${l.title}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">` : ''}
         <span class="absolute top-3 right-3 text-[10px] font-mono font-bold bg-[#0F172A] text-[#10B981] border border-[#10B981]/40 px-2.5 py-1 rounded-full shadow-lg shadow-black/40">${l.rent}</span>
+        ${isUnavailable ? `<div class="absolute inset-0 bg-slate-950/50 flex items-center justify-center"><span class="text-lg font-display font-bold uppercase tracking-widest text-white border-2 border-white/70 px-4 py-1.5 rotate-[-8deg]">${l.status}</span></div>` : ''}
       </div>
       <div class="p-5">
         <h3 class="font-display font-semibold text-white">${l.title}</h3>
