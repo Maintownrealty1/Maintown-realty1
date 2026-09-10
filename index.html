@@ -355,8 +355,8 @@
     <button id="closePhotoModal" aria-label="Close gallery" class="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 z-20 w-9 h-9 rounded-full bg-slate-950 border border-white/10 text-white flex items-center justify-center hover:bg-slate-800 hover:border-brand-500/50 transition">✕</button>
     <div class="rounded-2xl overflow-hidden border border-brand-500/30 bg-slate-900 shadow-2xl shadow-black/50">
       <div id="photoStage" class="relative h-[55vh] sm:h-[65vh] bg-slate-950 select-none overflow-hidden touch-pan-y">
-        <button id="photoPrev" aria-label="Previous photo" class="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-slate-950/70 border border-white/10 text-white flex items-center justify-center hover:bg-brand-600/80 hover:border-brand-400/50 transition">‹</button>
-        <button id="photoNext" aria-label="Next photo" class="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-slate-950/70 border border-white/10 text-white flex items-center justify-center hover:bg-brand-600/80 hover:border-brand-400/50 transition">›</button>
+        <button id="photoPrev" aria-label="Previous photo" class="hidden absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-slate-950/70 border border-white/10 text-white flex items-center justify-center hover:bg-brand-600/80 hover:border-brand-400/50 transition">‹</button>
+        <button id="photoNext" aria-label="Next photo" class="hidden absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-slate-950/70 border border-white/10 text-white flex items-center justify-center hover:bg-brand-600/80 hover:border-brand-400/50 transition">›</button>
         <span id="photoCounter" class="absolute bottom-3 right-3 z-10 text-[11px] font-mono bg-slate-950/80 border border-white/10 text-brand-300 px-2.5 py-1 rounded-full">1 / 5</span>
       </div>
       <div class="p-5">
@@ -950,8 +950,6 @@
       ],
       video: "./osapa-london-walkthrough.mp4"
     },
-    { title: "2-Bedroom Serviced Apartment", location: "Lekki Phase 1, Lagos", beds: 2, rent: "₦250,000/mo", color: "from-brand-600/30 to-slate-900" },
-    { title: "Modern Studio Apartment", location: "Yaba, Lagos", beds: 1, rent: "₦140,000/mo", color: "from-brand-400/25 to-slate-900" },
     {
       title: "Master Bedroom — Shared Apartment",
       location: "Badore, Ajah, Lagos",
