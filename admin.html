@@ -120,17 +120,22 @@
           <label>Monthly Rent (₦)</label>
           <input type="number" id="f-rent" placeholder="e.g. 150000">
         </div>
+        <div class="field">
+          <label>Annual Rent (₦) — optional, auto-fills Monthly ÷ 12</label>
+          <input type="number" id="f-rent-annual" placeholder="e.g. 1800000">
+        </div>
       </div>
 
       <!-- Live annual + suggested fee preview -->
       <div id="feePreview" class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 mb-5 text-sm text-slate-400 hidden">
-        <p>Annual: <strong class="text-white" id="fp-annual">—</strong></p>
+        <p>Monthly: <strong class="text-white" id="fp-monthly">—</strong></p>
+        <p class="mt-1">Annual: <strong class="text-white" id="fp-annual">—</strong></p>
         <p class="mt-1">Suggested Agent Fee (10%): <strong class="text-white" id="fp-agent">—</strong></p>
         <p class="mt-1">Suggested Legal Fee (5%): <strong class="text-white" id="fp-legal">—</strong></p>
       </div>
 
       <div class="field">
-        <label>Fees (one per line — edit or replace the suggested ones above)</label>
+        <label>Fees (one per line — auto-calculated, or edit/replace freely)</label>
         <textarea id="f-fees" rows="3" placeholder="Agent Fee: 10% (₦180,000)&#10;Legal Fee: 5% (₦90,000)"></textarea>
       </div>
 
@@ -269,26 +274,43 @@
     }
   });
 
-  // ---------- Live fee preview ----------
+  // ---------- Monthly ⇄ Annual rent sync + live fee preview ----------
+  // Typing in either field fills in the other (Annual ÷ 12 = Monthly, or
+  // Monthly × 12 = Annual), and the fee preview / suggested fees always
+  // recalculate off the resulting annual figure — from whichever field
+  // you actually typed into.
   const rentInput = document.getElementById('f-rent');
+  const annualRentInput = document.getElementById('f-rent-annual');
   const feesTextarea = document.getElementById('f-fees');
-  rentInput.addEventListener('input', () => {
-    const monthly = parseInt(rentInput.value, 10);
-    const feePreview = document.getElementById('feePreview');
+  const feePreview = document.getElementById('feePreview');
+
+  function updateFeePreview(monthly) {
     if (!monthly) { feePreview.classList.add('hidden'); return; }
     const annual = monthly * 12;
     const agent = Math.round(annual * 0.10);
     const legal = Math.round(annual * 0.05);
     feePreview.classList.remove('hidden');
+    document.getElementById('fp-monthly').textContent = '₦' + monthly.toLocaleString('en-US');
     document.getElementById('fp-annual').textContent = '₦' + annual.toLocaleString('en-US');
     document.getElementById('fp-agent').textContent = '₦' + agent.toLocaleString('en-US');
     document.getElementById('fp-legal').textContent = '₦' + legal.toLocaleString('en-US');
-    // Only auto-fill the fees box if the user hasn't typed their own fees yet.
-    if (!feesTextarea.dataset.touched) {
-      feesTextarea.value = `Agent Fee: 10% (₦${agent.toLocaleString('en-US')})\nLegal Fee: 5% (₦${legal.toLocaleString('en-US')})`;
-    }
+    // Fees always auto-calculate from the current rent — feel free to
+    // hand-edit the box afterwards if a listing needs a custom fee.
+    feesTextarea.value = `Agent Fee: 10% (₦${agent.toLocaleString('en-US')})\nLegal Fee: 5% (₦${legal.toLocaleString('en-US')})`;
+  }
+
+  rentInput.addEventListener('input', () => {
+    const monthly = parseInt(rentInput.value, 10);
+    annualRentInput.value = monthly ? monthly * 12 : '';
+    updateFeePreview(monthly);
   });
-  feesTextarea.addEventListener('input', () => { feesTextarea.dataset.touched = '1'; });
+
+  annualRentInput.addEventListener('input', () => {
+    const annual = parseInt(annualRentInput.value, 10);
+    const monthly = annual ? Math.round(annual / 12) : '';
+    rentInput.value = monthly;
+    updateFeePreview(monthly);
+  });
 
   // ---------- Photo/video previews ----------
   document.getElementById('f-images').addEventListener('change', (e) => {
@@ -374,10 +396,9 @@
   });
 
   function resetForm() {
-    ['f-title', 'f-location', 'f-rent'].forEach(id => document.getElementById(id).value = '');
+    ['f-title', 'f-location', 'f-rent', 'f-rent-annual'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('f-beds').value = 1;
     feesTextarea.value = '';
-    delete feesTextarea.dataset.touched;
     document.getElementById('feePreview').classList.add('hidden');
     document.getElementById('f-images').value = '';
     document.getElementById('f-video').value = '';
