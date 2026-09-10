@@ -886,7 +886,7 @@
       location: "Osapa London, Lagos",
       beds: 1,
       rent: "₦3,600,000/mo",
-      fees: ["Caution Fee: ₦100,000", "Agent Fee: 10% (₦360,000)", "Legal Fee: 5% (₦180,000)"],
+      fees: ["Caution Fee: ₦100,000", "Agent Fee: 10% (₦4,320,000)", "Legal Fee: 5% (₦2,160,000)"],
       color: "from-brand-500/30 to-slate-900",
       badges: ["Rent Alert"],
       features: ["1 Bedroom", "Private Pool", "Chef Available", "24/7 Power", "Secured Estate", "Housekeeping", "PS5 on Request", "Non-Flooding Area"],
@@ -899,12 +899,84 @@
       ],
       video: "./osapa-walkthrough.mp4"
     },
+    {
+      title: "Master's Studio",
+      location: "Osapa London, Lekki, Lagos",
+      beds: 1,
+      rent: "₦900,000/mo",
+      fees: ["Service Charge: ₦100,000", "Caution: ₦100,000", "Agent Fee: 10% (₦1,080,000)", "Legal Fee: 5% (₦540,000)"],
+      color: "from-brand-500/30 to-slate-900",
+      features: ["Fully Furnished", "Personal Kitchen", "Smart TV", "DSTV", "Air Conditioner", "WiFi", "Standing Fan", "Water Heater", "Clean Water", "Standby Generator", "Housekeeping", "Serviced Court"],
+      images: [
+        "./osapa-london-tv-unit.jpg",
+        "./osapa-london-bedroom.jpg",
+        "./osapa-london-kitchen-sink.jpg",
+        "./osapa-london-bathroom.jpg",
+        "./osapa-london-shower.jpg"
+      ],
+      video: "./osapa-london-walkthrough.mp4"
+    },
+    {
+      title: "Semi-Room Studio",
+      location: "Osapa London, Lekki, Lagos",
+      beds: 1,
+      rent: "₦800,000/mo",
+      fees: ["Service Charge: ₦100,000", "Caution: ₦100,000", "Agent Fee: 10% (₦960,000)", "Legal Fee: 5% (₦480,000)"],
+      color: "from-brand-400/25 to-slate-900",
+      features: ["Fully Furnished", "Personal Kitchen", "Smart TV", "DSTV", "Air Conditioner", "WiFi", "Standing Fan", "Water Heater", "Clean Water", "Standby Generator", "Housekeeping", "Serviced Court"],
+      images: [
+        "./osapa-london-tv-unit.jpg",
+        "./osapa-london-bedroom.jpg",
+        "./osapa-london-kitchen-sink.jpg",
+        "./osapa-london-bathroom.jpg",
+        "./osapa-london-shower.jpg"
+      ],
+      video: "./osapa-london-walkthrough.mp4"
+    },
+    {
+      title: "Portable Room Studio",
+      location: "Osapa London, Lekki, Lagos",
+      beds: 1,
+      rent: "₦700,000/mo",
+      fees: ["Service Charge: ₦50,000", "Caution: ₦100,000", "Agent Fee: 10% (₦840,000)", "Legal Fee: 5% (₦420,000)"],
+      color: "from-brand-600/30 to-slate-900",
+      features: ["Fully Furnished", "Personal Kitchen", "Smart TV", "DSTV", "Air Conditioner", "WiFi", "Standing Fan", "Water Heater", "Clean Water", "Standby Generator", "Housekeeping", "Serviced Court"],
+      images: [
+        "./osapa-london-tv-unit.jpg",
+        "./osapa-london-bedroom.jpg",
+        "./osapa-london-kitchen-sink.jpg",
+        "./osapa-london-bathroom.jpg",
+        "./osapa-london-shower.jpg"
+      ],
+      video: "./osapa-london-walkthrough.mp4"
+    },
     { title: "2-Bedroom Serviced Apartment", location: "Lekki Phase 1, Lagos", beds: 2, rent: "₦250,000/mo", color: "from-brand-600/30 to-slate-900" },
     { title: "Modern Studio Apartment", location: "Yaba, Lagos", beds: 1, rent: "₦140,000/mo", color: "from-brand-400/25 to-slate-900" },
-    { title: "Suburban Family Home", location: "Ajah, Lagos", beds: 4, rent: "₦380,000/mo", color: "from-amber-500/25 to-slate-900" },
+    {
+      title: "Master Bedroom — Shared Apartment",
+      location: "Badore, Ajah, Lagos",
+      beds: 1,
+      rent: "₦150,000/mo",
+      fees: ["Agent Fee: 10% (₦180,000)", "Legal Fee: 5% (₦90,000)"],
+      color: "from-amber-500/25 to-slate-900",
+      images: [
+        "./badore-ajah-masterbedroom-1.jpg",
+        "./badore-ajah-masterbedroom-2.jpg"
+      ]
+    },
   ];
 
   const listingsGrid = document.getElementById('listingsGrid');
+  // Derives "₦X,XXX,XXX / year" from a monthly rent string like "₦80,000/mo"
+  // — used so every listing card shows the full annual commitment first,
+  // before the smaller monthly breakdown underneath it.
+  function computeAnnualLabel(rentStr) {
+    if (!rentStr) return '';
+    const monthly = parseInt(rentStr.replace(/[^0-9]/g, ''), 10);
+    if (!monthly) return '';
+    const annual = monthly * 12;
+    return '₦' + annual.toLocaleString('en-US') + ' / year';
+  }
   listings.forEach((l, i) => {
     const card = document.createElement('div');
     card.className = "listing-card group rounded-2xl border border-white/10 bg-slate-850/50 overflow-hidden hover:border-brand-500/40 transition reveal";
@@ -919,7 +991,7 @@
       </div>
       <div class="p-5">
         <h3 class="font-display font-semibold text-white">${l.title}</h3>
-        ${l.rent ? `<p class="mt-1 font-display font-bold text-lg text-white">${l.rent.replace('/mo', ' / month')}</p>` : ''}
+        ${l.rent ? `<p class="mt-1 font-display font-bold text-lg text-white">${computeAnnualLabel(l.rent)}</p><p class="text-sm text-slate-400 mt-0.5">${l.rent.replace('/mo', ' / month')}</p>` : ''}
         <p class="text-sm text-slate-500 mt-1">${l.location} · ${l.beds} Bed${l.beds > 1 ? 's' : ''}${l.fees && l.fees.length ? ` · ${l.fees.join(' · ')}` : (l.caution ? ` · ${l.caution}` : '')}</p>
         ${badgesHtml ? `<div class="flex flex-wrap gap-1.5 mt-3">${badgesHtml}</div>` : ''}
         <div class="flex items-center gap-1.5 mt-2 text-xs text-brand-400">
