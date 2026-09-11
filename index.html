@@ -187,8 +187,8 @@
     <nav class="flex flex-col px-6 py-4 gap-1 text-sm">
       <a href="#listings" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Listings</a>
       <a href="./quick-fix.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Quick Fix</a>
-      <a href="#underwriting" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">AI Underwriting</a>
-      <a href="#tech" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Technology</a>
+      <button type="button" id="openUnderwritingModalMobile" class="text-left px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">AI Underwriting</button>
+      <button type="button" id="openTechModalMobile" class="text-left px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Technology</button>
       <button type="button" id="openVisionModalMobile" class="text-left px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Vision &amp; Mission</button>
       <button type="button" id="openAboutModalMobile" class="text-left px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">About Us</button>
       <a href="#onboarding" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Get Started</a>
@@ -212,7 +212,7 @@
 
     <!-- Subheadline -->
     <p class="text-slate-300 text-base md:text-xl max-w-3xl leading-relaxed">
-      Eliminating upfront rent burdens and securing cross-border escrow for local renters in Lagos, Nigeria and the global diaspora (Canada) — through human-vetted & AI-verified properties.
+      Find and secure trusted homes in Lagos — no upfront yearly stress.
     </p>
 
     <!-- Call to Action Buttons -->
@@ -375,6 +375,169 @@
     <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%27d%20like%20to%20learn%20more%20about%20getting%20started." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-full transition">
       Get Started on WhatsApp
     </a>
+  </div>
+</aside>
+
+<!-- ================= AI UNDERWRITING (Drawer) ================= -->
+<div id="underwritingOverlay" class="fixed inset-0 z-[80] hidden bg-black/70 backdrop-blur-sm"></div>
+<aside id="underwritingDrawer" aria-hidden="true" aria-labelledby="underwritingDrawerTitle" class="fixed top-0 right-0 z-[85] h-full w-full sm:max-w-xl bg-[#0F172A] border-l border-white/10 shadow-2xl shadow-black/50 translate-x-full transition-transform duration-300 ease-out overflow-y-auto">
+  <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-5 border-b border-white/5 bg-slate-900/90 backdrop-blur-md">
+    <h2 id="underwritingDrawerTitle" class="font-display font-bold text-lg text-white">AI Underwriting</h2>
+    <button type="button" id="closeUnderwritingDrawer" aria-label="Close" class="w-9 h-9 rounded-full bg-slate-950 border border-white/10 text-white flex items-center justify-center hover:bg-slate-800 hover:border-brand-500/50 transition">✕</button>
+  </div>
+
+  <div class="px-6 py-8 space-y-8">
+    <div>
+      <span class="text-xs font-mono uppercase tracking-widest text-brand-400">🧪 AI RISK MODEL — BETA DEMO</span>
+      <h3 class="mt-3 font-display font-bold text-2xl text-white">AI Underwriting &amp; Pre-Arrival Housing Engine</h3>
+      <p class="mt-4 text-slate-500 text-sm leading-relaxed">An illustrative simulation of the MainTown Risk Index — our alternative credit-scoring model built on Vertex AI.</p>
+    </div>
+
+    <div class="space-y-8">
+      <!-- Inputs -->
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-7 space-y-5">
+        <div>
+          <label class="text-xs font-mono uppercase text-slate-500 mb-2 block" for="userType">User Type</label>
+          <select id="userType" class="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-brand-500">
+            <option value="local">Local Renter</option>
+            <option value="immigrant">Relocating Immigrant to Canada</option>
+            <option value="diaspora">Diaspora Investor</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs font-mono uppercase text-slate-500 mb-2 block" for="income">Monthly Income (₦)</label>
+            <input id="income" type="number" value="600000" min="0" class="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-brand-500">
+          </div>
+          <div>
+            <label class="text-xs font-mono uppercase text-slate-500 mb-2 block" for="rent">Target Monthly Rent (₦)</label>
+            <input id="rent" type="number" value="250000" min="0" class="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-brand-500">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-mono uppercase text-slate-500 mb-2 block" for="utility">Utility Payment History</label>
+          <select id="utility" class="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-brand-500">
+            <option value="excellent">Excellent — always on time</option>
+            <option value="good">Good — mostly on time</option>
+            <option value="fair">Fair — some delays</option>
+            <option value="poor">Poor — frequent delays</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-mono uppercase text-slate-500 mb-2 block" for="bank">Bank Statement Simulation</label>
+          <select id="bank" class="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-brand-500">
+            <option value="consistent">Consistent income deposits</option>
+            <option value="irregular">Irregular income deposits</option>
+          </select>
+        </div>
+        <button id="runUnderwriting" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 rounded-xl transition">Run AI Risk Assessment</button>
+        <p class="text-xs text-slate-600 font-mono">Interactive simulation of MainTown's upcoming proprietary AI tenant risk scoring model. Currently in active development.</p>
+      </div>
+
+      <!-- Output -->
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-7 flex flex-col items-center">
+        <svg viewBox="0 0 300 170" class="w-full max-w-xs">
+          <path d="M 20 150 A 130 130 0 0 1 280 150" fill="none" stroke="#1B2740" stroke-width="18" stroke-linecap="round"/>
+          <path d="M 20 150 A 130 130 0 0 1 280 150" fill="none" stroke="url(#gaugeGrad)" stroke-width="18" stroke-linecap="round" stroke-dasharray="408" stroke-dashoffset="0" id="gaugeArc"/>
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#EF4444"/>
+              <stop offset="50%" stop-color="#F59E0B"/>
+              <stop offset="100%" stop-color="#10B981"/>
+            </linearGradient>
+          </defs>
+          <line x1="150" y1="150" x2="150" y2="35" stroke="#E2E8F0" stroke-width="4" stroke-linecap="round" class="gauge-needle" id="gaugeNeedle"/>
+          <circle cx="150" cy="150" r="8" fill="#E2E8F0"/>
+        </svg>
+        <div class="text-center -mt-2">
+          <div class="font-display font-bold text-4xl text-white" id="riskIndexValue">—</div>
+          <div class="text-xs font-mono uppercase text-slate-500 mt-1">MainTown Risk Index (0–800)</div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mt-8">
+          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-3 sm:p-4 text-center">
+            <div class="font-mono font-semibold text-lg text-brand-400" id="defaultProb">—</div>
+            <div class="text-xs font-semibold uppercase tracking-wider leading-tight text-center text-slate-500 mt-1">Default Probability</div>
+          </div>
+          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-3 sm:p-4 text-center">
+            <div class="font-mono font-semibold text-lg text-brand-400" id="rentAllowance">—</div>
+            <div class="text-xs font-semibold uppercase tracking-wider leading-tight text-center text-slate-500 mt-1">Recommended Rent</div>
+          </div>
+          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-3 sm:p-4 text-center">
+            <div class="font-mono font-semibold text-lg text-amber-400" id="escrowReq">—</div>
+            <div class="text-xs font-semibold uppercase tracking-wider leading-tight text-center text-slate-500 mt-1">Escrow Guarantee</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ================= TECHNOLOGY (Drawer) ================= -->
+<div id="techOverlay" class="fixed inset-0 z-[80] hidden bg-black/70 backdrop-blur-sm"></div>
+<aside id="techDrawer" aria-hidden="true" aria-labelledby="techDrawerTitle" class="fixed top-0 right-0 z-[85] h-full w-full sm:max-w-xl bg-[#0F172A] border-l border-white/10 shadow-2xl shadow-black/50 translate-x-full transition-transform duration-300 ease-out overflow-y-auto">
+  <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-5 border-b border-white/5 bg-slate-900/90 backdrop-blur-md">
+    <h2 id="techDrawerTitle" class="font-display font-bold text-lg text-white">Technology</h2>
+    <button type="button" id="closeTechDrawer" aria-label="Close" class="w-9 h-9 rounded-full bg-slate-950 border border-white/10 text-white flex items-center justify-center hover:bg-slate-800 hover:border-brand-500/50 transition">✕</button>
+  </div>
+
+  <div class="px-6 py-8 space-y-10">
+    <div>
+      <span class="text-xs font-mono uppercase tracking-widest text-brand-400">Under The Hood</span>
+      <h3 class="mt-3 font-display font-bold text-2xl text-white">Building the Future of African PropTech</h3>
+      <p class="mt-4 text-slate-500 text-sm leading-relaxed">Our engineering team is actively training machine learning models to eliminate rental fraud, calculate automated risk scores, and enable seamless escrow payments.</p>
+    </div>
+    <div class="grid sm:grid-cols-2 gap-5">
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
+        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-lg mb-4">🛡️</div>
+        <h4 class="font-display font-semibold text-white mb-2">Cadastral AI Audit Engine</h4>
+        <p class="text-sm text-slate-500 leading-relaxed">Automated land registry &amp; survey beacon cross-checks — LAT/LON mapping against government databases.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
+        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-lg mb-4">📊</div>
+        <h4 class="font-display font-semibold text-white mb-2">Vertex AI Credit Underwriting</h4>
+        <p class="text-sm text-slate-500 leading-relaxed">Alternative risk-scoring replacing 1-year upfront rent demands with flexible monthly payments.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
+        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-lg mb-4">🕵️</div>
+        <h4 class="font-display font-semibold text-white mb-2 flex items-center gap-2">Cross-Border Identity &amp; Fraud Detection <span class="text-[9px] font-mono font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">⏳ Coming Soon</span></h4>
+        <p class="text-sm text-slate-500 leading-relaxed">Passport and document verification for diaspora immigrants relocating to Nigeria.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
+        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-lg mb-4">🔒</div>
+        <h4 class="font-display font-semibold text-white mb-2">Automated Escrow Protocol</h4>
+        <p class="text-sm text-slate-500 leading-relaxed">Smart rent release mechanism holding tenant funds safely until physical unit verification.</p>
+      </div>
+    </div>
+
+    <div>
+      <span class="text-xs font-mono uppercase tracking-widest text-brand-400">Deep Tech</span>
+      <h3 class="mt-3 font-display font-bold text-2xl text-white">Proprietary AI Infrastructure</h3>
+      <p class="mt-4 text-slate-500 text-sm leading-relaxed">Four purpose-built modules form the trust layer beneath every transaction.</p>
+    </div>
+
+    <div class="grid gap-5">
+      <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-850/70 to-slate-900/70 p-7">
+        <span class="font-mono text-xs text-brand-400">MODULE A</span>
+        <h4 class="font-display font-semibold text-xl text-white mt-2 mb-3">Vertex AI Alternative Credit Scoring</h4>
+        <p class="text-sm text-slate-500 leading-relaxed">Builds credit profiles for the unbanked and thin-file using utility payments, income patterns, and behavioral signals — not just bank history.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-850/70 to-slate-900/70 p-7">
+        <span class="font-mono text-xs text-brand-400">MODULE B</span>
+        <h4 class="font-display font-semibold text-xl text-white mt-2 mb-3">Cadastral Beacon &amp; Satellite Spatial Audit</h4>
+        <p class="text-sm text-slate-500 leading-relaxed">Extracts survey-plan beacon coordinates and cross-references them against satellite imagery and government cadastral records.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-850/70 to-slate-900/70 p-7">
+        <span class="font-mono text-xs text-brand-400">MODULE C</span>
+        <h4 class="font-display font-semibold text-xl text-white mt-2 mb-3">Computer Vision Media &amp; Video Authenticator</h4>
+        <p class="text-sm text-slate-500 leading-relaxed">Frame-by-frame validation ensures submitted photos and videos match the physical realities of the site.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-850/70 to-slate-900/70 p-7">
+        <span class="font-mono text-xs text-brand-400">MODULE D</span>
+        <h4 class="font-display font-semibold text-xl text-white mt-2 mb-3">Gemini Conversational Escrow Agent</h4>
+        <p class="text-sm text-slate-500 leading-relaxed">Automates lease generation, supports local languages, and handles currency conversion for diaspora payments <span class="inline-block text-[9px] font-mono font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full align-middle whitespace-nowrap">⏳ Coming Soon</span>.</p>
+      </div>
+    </div>
   </div>
 </aside>
 
@@ -770,162 +933,6 @@
           </span>
         </a>
         <span class="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] font-mono bg-slate-950 border border-white/10 text-slate-300 px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition">App in private beta</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= UNDERWRITING DEMO ================= -->
-<section id="underwriting" class="py-24 border-b border-white/5 bg-slate-950/40">
-  <div class="max-w-7xl mx-auto px-6">
-    <div class="text-center max-w-2xl mx-auto mb-14">
-      <span class="text-xs font-mono uppercase tracking-widest text-brand-400">🧪 AI RISK MODEL — BETA DEMO</span>
-      <h2 class="mt-3 font-display font-bold text-3xl sm:text-4xl text-white">AI Underwriting &amp; Pre-Arrival Housing Engine</h2>
-      <p class="mt-4 text-slate-500">An illustrative simulation of the MainTown Risk Index — our alternative credit-scoring model built on Vertex AI.</p>
-    </div>
-
-    <div class="grid lg:grid-cols-2 gap-10">
-      <!-- Inputs -->
-      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-7 space-y-5">
-        <div>
-          <label class="text-xs font-mono uppercase text-slate-500 mb-2 block" for="userType">User Type</label>
-          <select id="userType" class="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-brand-500">
-            <option value="local">Local Renter</option>
-            <option value="immigrant">Relocating Immigrant to Canada</option>
-            <option value="diaspora">Diaspora Investor</option>
-          </select>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="text-xs font-mono uppercase text-slate-500 mb-2 block" for="income">Monthly Income (₦)</label>
-            <input id="income" type="number" value="600000" min="0" class="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-brand-500">
-          </div>
-          <div>
-            <label class="text-xs font-mono uppercase text-slate-500 mb-2 block" for="rent">Target Monthly Rent (₦)</label>
-            <input id="rent" type="number" value="250000" min="0" class="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-brand-500">
-          </div>
-        </div>
-        <div>
-          <label class="text-xs font-mono uppercase text-slate-500 mb-2 block" for="utility">Utility Payment History</label>
-          <select id="utility" class="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-brand-500">
-            <option value="excellent">Excellent — always on time</option>
-            <option value="good">Good — mostly on time</option>
-            <option value="fair">Fair — some delays</option>
-            <option value="poor">Poor — frequent delays</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-xs font-mono uppercase text-slate-500 mb-2 block" for="bank">Bank Statement Simulation</label>
-          <select id="bank" class="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-brand-500">
-            <option value="consistent">Consistent income deposits</option>
-            <option value="irregular">Irregular income deposits</option>
-          </select>
-        </div>
-        <button id="runUnderwriting" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 rounded-xl transition">Run AI Risk Assessment</button>
-        <p class="text-xs text-slate-600 font-mono">Interactive simulation of MainTown's upcoming proprietary AI tenant risk scoring model. Currently in active development.</p>
-      </div>
-
-      <!-- Output -->
-      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-7 flex flex-col items-center">
-        <svg viewBox="0 0 300 170" class="w-full max-w-xs">
-          <path d="M 20 150 A 130 130 0 0 1 280 150" fill="none" stroke="#1B2740" stroke-width="18" stroke-linecap="round"/>
-          <path d="M 20 150 A 130 130 0 0 1 280 150" fill="none" stroke="url(#gaugeGrad)" stroke-width="18" stroke-linecap="round" stroke-dasharray="408" stroke-dashoffset="0" id="gaugeArc"/>
-          <defs>
-            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#EF4444"/>
-              <stop offset="50%" stop-color="#F59E0B"/>
-              <stop offset="100%" stop-color="#10B981"/>
-            </linearGradient>
-          </defs>
-          <line x1="150" y1="150" x2="150" y2="35" stroke="#E2E8F0" stroke-width="4" stroke-linecap="round" class="gauge-needle" id="gaugeNeedle"/>
-          <circle cx="150" cy="150" r="8" fill="#E2E8F0"/>
-        </svg>
-        <div class="text-center -mt-2">
-          <div class="font-display font-bold text-4xl text-white" id="riskIndexValue">—</div>
-          <div class="text-xs font-mono uppercase text-slate-500 mt-1">MainTown Risk Index (0–800)</div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mt-8">
-          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-3 sm:p-4 text-center">
-            <div class="font-mono font-semibold text-lg text-brand-400" id="defaultProb">—</div>
-            <div class="text-xs font-semibold uppercase tracking-wider leading-tight text-center text-slate-500 mt-1">Default Probability</div>
-          </div>
-          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-3 sm:p-4 text-center">
-            <div class="font-mono font-semibold text-lg text-brand-400" id="rentAllowance">—</div>
-            <div class="text-xs font-semibold uppercase tracking-wider leading-tight text-center text-slate-500 mt-1">Recommended Rent</div>
-          </div>
-          <div class="rounded-xl bg-slate-900/70 border border-white/5 p-3 sm:p-4 text-center">
-            <div class="font-mono font-semibold text-lg text-amber-400" id="escrowReq">—</div>
-            <div class="text-xs font-semibold uppercase tracking-wider leading-tight text-center text-slate-500 mt-1">Escrow Guarantee</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= HOW AI POWERS INFRASTRUCTURE ================= -->
-<section class="py-24 border-b border-white/5">
-  <div class="max-w-7xl mx-auto px-6">
-    <div class="text-center max-w-2xl mx-auto mb-14">
-      <span class="text-xs font-mono uppercase tracking-widest text-brand-400">Under The Hood</span>
-      <h2 class="mt-3 font-display font-bold text-3xl sm:text-4xl text-white">Building the Future of African PropTech</h2>
-      <p class="mt-4 text-slate-500">Our engineering team is actively training machine learning models to eliminate rental fraud, calculate automated risk scores, and enable seamless escrow payments.</p>
-    </div>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      <div class="reveal rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
-        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-lg mb-4">🛡️</div>
-        <h3 class="font-display font-semibold text-white mb-2">Cadastral AI Audit Engine</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Automated land registry &amp; survey beacon cross-checks — LAT/LON mapping against government databases.</p>
-      </div>
-      <div class="reveal rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
-        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-lg mb-4">📊</div>
-        <h3 class="font-display font-semibold text-white mb-2">Vertex AI Credit Underwriting</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Alternative risk-scoring replacing 1-year upfront rent demands with flexible monthly payments.</p>
-      </div>
-      <div class="reveal rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
-        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-lg mb-4">🕵️</div>
-        <h3 class="font-display font-semibold text-white mb-2 flex items-center gap-2">Cross-Border Identity &amp; Fraud Detection <span class="text-[9px] font-mono font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">⏳ Coming Soon</span></h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Passport and document verification for diaspora immigrants relocating to Nigeria.</p>
-      </div>
-      <div class="reveal rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
-        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-lg mb-4">🔒</div>
-        <h3 class="font-display font-semibold text-white mb-2">Automated Escrow Protocol</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Smart rent release mechanism holding tenant funds safely until physical unit verification.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= TECH INFRASTRUCTURE ================= -->
-<section id="tech" class="py-24 border-b border-white/5">
-  <div class="max-w-7xl mx-auto px-6">
-    <div class="text-center max-w-2xl mx-auto mb-14">
-      <span class="text-xs font-mono uppercase tracking-widest text-brand-400">Deep Tech</span>
-      <h2 class="mt-3 font-display font-bold text-3xl sm:text-4xl text-white">Proprietary AI Infrastructure</h2>
-      <p class="mt-4 text-slate-500">Four purpose-built modules form the trust layer beneath every transaction.</p>
-    </div>
-
-    <div class="grid md:grid-cols-2 gap-6">
-      <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-850/70 to-slate-900/70 p-7">
-        <span class="font-mono text-xs text-brand-400">MODULE A</span>
-        <h3 class="font-display font-semibold text-xl text-white mt-2 mb-3">Vertex AI Alternative Credit Scoring</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Builds credit profiles for the unbanked and thin-file using utility payments, income patterns, and behavioral signals — not just bank history.</p>
-      </div>
-      <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-850/70 to-slate-900/70 p-7">
-        <span class="font-mono text-xs text-brand-400">MODULE B</span>
-        <h3 class="font-display font-semibold text-xl text-white mt-2 mb-3">Cadastral Beacon &amp; Satellite Spatial Audit</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Extracts survey-plan beacon coordinates and cross-references them against satellite imagery and government cadastral records.</p>
-      </div>
-      <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-850/70 to-slate-900/70 p-7">
-        <span class="font-mono text-xs text-brand-400">MODULE C</span>
-        <h3 class="font-display font-semibold text-xl text-white mt-2 mb-3">Computer Vision Media &amp; Video Authenticator</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Frame-by-frame validation ensures submitted photos and videos match the physical realities of the site.</p>
-      </div>
-      <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-850/70 to-slate-900/70 p-7">
-        <span class="font-mono text-xs text-brand-400">MODULE D</span>
-        <h3 class="font-display font-semibold text-xl text-white mt-2 mb-3">Gemini Conversational Escrow Agent</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Automates lease generation, supports local languages, and handles currency conversion for diaspora payments <span class="inline-block text-[9px] font-mono font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full align-middle whitespace-nowrap">⏳ Coming Soon</span>.</p>
       </div>
     </div>
   </div>
@@ -1553,6 +1560,54 @@
   aboutOverlay.addEventListener('click', closeAboutDrawer);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !aboutDrawer.classList.contains('translate-x-full')) closeAboutDrawer();
+  });
+
+  // ---------- AI Underwriting drawer ----------
+  const underwritingOverlay = document.getElementById('underwritingOverlay');
+  const underwritingDrawer = document.getElementById('underwritingDrawer');
+
+  function openUnderwritingDrawer() {
+    closeMobileMenu();
+    underwritingOverlay.classList.remove('hidden');
+    underwritingDrawer.classList.remove('translate-x-full');
+    underwritingDrawer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeUnderwritingDrawer() {
+    underwritingDrawer.classList.add('translate-x-full');
+    underwritingDrawer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    setTimeout(() => underwritingOverlay.classList.add('hidden'), 300);
+  }
+  document.getElementById('openUnderwritingModalMobile').addEventListener('click', openUnderwritingDrawer);
+  document.getElementById('closeUnderwritingDrawer').addEventListener('click', closeUnderwritingDrawer);
+  underwritingOverlay.addEventListener('click', closeUnderwritingDrawer);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !underwritingDrawer.classList.contains('translate-x-full')) closeUnderwritingDrawer();
+  });
+
+  // ---------- Technology drawer ----------
+  const techOverlay = document.getElementById('techOverlay');
+  const techDrawer = document.getElementById('techDrawer');
+
+  function openTechDrawer() {
+    closeMobileMenu();
+    techOverlay.classList.remove('hidden');
+    techDrawer.classList.remove('translate-x-full');
+    techDrawer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeTechDrawer() {
+    techDrawer.classList.add('translate-x-full');
+    techDrawer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    setTimeout(() => techOverlay.classList.add('hidden'), 300);
+  }
+  document.getElementById('openTechModalMobile').addEventListener('click', openTechDrawer);
+  document.getElementById('closeTechDrawer').addEventListener('click', closeTechDrawer);
+  techOverlay.addEventListener('click', closeTechDrawer);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !techDrawer.classList.contains('translate-x-full')) closeTechDrawer();
   });
 </script>
 
