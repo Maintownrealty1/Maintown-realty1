@@ -167,6 +167,7 @@
       <a href="#underwriting" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">AI Underwriting</a>
       <a href="#tech" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">Technology</a>
       <button type="button" id="openVisionModalDesktop" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">Vision &amp; Mission</button>
+      <button type="button" id="openAboutModalDesktop" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">About Us</button>
       <a href="#onboarding" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">Get Started</a>
     </nav>
     <div class="hidden sm:flex items-center gap-3 ml-auto">
@@ -189,6 +190,7 @@
       <a href="#underwriting" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">AI Underwriting</a>
       <a href="#tech" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Technology</a>
       <button type="button" id="openVisionModalMobile" class="text-left px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Vision &amp; Mission</button>
+      <button type="button" id="openAboutModalMobile" class="text-left px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">About Us</button>
       <a href="#onboarding" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Get Started</a>
     </nav>
   </div>
@@ -299,6 +301,82 @@
         <p class="text-sm text-slate-500 leading-relaxed">Pre-arrival verification &amp; escrow for Nigerians relocating abroad.</p>
       </div>
     </div>
+  </div>
+</aside>
+
+<!-- ================= ABOUT US (Drawer) ================= -->
+<div id="aboutOverlay" class="fixed inset-0 z-[80] hidden bg-black/70 backdrop-blur-sm"></div>
+<aside id="aboutDrawer" aria-hidden="true" aria-labelledby="aboutDrawerTitle" class="fixed top-0 right-0 z-[85] h-full w-full sm:max-w-xl bg-[#0F172A] border-l border-white/10 shadow-2xl shadow-black/50 translate-x-full transition-transform duration-300 ease-out overflow-y-auto">
+  <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-5 border-b border-white/5 bg-slate-900/90 backdrop-blur-md">
+    <h2 id="aboutDrawerTitle" class="font-display font-bold text-lg text-white">About Us</h2>
+    <button type="button" id="closeAboutDrawer" aria-label="Close" class="w-9 h-9 rounded-full bg-slate-950 border border-white/10 text-white flex items-center justify-center hover:bg-slate-800 hover:border-brand-500/50 transition">✕</button>
+  </div>
+
+  <div class="px-6 py-8 space-y-10">
+    <div>
+      <span class="text-xs font-mono uppercase tracking-widest text-brand-400">Who We Are</span>
+      <p class="mt-4 text-2xl font-display font-medium text-white leading-snug">
+        MainTown Realty is Lagos' verified property marketplace — built to make finding, renting, and buying
+        a home as trustworthy as it should have been all along.
+      </p>
+    </div>
+
+    <div>
+      <p class="text-slate-400 leading-relaxed">
+        Housing in Lagos has long asked too much of too many people — a full year's rent demanded upfront,
+        agent fees with no clear breakdown, and no real way to confirm a listing is genuine before money
+        changes hands. MainTown Realty exists to change that. We built a platform where every listing is
+        verified, every fee is itemized before you commit, and every tenant, buyer, and landlord can transact
+        with confidence.
+      </p>
+      <p class="mt-4 text-slate-400 leading-relaxed">
+        What started as a simple idea — that finding a home shouldn't require blind trust — has grown into
+        a full property ecosystem serving renters, buyers, landlords, and agents across Lagos, with land and
+        property purchase options now extending to diaspora Nigerians investing from abroad.
+      </p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-5">
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
+        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-brand-400 mb-4">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+        </div>
+        <h3 class="font-display font-semibold text-white mb-2">Verified, Not Just Listed</h3>
+        <p class="text-sm text-slate-500 leading-relaxed">Every property is checked before it ever reaches you — no ghost listings, no surprises.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
+        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-brand-400 mb-4">₦</div>
+        <h3 class="font-display font-semibold text-white mb-2">Fees You Can See Upfront</h3>
+        <p class="text-sm text-slate-500 leading-relaxed">Agent and legal fees are calculated and shown before you ever commit — no hidden costs.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
+        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-brand-400 mb-4">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg>
+        </div>
+        <h3 class="font-display font-semibold text-white mb-2">Flexible Payment Plans</h3>
+        <p class="text-sm text-slate-500 leading-relaxed">Monthly, quarterly, or half-yearly — pay on a schedule that fits your life, not the market's.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
+        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-brand-400 mb-4">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
+        </div>
+        <h3 class="font-display font-semibold text-white mb-2">Built for Lagos, Open to the World</h3>
+        <p class="text-sm text-slate-500 leading-relaxed">Rooted in Lagos neighborhoods, with tools for diaspora buyers investing from anywhere.</p>
+      </div>
+    </div>
+
+    <div>
+      <span class="text-xs font-mono uppercase tracking-widest text-brand-400">Our Promise</span>
+      <p class="mt-4 text-slate-400 leading-relaxed">
+        Whether you're a tenant searching for your next home, a landlord looking to list with confidence, or
+        an agent building your portfolio, MainTown Realty is built around one principle: property transactions
+        should be transparent, fair, and stress-free — for everyone at the table.
+      </p>
+    </div>
+
+    <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%27d%20like%20to%20learn%20more%20about%20getting%20started." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-full transition">
+      Get Started on WhatsApp
+    </a>
   </div>
 </aside>
 
@@ -1393,6 +1471,31 @@
   visionOverlay.addEventListener('click', closeVisionDrawer);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !visionDrawer.classList.contains('translate-x-full')) closeVisionDrawer();
+  });
+
+  // ---------- About Us drawer ----------
+  const aboutOverlay = document.getElementById('aboutOverlay');
+  const aboutDrawer = document.getElementById('aboutDrawer');
+
+  function openAboutDrawer() {
+    closeMobileMenu();
+    aboutOverlay.classList.remove('hidden');
+    aboutDrawer.classList.remove('translate-x-full');
+    aboutDrawer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeAboutDrawer() {
+    aboutDrawer.classList.add('translate-x-full');
+    aboutDrawer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    setTimeout(() => aboutOverlay.classList.add('hidden'), 300);
+  }
+  document.getElementById('openAboutModalDesktop').addEventListener('click', openAboutDrawer);
+  document.getElementById('openAboutModalMobile').addEventListener('click', openAboutDrawer);
+  document.getElementById('closeAboutDrawer').addEventListener('click', closeAboutDrawer);
+  aboutOverlay.addEventListener('click', closeAboutDrawer);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !aboutDrawer.classList.contains('translate-x-full')) closeAboutDrawer();
   });
 </script>
 
