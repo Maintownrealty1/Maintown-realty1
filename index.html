@@ -162,29 +162,28 @@
         <span class="text-xl font-extrabold text-white tracking-tight">MainTown <span class="text-purple-400">Realty</span></span>
       </a>
     </div>
-    <nav class="hidden md:flex items-center gap-6 lg:gap-8 ml-8 lg:ml-12">
-      <a href="#listings" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">Listings</a>
-      <a href="#underwriting" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">AI Underwriting</a>
-      <a href="#tech" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">Technology</a>
-      <button type="button" id="openVisionModalDesktop" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">Vision &amp; Mission</button>
-      <button type="button" id="openAboutModalDesktop" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">About Us</button>
-      <a href="#onboarding" class="px-2 py-1 text-sm font-medium text-slate-300 hover:text-white transition-colors">Get Started</a>
-    </nav>
-    <div class="hidden sm:flex items-center gap-3 ml-auto">
-      <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" aria-label="MainTown Realty on Instagram" class="w-9 h-9 rounded-full border border-white/10 text-slate-300 hover:text-white hover:border-brand-500/50 flex items-center justify-center transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.8"/><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none"/></svg>
-      </a>
-      <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20would%20like%20to%20get%20started%20with%20onboarding%20and%20property%20listing." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-full transition">
-        WhatsApp Onboarding
-      </a>
+    <div class="flex items-center gap-2 ml-auto">
+      <button type="button" id="searchToggle" aria-label="Search listings" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white hover:bg-white/5 transition">
+        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m21 21-4.3-4.3"/></svg>
+      </button>
+      <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
+        <span id="mobileMenuIcon">☰</span>
+      </button>
     </div>
-    <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
-      <span id="mobileMenuIcon">☰</span>
-    </button>
+  </div>
+
+  <!-- Search bar — toggled by the search icon, filters listings by
+       keyword (title/location/feature) or by monthly budget. -->
+  <div id="searchBar" class="hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center gap-3">
+      <input type="text" id="searchInput" placeholder="Search by location, keyword, or budget (e.g. 150000)" class="flex-1 bg-slate-900 border border-slate-700 focus:border-brand-500 outline-none text-white text-sm rounded-lg px-4 py-2.5 placeholder:text-slate-500">
+      <button type="button" id="searchGoBtn" class="text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-lg transition shrink-0">Search</button>
+      <button type="button" id="searchClearBtn" class="hidden text-sm font-medium text-slate-400 hover:text-white px-2 py-2.5 shrink-0">Clear</button>
+    </div>
   </div>
 
   <!-- Mobile Menu -->
-  <div id="mobileMenu" class="md:hidden hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
+  <div id="mobileMenu" class="hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
     <nav class="flex flex-col px-6 py-4 gap-1 text-sm">
       <a href="#listings" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Listings</a>
       <a href="#underwriting" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">AI Underwriting</a>
@@ -192,6 +191,10 @@
       <button type="button" id="openVisionModalMobile" class="text-left px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Vision &amp; Mission</button>
       <button type="button" id="openAboutModalMobile" class="text-left px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">About Us</button>
       <a href="#onboarding" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Get Started</a>
+      <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Instagram</a>
+      <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20would%20like%20to%20get%20started%20with%20onboarding%20and%20property%20listing." target="_blank" rel="noopener noreferrer" class="mt-2 text-center text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-3 rounded-full transition">
+        WhatsApp Onboarding
+      </a>
     </nav>
   </div>
 </header>
@@ -200,12 +203,6 @@
 <!-- MainTown Realty Hero Section -->
 <section id="hero" class="relative bg-[#0F172A] text-white py-20 px-6 md:px-12 text-center md:text-left flex flex-col items-center justify-center border-b border-slate-800">
   <div class="max-w-4xl mx-auto space-y-6">
-
-    <!-- Trust Pill Badge -->
-    <div class="inline-flex items-center gap-2 bg-purple-900/40 border border-purple-500/30 text-purple-300 text-xs md:text-sm font-medium px-4 py-1.5 rounded-full">
-      <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-      BUILDING FOR LAGOS & THE DIASPORA
-    </div>
 
     <!-- Main Headline -->
     <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
@@ -1067,6 +1064,7 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let listings = FALLBACK_LISTINGS;
+  let filteredListings = null; // null = no active search, show everything
 
   const listingsGrid = document.getElementById('listingsGrid');
   const listingsPrevBtn = document.getElementById('listingsPrevBtn');
@@ -1095,11 +1093,19 @@
   }
 
   function renderListingsPage(page) {
-    const listingsPageCount = Math.max(1, Math.ceil(listings.length / LISTINGS_PER_PAGE));
+    const activeListings = filteredListings || listings;
+    const listingsPageCount = Math.max(1, Math.ceil(activeListings.length / LISTINGS_PER_PAGE));
     listingsPage = Math.max(0, Math.min(page, listingsPageCount - 1));
     listingsGrid.innerHTML = '';
+    if (!activeListings.length) {
+      listingsGrid.innerHTML = `<p class="col-span-full text-center text-slate-500 text-sm py-12">No listings match your search. Try a different keyword or budget.</p>`;
+      if (listingsPageIndicator) listingsPageIndicator.textContent = '0 / 0';
+      if (listingsPrevBtn) listingsPrevBtn.disabled = true;
+      if (listingsNextBtn) listingsNextBtn.disabled = true;
+      return;
+    }
     const start = listingsPage * LISTINGS_PER_PAGE;
-    listings.slice(start, start + LISTINGS_PER_PAGE).forEach((l) => {
+    activeListings.slice(start, start + LISTINGS_PER_PAGE).forEach((l) => {
     const card = document.createElement('div');
     card.className = "listing-card group rounded-2xl border border-white/10 bg-slate-850/50 overflow-hidden hover:border-brand-500/40 transition reveal";
     const badgesHtml = (l.badges || []).map(b => `<span class="text-[10px] font-mono font-semibold ${b.toLowerCase().includes('alert') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-brand-500/15 text-brand-300 border border-brand-500/30'} px-2.5 py-1 rounded-full">${b}</span>`).join('');
@@ -1158,6 +1164,58 @@
     }
   }
   fetchListings();
+
+  // ---------- Header search: keyword or budget ----------
+  // Toggling the search icon reveals a bar under the header. Typing a
+  // location/feature keyword filters by text match; typing a plain number
+  // (e.g. "150000") filters to listings whose monthly rent is within that
+  // budget. Either way, results replace the Explore grid and scroll into view.
+  const searchToggle = document.getElementById('searchToggle');
+  const searchBar = document.getElementById('searchBar');
+  const searchInput = document.getElementById('searchInput');
+  const searchGoBtn = document.getElementById('searchGoBtn');
+  const searchClearBtn = document.getElementById('searchClearBtn');
+
+  searchToggle.addEventListener('click', () => {
+    searchBar.classList.toggle('hidden');
+    if (!searchBar.classList.contains('hidden')) searchInput.focus();
+  });
+
+  function runSearch() {
+    const raw = searchInput.value.trim();
+    if (!raw) { clearSearch(); return; }
+    const q = raw.toLowerCase();
+    const digitsOnly = raw.replace(/[^0-9]/g, '');
+    // Treat as a pure budget search only if the query is basically just a
+    // number (allowing things like "₦150,000" or "150k")—otherwise it's a
+    // keyword search against title/location/features.
+    const isBudgetQuery = digitsOnly.length >= 4 && digitsOnly.length === raw.replace(/[^0-9]/g, '').length && /^[₦\s,0-9kK]+$/.test(raw);
+    const budget = isBudgetQuery ? parseInt(digitsOnly, 10) * (/[kK]$/.test(raw.trim()) ? 1000 : 1) : null;
+
+    filteredListings = (listings).filter(l => {
+      if (budget) {
+        const monthly = parseInt((l.rent || '').replace(/[^0-9]/g, ''), 10);
+        return monthly && monthly <= budget;
+      }
+      const haystack = `${l.title} ${l.location} ${(l.features || []).join(' ')}`.toLowerCase();
+      return haystack.includes(q);
+    });
+
+    searchClearBtn.classList.remove('hidden');
+    renderListingsPage(0);
+    listingsGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function clearSearch() {
+    filteredListings = null;
+    searchInput.value = '';
+    searchClearBtn.classList.add('hidden');
+    renderListingsPage(0);
+  }
+
+  searchGoBtn.addEventListener('click', runSearch);
+  searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+  searchClearBtn.addEventListener('click', clearSearch);
 
   if (listingsPrevBtn) listingsPrevBtn.addEventListener('click', () => {
     renderListingsPage(listingsPage - 1);
@@ -1465,7 +1523,6 @@
     document.body.style.overflow = '';
     setTimeout(() => visionOverlay.classList.add('hidden'), 300);
   }
-  document.getElementById('openVisionModalDesktop').addEventListener('click', openVisionDrawer);
   document.getElementById('openVisionModalMobile').addEventListener('click', openVisionDrawer);
   document.getElementById('closeVisionDrawer').addEventListener('click', closeVisionDrawer);
   visionOverlay.addEventListener('click', closeVisionDrawer);
@@ -1490,7 +1547,6 @@
     document.body.style.overflow = '';
     setTimeout(() => aboutOverlay.classList.add('hidden'), 300);
   }
-  document.getElementById('openAboutModalDesktop').addEventListener('click', openAboutDrawer);
   document.getElementById('openAboutModalMobile').addEventListener('click', openAboutDrawer);
   document.getElementById('closeAboutDrawer').addEventListener('click', closeAboutDrawer);
   aboutOverlay.addEventListener('click', closeAboutDrawer);
