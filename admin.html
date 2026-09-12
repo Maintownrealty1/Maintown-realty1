@@ -182,8 +182,14 @@
 
     <!-- ---- Existing Listings ---- -->
     <section class="mb-10">
-      <h2 class="font-display font-semibold text-lg text-white mb-4">Live Listings</h2>
-      <div id="existingList" class="space-y-3"></div>
+      <button type="button" id="listingsToggle" class="w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none">
+        <h2 class="font-display font-semibold text-lg text-white flex items-center gap-2">
+          Live Listings
+          <span id="listingsCount" class="text-xs font-mono font-normal text-slate-500 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">0</span>
+        </h2>
+        <span id="listingsChevron" class="text-slate-500 text-sm transition-transform shrink-0">▸</span>
+      </button>
+      <div id="existingList" class="space-y-3 mt-4 hidden"></div>
     </section>
 
     <!-- ---- Sign-Ups & Onboarding (KYC + Legal Agreement + Login) ---- -->
@@ -446,6 +452,7 @@
       listEl.innerHTML = `<p class="text-sm text-red-400">Could not load listings: ${error.message}</p>`;
       return;
     }
+    document.getElementById('listingsCount').textContent = data.length;
     if (!data.length) {
       listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet — add your first one above.</p>';
       return;
@@ -468,6 +475,14 @@
       </div>
     `).join('');
   }
+
+  document.getElementById('listingsToggle').addEventListener('click', () => {
+    const listEl = document.getElementById('existingList');
+    const chevron = document.getElementById('listingsChevron');
+    const isOpen = !listEl.classList.contains('hidden');
+    listEl.classList.toggle('hidden', isOpen);
+    chevron.textContent = isOpen ? '▸' : '▾';
+  });
 
   document.getElementById('existingList').addEventListener('change', async (e) => {
     const select = e.target.closest('.status-select');
@@ -544,15 +559,18 @@
         ? `<p class="text-xs text-slate-500 mt-2">Guarantor: ${s.guarantor_name} (${s.guarantor_relationship || 'n/a'}) — ${s.guarantor_phone || ''}</p>`
         : '';
       return `
-      <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-4">
-        <div class="flex items-start justify-between gap-3 flex-wrap">
-          <div class="min-w-0">
-            <p class="text-sm font-semibold text-white">
-              ${s.full_name || '—'}
-              <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${ROLE_LABELS[s.role] || s.role}</span>
-            </p>
-            <p class="text-xs text-slate-500 mt-0.5">${s.phone || ''}${s.occupation ? ' · ' + s.occupation : ''}</p>
-            ${guarantorHtml}
+      <div class="signup-card bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <div class="signup-header flex items-start justify-between gap-3 flex-wrap px-4 py-4 cursor-pointer select-none">
+          <div class="min-w-0 flex items-start gap-2">
+            <span class="signup-chevron text-slate-500 text-xs mt-1 shrink-0 transition-transform">▸</span>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-white">
+                ${s.full_name || '—'}
+                <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${ROLE_LABELS[s.role] || s.role}</span>
+              </p>
+              <p class="text-xs text-slate-500 mt-0.5">${s.phone || ''}${s.occupation ? ' · ' + s.occupation : ''}</p>
+              ${guarantorHtml}
+            </div>
           </div>
           <select class="signup-status-select shrink-0 !w-auto !py-1.5 !text-xs" data-id="${s.id}">
             <option value="pending" ${(!s.status || s.status === 'pending') ? 'selected' : ''}>Pending Review</option>
@@ -561,32 +579,34 @@
           </select>
         </div>
 
-        <div class="mt-3 bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2.5">
-          <div class="flex items-center justify-between gap-2 flex-wrap">
-            <div class="min-w-0">
-              <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-0.5">App Login</p>
-              <p class="text-sm text-white font-mono truncate">${s.email || '—'}</p>
+        <div class="signup-details hidden px-4 pb-4">
+          <div class="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2.5">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="min-w-0">
+                <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-0.5">App Login</p>
+                <p class="text-sm text-white font-mono truncate">${s.email || '—'}</p>
+              </div>
+              ${loginBadge}
             </div>
-            ${loginBadge}
+            ${s.user_id ? `<p class="text-[10px] text-slate-600 font-mono mt-1.5 truncate">Auth User ID: ${s.user_id}</p>` : ''}
+            <p class="text-[11px] text-slate-500 mt-1.5 leading-snug">This email + the password they set at sign-up already work as a real login on the same Supabase project — no re-onboarding needed once the app is live. Passwords are securely hashed and are never stored or visible here; use "Send Password Reset" if someone needs to reset theirs.</p>
+            ${s.email ? `<button class="reset-password-btn btn-secondary !py-1 !px-2.5 !text-[11px] mt-2" data-email="${s.email}">Send Password Reset Email</button>` : ''}
           </div>
-          ${s.user_id ? `<p class="text-[10px] text-slate-600 font-mono mt-1.5 truncate">Auth User ID: ${s.user_id}</p>` : ''}
-          <p class="text-[11px] text-slate-500 mt-1.5 leading-snug">This email + the password they set at sign-up already work as a real login on the same Supabase project — no re-onboarding needed once the app is live. Passwords are securely hashed and are never stored or visible here; use "Send Password Reset" if someone needs to reset theirs.</p>
-          ${s.email ? `<button class="reset-password-btn btn-secondary !py-1 !px-2.5 !text-[11px] mt-2" data-email="${s.email}">Send Password Reset Email</button>` : ''}
-        </div>
 
-        <div class="mt-3">
-          <p class="text-xs font-semibold text-slate-400 mb-1">KYC checklist</p>
-          <ul class="text-xs text-slate-300 list-disc list-inside space-y-0.5">${kycHtml}</ul>
-        </div>
+          <div class="mt-3">
+            <p class="text-xs font-semibold text-slate-400 mb-1">KYC checklist</p>
+            <ul class="text-xs text-slate-300 list-disc list-inside space-y-0.5">${kycHtml}</ul>
+          </div>
 
-        <div class="mt-3">
-          <p class="text-xs font-semibold text-slate-400 mb-1">Uploaded KYC documents / selfie</p>
-          <div class="flex flex-wrap gap-2">${kycDocsHtml}</div>
-        </div>
+          <div class="mt-3">
+            <p class="text-xs font-semibold text-slate-400 mb-1">Uploaded KYC documents / selfie</p>
+            <div class="flex flex-wrap gap-2">${kycDocsHtml}</div>
+          </div>
 
-        <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-800">
-          ${s.agreement_pdf_url ? `<a href="${s.agreement_pdf_url}" target="_blank" rel="noopener noreferrer" class="btn-secondary !py-1.5 !text-xs">View Signed Agreement (PDF)</a>` : '<span class="text-xs text-slate-600">No signed agreement on file.</span>'}
-          <button class="delete-signup-btn btn-secondary !py-1.5 !text-xs" data-id="${s.id}" data-name="${s.full_name || 'this sign-up'}">Delete</button>
+          <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-800">
+            ${s.agreement_pdf_url ? `<a href="${s.agreement_pdf_url}" target="_blank" rel="noopener noreferrer" class="btn-secondary !py-1.5 !text-xs">View Signed Agreement (PDF)</a>` : '<span class="text-xs text-slate-600">No signed agreement on file.</span>'}
+            <button class="delete-signup-btn btn-secondary !py-1.5 !text-xs" data-id="${s.id}" data-name="${s.full_name || 'this sign-up'}">Delete</button>
+          </div>
         </div>
       </div>`;
     }).join('');
@@ -599,6 +619,18 @@
     chip.classList.add('active');
     signupRoleFilter = chip.dataset.role;
     renderSignups();
+  });
+
+  document.getElementById('signupsList').addEventListener('click', (e) => {
+    if (e.target.closest('select') || e.target.closest('button') || e.target.closest('a')) return;
+    const header = e.target.closest('.signup-header');
+    if (!header) return;
+    const card = header.closest('.signup-card');
+    const details = card.querySelector('.signup-details');
+    const chevron = header.querySelector('.signup-chevron');
+    const isOpen = !details.classList.contains('hidden');
+    details.classList.toggle('hidden', isOpen);
+    chevron.textContent = isOpen ? '▸' : '▾';
   });
 
   document.getElementById('signupsList').addEventListener('change', async (e) => {
