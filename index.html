@@ -182,7 +182,7 @@
     </div>
 
     <!-- Desktop nav: only visible on larger screens; mirrors the mobile menu links -->
-    <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-200">
+    <nav class="hidden md:flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] lg:text-sm font-medium text-slate-200">
       <a href="#listings" class="hover:text-white transition">Listings</a>
       <a href="./quick-fix.html" class="hover:text-white transition">Quick Fix</a>
       <button type="button" id="openUnderwritingModalDesktop" class="hover:text-white transition">AI Underwriting</button>
@@ -192,8 +192,8 @@
       <a href="#onboarding" class="hover:text-white transition">Get Started</a>
     </nav>
 
-    <div class="flex items-center gap-2 ml-auto lg:ml-0">
-      <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" aria-label="Instagram" class="hidden lg:inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white hover:bg-white/5 transition">
+    <div class="flex items-center gap-2 ml-auto md:ml-0">
+      <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" aria-label="Instagram" class="hidden md:inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white hover:bg-white/5 transition">
         <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" aria-hidden="true">
           <defs>
             <linearGradient id="igGradientNav" x1="0%" y1="100%" x2="100%" y2="0%">
@@ -211,10 +211,10 @@
       <button type="button" id="searchToggle" aria-label="Search listings" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white hover:bg-white/5 transition">
         <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m21 21-4.3-4.3"/></svg>
       </button>
-      <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20would%20like%20to%20get%20started%20with%20onboarding%20and%20property%20listing." target="_blank" rel="noopener noreferrer" class="hidden lg:inline-flex items-center text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-lg transition">
+      <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20would%20like%20to%20get%20started%20with%20onboarding%20and%20property%20listing." target="_blank" rel="noopener noreferrer" class="hidden md:inline-flex items-center text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-lg transition">
         Get Started on WhatsApp
       </a>
-      <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
+      <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
         <span id="mobileMenuIcon">☰</span>
       </button>
     </div>
@@ -231,7 +231,7 @@
   </div>
 
   <!-- Mobile Menu (mobile/tablet only) -->
-  <div id="mobileMenu" class="hidden lg:hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
+  <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
     <nav class="flex flex-col px-6 py-4 gap-1 text-sm">
       <a href="#listings" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Listings</a>
       <a href="./quick-fix.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Quick Fix</a>

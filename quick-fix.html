@@ -64,7 +64,7 @@
     </a>
 
     <!-- Desktop nav: visible on larger screens, mirrors the mobile menu links -->
-    <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-200">
+    <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-200">
       <a href="./index.html#listings" class="hover:text-white transition">Find a Home</a>
       <a href="./quick-fix.html" class="hover:text-white transition">Quick Fix</a>
       <a href="./partner-as-an-agent.html" class="hover:text-white transition">Partner as an Agent</a>
@@ -74,15 +74,15 @@
     </nav>
 
     <div class="flex items-center gap-2">
-      <a href="./index.html" class="hidden sm:inline-flex lg:hidden text-sm text-slate-400 hover:text-white transition px-2">← Back to site</a>
-      <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
+      <a href="./index.html" class="hidden sm:inline-flex md:hidden text-sm text-slate-400 hover:text-white transition px-2">← Back to site</a>
+      <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
         <span id="mobileMenuIcon">☰</span>
       </button>
     </div>
   </div>
 
   <!-- Mobile Menu (mobile/tablet only) -->
-  <div id="mobileMenu" class="hidden lg:hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
+  <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
     <nav class="flex flex-col px-6 py-4 gap-1 text-sm max-w-5xl mx-auto">
       <a href="./index.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Home</a>
       <a href="./index.html#listings" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Find a Home</a>
