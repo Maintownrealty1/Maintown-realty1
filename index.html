@@ -220,7 +220,7 @@
 
 <!-- ================= HERO ================= -->
 <!-- MainTown Realty Hero Section -->
-<section id="hero" class="relative overflow-hidden bg-[#0F172A] text-white py-20 px-6 md:px-12 text-center md:text-left flex flex-col items-center justify-center border-b border-slate-800">
+<section id="hero" class="relative overflow-hidden bg-[#0F172A] text-white py-10 sm:py-14 md:py-20 px-6 md:px-12 text-center md:text-left flex flex-col items-center justify-center border-b border-slate-800">
 
   <!-- Hero Background Slideshow (Lagos cityscape, 5s rotation) -->
   <div class="hero-slideshow" aria-hidden="true">
@@ -229,40 +229,40 @@
     <div class="hero-overlay"></div>
   </div>
 
-  <div class="relative z-10 max-w-4xl mx-auto space-y-6">
+  <div class="relative z-10 max-w-4xl mx-auto space-y-3.5 sm:space-y-5 md:space-y-6">
 
     <!-- Main Headline -->
-    <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight" style="text-shadow: 0 2px 20px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.6);">
+    <h1 class="text-[26px] leading-[1.15] sm:text-4xl md:text-6xl font-extrabold tracking-tight text-white sm:leading-tight" style="text-shadow: 0 2px 20px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.6);">
       Verified Homes. Flexible Payments. <span class="text-purple-400">Smart Living.</span>
     </h1>
 
     <!-- Subheadline -->
-    <p class="text-slate-200 text-base md:text-xl max-w-3xl leading-relaxed" style="text-shadow: 0 1px 12px rgba(0,0,0,0.6);">
+    <p class="text-slate-200 text-[13.5px] sm:text-base md:text-xl max-w-3xl leading-relaxed" style="text-shadow: 0 1px 12px rgba(0,0,0,0.6);">
       Find and secure trusted homes in Lagos — no upfront yearly stress.
     </p>
 
     <!-- Call to Action Buttons -->
-    <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 pt-4">
-      <a href="#listings" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-3.5 rounded-xl transition-all duration-200 text-center shadow-lg shadow-purple-600/30">
+    <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-2.5 sm:gap-4 pt-1 sm:pt-4">
+      <a href="#listings" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-2.5 sm:py-3.5 rounded-xl transition-all duration-200 text-center shadow-lg shadow-purple-600/30 text-sm sm:text-base">
         Explore Verified Listings
       </a>
-      <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20want%20to%20inquire%20about%20renting" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-8 py-3.5 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-2">
+      <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20want%20to%20inquire%20about%20renting" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-8 py-2.5 sm:py-3.5 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-2 text-sm sm:text-base">
         <span>Get Started on WhatsApp</span>
       </a>
     </div>
 
     <!-- Key Metrics / Trust Features -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8 border-t border-slate-800/80 text-xs md:text-sm text-slate-400">
-      <div class="flex items-center gap-2 justify-center md:justify-start">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 pt-4 sm:pt-6 md:pt-8 border-t border-slate-800/80 text-[10.5px] sm:text-xs md:text-sm text-slate-400">
+      <div class="flex items-center gap-1.5 sm:gap-2 justify-center md:justify-start">
         <span class="text-purple-400 font-bold">✓</span> Cadastral-Verified Titles
       </div>
-      <div class="flex items-center gap-2 justify-center md:justify-start">
+      <div class="flex items-center gap-1.5 sm:gap-2 justify-center md:justify-start">
         <span class="text-purple-400 font-bold">✓</span> Bank-Grade Escrow
       </div>
-      <div class="flex items-center gap-2 justify-center md:justify-start">
+      <div class="flex items-center gap-1.5 sm:gap-2 justify-center md:justify-start">
         <span class="text-purple-400 font-bold">✓</span> Human & AI Verified
       </div>
-      <div class="flex items-center gap-2 justify-center md:justify-start">
+      <div class="flex items-center gap-1.5 sm:gap-2 justify-center md:justify-start">
         <span class="text-purple-400 font-bold">✓</span> Lagos & Diaspora Support
       </div>
     </div>
@@ -1766,20 +1766,268 @@
   })();
 </script>
 
-<!-- ================= FLOATING WHATSAPP BUTTON ================= -->
-<a
-  id="whatsapp-floating-btn"
-  href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20would%20like%20to%20get%20started%20with%20onboarding%20and%20property%20listing."
-  target="_blank"
-  rel="noopener noreferrer"
-  aria-label="Chat with MainTown Realty on WhatsApp"
+<!-- ================= SITE CHAT WIDGET (synced to WhatsApp) ================= -->
+<button
+  id="chat-widget-trigger"
+  type="button"
+  aria-label="Chat with MainTown Realty"
+  aria-expanded="false"
   class="group fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#25D366] shadow-lg shadow-black/40 flex items-center justify-center transition-transform duration-200 hover:scale-105"
 >
   <span class="absolute inset-0 rounded-full bg-[#25D366] opacity-0 group-hover:opacity-60 group-hover:animate-ping"></span>
   <svg class="relative w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.3zM12 21.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.8-9.8 9.8z"/>
   </svg>
-</a>
+  <span id="chat-unread-dot" class="hidden absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-slate-950"></span>
+</button>
+
+<!-- Chat panel -->
+<div
+  id="chat-widget-panel"
+  class="hidden fixed z-50 bottom-0 right-0 sm:bottom-24 sm:right-6 w-full sm:w-[360px] h-[85dvh] sm:h-[540px] max-h-[640px] bg-slate-900 border border-white/10 sm:rounded-2xl shadow-2xl shadow-black/60 flex flex-col overflow-hidden"
+  role="dialog"
+  aria-label="Chat with MainTown Realty"
+  aria-hidden="true"
+>
+  <!-- Header -->
+  <div class="shrink-0 flex items-center justify-between gap-3 px-4 py-3.5 bg-slate-850 border-b border-white/10">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div class="w-9 h-9 rounded-full bg-brand-500/15 flex items-center justify-center shrink-0">
+        <svg class="w-4.5 h-4.5 text-brand-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v3.5c0 .199.079.39.22.53l2.5 2.5a.75.75 0 101.06-1.06l-2.28-2.28V6.75z" clip-rule="evenodd"/></svg>
+      </div>
+      <div class="min-w-0">
+        <p class="font-display font-semibold text-white text-sm truncate">MainTown Realty</p>
+        <p class="text-[11px] text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Synced with WhatsApp</p>
+      </div>
+    </div>
+    <button type="button" id="chat-widget-close" aria-label="Close chat" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition shrink-0">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <!-- Start-chat form (shown before a conversation exists) -->
+  <div id="chat-start-view" class="flex-1 overflow-y-auto px-4 py-5 flex flex-col">
+    <p class="text-white font-display font-semibold text-base">Let's get you started</p>
+    <p class="text-slate-400 text-sm mt-1.5 leading-relaxed">Chat with us right here on the site. Your messages are also delivered to your WhatsApp, so you can continue from there too if you ever want to.</p>
+    <div class="mt-5 space-y-3">
+      <div>
+        <label for="chat-name-input" class="text-xs font-semibold text-slate-400">Your name (optional)</label>
+        <input id="chat-name-input" type="text" placeholder="e.g. Ada" class="mt-1.5 w-full bg-slate-900 border border-slate-700 focus:border-brand-500 outline-none text-white text-sm rounded-lg px-3.5 py-2.5 placeholder:text-slate-500">
+      </div>
+      <div>
+        <label for="chat-phone-input" class="text-xs font-semibold text-slate-400">WhatsApp number *</label>
+        <input id="chat-phone-input" type="tel" placeholder="e.g. 2348012345678" class="mt-1.5 w-full bg-slate-900 border border-slate-700 focus:border-brand-500 outline-none text-white text-sm rounded-lg px-3.5 py-2.5 placeholder:text-slate-500">
+        <p class="text-[11px] text-slate-500 mt-1">Include country code, no spaces or +</p>
+      </div>
+      <div>
+        <label for="chat-first-message" class="text-xs font-semibold text-slate-400">Message *</label>
+        <textarea id="chat-first-message" rows="3" placeholder="How can we help?" class="mt-1.5 w-full bg-slate-900 border border-slate-700 focus:border-brand-500 outline-none text-white text-sm rounded-lg px-3.5 py-2.5 placeholder:text-slate-500 resize-none"></textarea>
+      </div>
+      <p id="chat-start-error" class="hidden text-xs text-red-400"></p>
+      <button type="button" id="chat-start-submit" class="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 text-white font-semibold text-sm py-2.5 transition">
+        Start chat
+      </button>
+    </div>
+  </div>
+
+  <!-- Message thread (shown once a conversation exists) -->
+  <div id="chat-thread-view" class="hidden flex-1 flex flex-col min-h-0">
+    <div id="chat-messages" class="flex-1 overflow-y-auto px-3.5 py-4 space-y-3"></div>
+    <div class="shrink-0 border-t border-white/10 p-2.5 flex items-end gap-2">
+      <textarea id="chat-input" rows="1" placeholder="Type a message…" class="flex-1 bg-slate-800 border border-slate-700 focus:border-brand-500 outline-none text-white text-sm rounded-xl px-3.5 py-2.5 placeholder:text-slate-500 resize-none max-h-24"></textarea>
+      <button type="button" id="chat-send-btn" aria-label="Send message" class="shrink-0 w-10 h-10 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center transition disabled:opacity-40">
+        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---------- Config ----------
+  const CHAT_SEND_ENDPOINT = `${SUPABASE_URL}/functions/v1/chat-send`;
+  const LS_CONVO_ID = 'mtr_chat_conversation_id';
+  const LS_PHONE = 'mtr_chat_phone';
+  const LS_NAME = 'mtr_chat_name';
+
+  // ---------- Elements ----------
+  const trigger = document.getElementById('chat-widget-trigger');
+  const panel = document.getElementById('chat-widget-panel');
+  const closeBtn = document.getElementById('chat-widget-close');
+  const startView = document.getElementById('chat-start-view');
+  const threadView = document.getElementById('chat-thread-view');
+  const nameInput = document.getElementById('chat-name-input');
+  const phoneInput = document.getElementById('chat-phone-input');
+  const firstMsgInput = document.getElementById('chat-first-message');
+  const startBtn = document.getElementById('chat-start-submit');
+  const startError = document.getElementById('chat-start-error');
+  const messagesEl = document.getElementById('chat-messages');
+  const chatInput = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('chat-send-btn');
+  const unreadDot = document.getElementById('chat-unread-dot');
+
+  let conversationId = localStorage.getItem(LS_CONVO_ID) || null;
+  let channel = null;
+  let panelOpen = false;
+
+  // ---------- Helpers ----------
+  function formatTime(iso) {
+    try {
+      return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch { return ''; }
+  }
+
+  function appendMessage(msg, { scroll = true } = {}) {
+    const isVisitor = msg.sender === 'visitor';
+    const wrap = document.createElement('div');
+    wrap.className = `flex ${isVisitor ? 'justify-end' : 'justify-start'}`;
+    wrap.innerHTML = `
+      <div class="max-w-[80%] ${isVisitor ? 'bg-gradient-to-r from-brand-500 to-brand-600 text-white' : 'bg-slate-800 text-slate-100'} rounded-2xl ${isVisitor ? 'rounded-br-sm' : 'rounded-bl-sm'} px-3.5 py-2.5">
+        <p class="text-sm leading-relaxed whitespace-pre-wrap break-words"></p>
+        <p class="text-[10px] mt-1 ${isVisitor ? 'text-white/70' : 'text-slate-500'}">${formatTime(msg.created_at)}</p>
+      </div>`;
+    wrap.querySelector('p.text-sm').textContent = msg.body;
+    messagesEl.appendChild(wrap);
+    if (scroll) messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function loadHistory() {
+    messagesEl.innerHTML = '';
+    const { data, error } = await sb
+      .from('chat_messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+    if (error) { console.error(error); return; }
+    data.forEach((m) => appendMessage(m, { scroll: false }));
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function subscribeRealtime() {
+    if (channel) sb.removeChannel(channel);
+    channel = sb
+      .channel(`chat-${conversationId}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'chat_messages',
+        filter: `conversation_id=eq.${conversationId}`,
+      }, (payload) => {
+        appendMessage(payload.new);
+        if (payload.new.sender === 'owner' && !panelOpen) {
+          unreadDot.classList.remove('hidden');
+        }
+      })
+      .subscribe();
+  }
+
+  function showThreadView() {
+    startView.classList.add('hidden');
+    threadView.classList.remove('hidden');
+    threadView.classList.add('flex');
+  }
+
+  function openPanel() {
+    panel.classList.remove('hidden');
+    panel.setAttribute('aria-hidden', 'false');
+    trigger.setAttribute('aria-expanded', 'true');
+    panelOpen = true;
+    unreadDot.classList.add('hidden');
+    if (conversationId) {
+      showThreadView();
+      loadHistory();
+      chatInput.focus();
+    }
+  }
+
+  function closePanel() {
+    panel.classList.add('hidden');
+    panel.setAttribute('aria-hidden', 'true');
+    trigger.setAttribute('aria-expanded', 'false');
+    panelOpen = false;
+  }
+
+  async function startChat() {
+    const name = nameInput.value.trim();
+    const phone = phoneInput.value.trim().replace(/[^0-9]/g, '');
+    const text = firstMsgInput.value.trim();
+    startError.classList.add('hidden');
+
+    if (!/^[0-9]{10,15}$/.test(phone)) {
+      startError.textContent = 'Please enter a valid WhatsApp number with country code.';
+      startError.classList.remove('hidden');
+      return;
+    }
+    if (!text) {
+      startError.textContent = 'Please enter a message.';
+      startError.classList.remove('hidden');
+      return;
+    }
+
+    startBtn.disabled = true;
+    startBtn.textContent = 'Starting…';
+    try {
+      const res = await fetch(CHAT_SEND_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ visitor_name: name || null, visitor_phone: phone, text }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Something went wrong');
+
+      conversationId = json.conversation_id;
+      localStorage.setItem(LS_CONVO_ID, conversationId);
+      localStorage.setItem(LS_PHONE, phone);
+      if (name) localStorage.setItem(LS_NAME, name);
+
+      showThreadView();
+      subscribeRealtime();
+      await loadHistory();
+    } catch (err) {
+      startError.textContent = 'Could not send your message. Please try again.';
+      startError.classList.remove('hidden');
+      console.error(err);
+    } finally {
+      startBtn.disabled = false;
+      startBtn.textContent = 'Start chat';
+    }
+  }
+
+  async function sendMessage() {
+    const text = chatInput.value.trim();
+    if (!text || !conversationId) return;
+    chatInput.value = '';
+    sendBtn.disabled = true;
+    try {
+      const res = await fetch(CHAT_SEND_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ conversation_id: conversationId, text }),
+      });
+      if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || 'Failed to send'); }
+      // The message will also arrive via realtime, but append immediately for snappy UX.
+    } catch (err) {
+      console.error(err);
+      chatInput.value = text; // restore so they can retry
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  // ---------- Wire up ----------
+  trigger.addEventListener('click', () => (panelOpen ? closePanel() : openPanel()));
+  closeBtn.addEventListener('click', closePanel);
+  startBtn.addEventListener('click', startChat);
+  sendBtn.addEventListener('click', sendMessage);
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  // Resume an existing conversation on load, and listen quietly for owner replies
+  // even before the visitor opens the panel, so the unread dot can light up.
+  if (conversationId) {
+    subscribeRealtime();
+  }
+})();
+</script>
 
 </body>
 </html>
