@@ -99,9 +99,9 @@
   <main class="max-w-4xl mx-auto px-6 py-10">
 
     <!-- ---- Add Listing Form ---- -->
-    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-10">
-      <h2 class="font-display font-semibold text-lg text-white mb-1">Add a New Listing</h2>
-      <p class="text-sm text-slate-500 mb-6">This publishes straight to your live site — no code, no re-upload.</p>
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-10" id="listingFormSection">
+      <h2 class="font-display font-semibold text-lg text-white mb-1" id="formHeading">Add a New Listing</h2>
+      <p class="text-sm text-slate-500 mb-6" id="formSubtext">This publishes straight to your live site — no code, no re-upload.</p>
 
       <div class="grid sm:grid-cols-2 gap-x-5">
         <div class="field">
@@ -182,6 +182,7 @@
         <label>Photos (you can select multiple)</label>
         <input type="file" id="f-images" accept="image/*" multiple class="!p-2">
         <div id="imagePreview" class="flex flex-wrap gap-2 mt-3"></div>
+        <p id="imagePreviewNote" class="text-xs text-slate-500 mt-1 hidden">These are the current photos. Choose new files above only if you want to replace them.</p>
       </div>
 
       <div class="field">
@@ -190,7 +191,10 @@
         <p id="videoFileName" class="text-xs text-slate-500 mt-1"></p>
       </div>
 
-      <button id="submitBtn" class="btn-primary w-full sm:w-auto mt-2">Publish Listing</button>
+      <div class="flex flex-wrap items-center gap-3 mt-2">
+        <button id="submitBtn" class="btn-primary w-full sm:w-auto">Publish Listing</button>
+        <button id="cancelEditBtn" type="button" class="btn-secondary w-full sm:w-auto hidden">Cancel Edit</button>
+      </div>
       <div id="uploadProgress" class="text-xs text-slate-500 mt-3 hidden"></div>
     </section>
 
@@ -321,10 +325,10 @@
     }
   });
 
-  // ---------- Monthly / Annual rent — independent manual fields ----------
-  // Monthly Rent and Annual Rent no longer auto-calculate each other.
-  // The fee preview still suggests Agent/Legal fees, based on the Annual
-  // Rent if you've typed one in, otherwise Monthly × 12 as a fallback.
+  // ---------- Monthly / Annual rent — fully independent manual fields ----------
+  // Monthly Rent and Annual Rent never auto-calculate each other or anything
+  // else. The fee preview only suggests Agent/Legal fees off the Annual
+  // Rent field itself — it no longer multiplies Monthly Rent by 12.
   const rentInput = document.getElementById('f-rent');
   const annualRentInput = document.getElementById('f-rent-annual');
   const feesTextarea = document.getElementById('f-fees');
@@ -332,18 +336,23 @@
 
   function updateFeePreview() {
     const monthly = parseInt(rentInput.value, 10) || 0;
-    const annualEntered = parseInt(annualRentInput.value, 10) || 0;
-    const annual = annualEntered || (monthly ? monthly * 12 : 0);
+    const annual = parseInt(annualRentInput.value, 10) || 0;
     if (!monthly && !annual) { feePreview.classList.add('hidden'); return; }
-    const agent = Math.round(annual * 0.10);
-    const legal = Math.round(annual * 0.05);
     feePreview.classList.remove('hidden');
     document.getElementById('fp-monthly').textContent = monthly ? '₦' + monthly.toLocaleString('en-US') : '—';
-    document.getElementById('fp-annual').textContent = annual ? '₦' + annual.toLocaleString('en-US') : '—';
+    if (!annual) {
+      document.getElementById('fp-annual').textContent = '—';
+      document.getElementById('fp-agent').textContent = '—';
+      document.getElementById('fp-legal').textContent = '—';
+      return;
+    }
+    const agent = Math.round(annual * 0.10);
+    const legal = Math.round(annual * 0.05);
+    document.getElementById('fp-annual').textContent = '₦' + annual.toLocaleString('en-US');
     document.getElementById('fp-agent').textContent = '₦' + agent.toLocaleString('en-US');
     document.getElementById('fp-legal').textContent = '₦' + legal.toLocaleString('en-US');
-    // Fees always auto-calculate from the current rent — feel free to
-    // hand-edit the box afterwards if a listing needs a custom fee.
+    // Only auto-fills the fees box when an Annual Rent is actually entered —
+    // feel free to hand-edit the box afterwards for a custom fee.
     feesTextarea.value = `Agent Fee: 10% (₦${agent.toLocaleString('en-US')})\nLegal Fee: 5% (₦${legal.toLocaleString('en-US')})`;
   }
 
@@ -402,21 +411,23 @@
     submitBtn.disabled = true;
     progressEl.classList.remove('hidden');
     try {
-      progressEl.textContent = 'Uploading photos...';
-      const imageUrls = [];
-      for (let i = 0; i < imageFiles.length; i++) {
-        progressEl.textContent = `Uploading photo ${i + 1} of ${imageFiles.length}...`;
-        imageUrls.push(await uploadFile(imageFiles[i]));
+      let imageUrls = editingId ? editingExistingImages : [];
+      if (imageFiles.length) {
+        imageUrls = [];
+        progressEl.textContent = 'Uploading photos...';
+        for (let i = 0; i < imageFiles.length; i++) {
+          progressEl.textContent = `Uploading photo ${i + 1} of ${imageFiles.length}...`;
+          imageUrls.push(await uploadFile(imageFiles[i]));
+        }
       }
 
-      let videoUrl = null;
+      let videoUrl = editingId ? editingExistingVideo : null;
       if (videoFile) {
         progressEl.textContent = 'Uploading video (this can take a minute)...';
         videoUrl = await uploadFile(videoFile);
       }
 
-      progressEl.textContent = 'Saving listing...';
-      const { error } = await sb.from('listings').insert({
+      const payload = {
         title, location, beds,
         rent: `₦${rentNum.toLocaleString('en-US')}/mo`,
         fees, color,
@@ -424,11 +435,21 @@
         images: imageUrls,
         video: videoUrl,
         status: document.getElementById('f-status').value,
-      });
-      if (error) throw error;
+      };
 
-      showToast('Listing published! It\'s live on your site now.');
-      resetForm();
+      if (editingId) {
+        progressEl.textContent = 'Saving changes...';
+        const { error } = await sb.from('listings').update(payload).eq('id', editingId);
+        if (error) throw error;
+        showToast('Listing updated! Your changes are live.');
+        exitEditMode();
+      } else {
+        progressEl.textContent = 'Saving listing...';
+        const { error } = await sb.from('listings').insert(payload);
+        if (error) throw error;
+        showToast('Listing published! It\'s live on your site now.');
+        resetForm();
+      }
       loadExistingListings();
     } catch (err) {
       console.error(err);
@@ -454,7 +475,12 @@
     renderFeatureChips();
   }
 
-  // ---------- Existing listings + delete ----------
+  // ---------- Existing listings + edit + delete ----------
+  let listingsCache = [];
+  let editingId = null;
+  let editingExistingImages = [];
+  let editingExistingVideo = null;
+
   async function loadExistingListings() {
     const listEl = document.getElementById('existingList');
     listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
@@ -463,6 +489,7 @@
       listEl.innerHTML = `<p class="text-sm text-red-400">Could not load listings: ${error.message}</p>`;
       return;
     }
+    listingsCache = data || [];
     document.getElementById('listingsCount').textContent = data.length;
     if (!data.length) {
       listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet — add your first one above.</p>';
@@ -482,6 +509,7 @@
           <option value="sold" ${l.status === 'sold' ? 'selected' : ''}>Sold</option>
           <option value="rented" ${l.status === 'rented' ? 'selected' : ''}>Rented</option>
         </select>
+        <button class="edit-listing-btn btn-secondary shrink-0" data-id="${l.id}">Edit</button>
         <button class="delete-listing-btn btn-secondary shrink-0" data-id="${l.id}" data-title="${l.title}">Delete</button>
       </div>
     `).join('');
@@ -507,6 +535,12 @@
   });
 
   document.getElementById('existingList').addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('.edit-listing-btn');
+    if (editBtn) {
+      const listing = listingsCache.find(l => String(l.id) === String(editBtn.dataset.id));
+      if (listing) startEdit(listing);
+      return;
+    }
     const btn = e.target.closest('.delete-listing-btn');
     if (!btn) return;
     if (!confirm(`Delete "${btn.dataset.title}"? This can't be undone.`)) return;
@@ -522,6 +556,58 @@
     showToast('Listing deleted.');
     loadExistingListings();
   });
+
+  // ---------- Edit an existing listing ----------
+  function startEdit(listing) {
+    editingId = listing.id;
+    editingExistingImages = Array.isArray(listing.images) ? listing.images : [];
+    editingExistingVideo = listing.video || null;
+
+    document.getElementById('f-title').value = listing.title || '';
+    document.getElementById('f-location').value = listing.location || '';
+    document.getElementById('f-beds').value = listing.beds || 0;
+    const rentDigits = parseInt(String(listing.rent || '').replace(/[^0-9]/g, ''), 10);
+    rentInput.value = rentDigits || '';
+    annualRentInput.value = '';
+    document.getElementById('f-caution-fee').value = '';
+    document.getElementById('f-service-charge').value = '';
+    document.getElementById('f-service-charge-freq').value = 'yr';
+    feesTextarea.value = (listing.fees || []).join('\n');
+    updateFeePreview();
+    document.getElementById('f-color').value = listing.color || 'from-brand-500/30 to-slate-900';
+    document.getElementById('f-status').value = listing.status || 'available';
+    selectedFeatures = Array.isArray(listing.features) ? [...listing.features] : [];
+    renderFeatureChips();
+
+    document.getElementById('f-images').value = '';
+    document.getElementById('f-video').value = '';
+    const imagePreview = document.getElementById('imagePreview');
+    imagePreview.innerHTML = editingExistingImages.map(url =>
+      `<img src="${url}" class="w-16 h-16 object-cover rounded-lg border border-slate-700">`
+    ).join('');
+    document.getElementById('imagePreviewNote').classList.toggle('hidden', !editingExistingImages.length);
+    document.getElementById('videoFileName').textContent = editingExistingVideo ? 'Current video is attached — choose a new file above only to replace it.' : '';
+
+    document.getElementById('formHeading').textContent = 'Edit Listing';
+    document.getElementById('formSubtext').textContent = `Editing "${listing.title}" — make your changes and save.`;
+    document.getElementById('submitBtn').textContent = 'Save Changes';
+    document.getElementById('cancelEditBtn').classList.remove('hidden');
+    document.getElementById('listingFormSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function exitEditMode() {
+    editingId = null;
+    editingExistingImages = [];
+    editingExistingVideo = null;
+    document.getElementById('formHeading').textContent = 'Add a New Listing';
+    document.getElementById('formSubtext').textContent = 'This publishes straight to your live site — no code, no re-upload.';
+    document.getElementById('submitBtn').textContent = 'Publish Listing';
+    document.getElementById('cancelEditBtn').classList.add('hidden');
+    document.getElementById('imagePreviewNote').classList.add('hidden');
+    resetForm();
+  }
+
+  document.getElementById('cancelEditBtn').addEventListener('click', exitEditMode);
 
   // ---------- Sign-Ups & Onboarding (KYC + Legal Agreement) ----------
   // Reads the "signups" table that signup.html writes to: login email,
