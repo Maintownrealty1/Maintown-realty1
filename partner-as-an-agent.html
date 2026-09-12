@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partner as an Agent — MainTown Realty</title>
+<meta name="description" content="Join MainTown Realty as a verified agent. List properties, reach diaspora buyers, and get featured with a live feed of your listings.">
+<link rel="icon" type="image/png" sizes="192x192" href="./favicon-192.png">
+<link rel="apple-touch-icon" href="./favicon-192.png">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          slate: { 950: '#0B1120', 900: '#0F172A', 850: '#141E33', 800: '#1B2740', 700: '#28395C' },
+          brand: { 300: '#C4B5FD', 400: '#A855F7', 500: '#8B5CF6', 600: '#7C3AED', 700: '#6D28D9' },
+          amber: { 400: '#FBBF24', 500: '#F59E0B' },
+        },
+        fontFamily: {
+          display: ['"Space Grotesk"', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { background-color: #0F172A; }
+  .live-dot { position: relative; }
+  .live-dot::before {
+    content: ""; position: absolute; inset: 0; border-radius: 9999px;
+    background: #34D399; opacity: 0.6; animation: livePulse 1.6s ease-out infinite;
+  }
+  @keyframes livePulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="font-body text-slate-200 antialiased min-h-screen flex flex-col">
+
+  <!-- ================= NAV ================= -->
+  <header class="border-b border-white/5 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="./index.html" class="flex items-center gap-2 font-display font-bold text-lg">
+        <img src="./logo.webp" alt="MainTown Realty" class="h-7 w-7 max-h-7 object-contain rounded-md shrink-0">
+        <span class="text-xl font-extrabold text-white tracking-tight">MainTown <span class="text-purple-400">Realty</span></span>
+      </a>
+      <a href="./index.html" class="text-sm text-slate-400 hover:text-white transition">&larr; Back to Home</a>
+    </div>
+  </header>
+
+  <!-- ================= HERO ================= -->
+  <section class="relative overflow-hidden border-b border-white/5 px-6 pt-14 pb-12 sm:pt-20 sm:pb-16 text-center">
+    <div class="absolute inset-0 cadastral-bg pointer-events-none" style="background-image: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(124,58,237,0.16), transparent 70%);"></div>
+    <div class="relative max-w-2xl mx-auto">
+      <span class="inline-block text-[11px] font-mono uppercase tracking-widest text-brand-400 bg-brand-500/10 border border-brand-500/30 rounded-full px-3 py-1 mb-6">Work With Us</span>
+      <h1 class="font-display font-bold text-3xl sm:text-5xl text-white mb-4">Partner as an Agent</h1>
+      <p class="text-slate-400 leading-relaxed mb-8 max-w-xl mx-auto">
+        List verified properties, get matched with diaspora and local renters, and build your reputation with a public, verified profile — backed by a live feed of everything you have on the platform.
+      </p>
+      <a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27m%20an%20agent%20interested%20in%20partnering%20with%20you." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-7 py-3.5 rounded-xl transition shadow-lg shadow-brand-600/30">
+        Apply to Partner on WhatsApp
+      </a>
+    </div>
+  </section>
+
+  <!-- ================= VERIFIED AGENTS ================= -->
+  <section class="px-6 py-16 sm:py-20 border-b border-white/5">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-10 text-center">
+        <h2 class="font-display font-bold text-2xl sm:text-3xl text-white mb-2">Verified Agents</h2>
+        <p class="text-slate-400 max-w-xl mx-auto">Every agent on MainTown Realty is checked before they can list — so renters can trust the name on the profile.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
+        <!-- Agent card: Mamah Obinna Jerry -->
+        <div class="rounded-2xl border border-white/10 bg-slate-850/50 overflow-hidden hover:border-brand-500/40 transition">
+          <div class="relative h-44 bg-slate-900">
+            <img src="./assets/agent-mamah-obinna-jerry.jpg" alt="Mamah Obinna Jerry" class="w-full h-full object-cover object-top">
+            <span class="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-semibold bg-slate-950/90 border border-emerald-400/40 text-emerald-400 px-2.5 py-1 rounded-full shadow">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2 3.5 5v6.4c0 5 3.4 9.4 8.5 10.6 5.1-1.2 8.5-5.6 8.5-10.6V5L12 2z"/><path fill="#0F172A" d="m10.6 13.8-2.2-2.2-1.2 1.2 3.4 3.4 6-6-1.2-1.2z"/></svg>
+              Verified Agent
+            </span>
+          </div>
+          <div class="p-5">
+            <h3 class="font-display font-semibold text-white text-lg leading-snug">Mamah Obinna Jerry</h3>
+            <div class="flex items-center gap-2 mt-2 mb-4">
+              <img src="./assets/hd-properties-logo.jpg" alt="H.D Properties" class="w-6 h-6 rounded-full object-cover shrink-0">
+              <span class="text-xs font-mono text-slate-400">H.D Properties</span>
+            </div>
+            <p class="text-sm text-slate-500 leading-relaxed mb-4">Onboarded and verified on MainTown Realty. Listings reviewed for accuracy before they go live.</p>
+            <a href="https://wa.me/2348066611017?text=Hi%2C%20I%27d%20like%20to%20speak%20with%20Mamah%20Obinna%20Jerry%20about%20a%20listing." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-400 hover:text-brand-300 transition">
+              Chat on WhatsApp
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Open slot card -->
+        <div class="rounded-2xl border border-dashed border-white/15 bg-slate-900/40 flex flex-col items-center justify-center text-center p-8 hover:border-brand-500/40 transition">
+          <span class="w-12 h-12 rounded-full bg-brand-500/15 flex items-center justify-center text-brand-400 mb-4">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+          </span>
+          <h3 class="font-display font-semibold text-white mb-1">Agent Slot Open</h3>
+          <p class="text-sm text-slate-500 leading-relaxed mb-4">Get verified and featured here with your own profile and live listings feed.</p>
+          <a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27m%20an%20agent%20interested%20in%20partnering%20with%20you." target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-brand-400 hover:text-brand-300 transition">Apply Now →</a>
+        </div>
+
+        <!-- Open slot card -->
+        <div class="rounded-2xl border border-dashed border-white/15 bg-slate-900/40 flex flex-col items-center justify-center text-center p-8 hover:border-brand-500/40 transition">
+          <span class="w-12 h-12 rounded-full bg-brand-500/15 flex items-center justify-center text-brand-400 mb-4">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+          </span>
+          <h3 class="font-display font-semibold text-white mb-1">Agent Slot Open</h3>
+          <p class="text-sm text-slate-500 leading-relaxed mb-4">Get verified and featured here with your own profile and live listings feed.</p>
+          <a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27m%20an%20agent%20interested%20in%20partnering%20with%20you." target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-brand-400 hover:text-brand-300 transition">Apply Now →</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LIVE LISTINGS FEED ================= -->
+  <section class="px-6 py-16 sm:py-20 border-b border-white/5 bg-slate-950/40">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 live-dot"></span>
+        <span class="text-[11px] font-mono uppercase tracking-widest text-emerald-400">Live Feed</span>
+      </div>
+      <div class="mb-10 text-center">
+        <h2 class="font-display font-bold text-2xl sm:text-3xl text-white mb-2">Listings Currently on the Platform</h2>
+        <p class="text-slate-400 max-w-xl mx-auto">Pulled straight from MainTown Realty's live database — this updates automatically as agents add new properties.</p>
+      </div>
+
+      <div id="agentListingsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Populated by JS -->
+      </div>
+
+      <p id="agentListingsEmpty" class="hidden text-center text-slate-500 text-sm py-10">No live listings found right now — check back shortly.</p>
+
+      <div class="text-center mt-10">
+        <a href="./index.html#listings" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-400 hover:text-brand-300 transition">
+          View all listings on MainTown Realty
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WHY PARTNER ================= -->
+  <section class="px-6 py-16 sm:py-20">
+    <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6">
+        <h3 class="font-display font-semibold text-white mb-2">Verified Badge</h3>
+        <p class="text-sm text-slate-500 leading-relaxed">Stand out with a public "Verified Agent" badge renters can trust.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6">
+        <h3 class="font-display font-semibold text-white mb-2">Live Listings Feed</h3>
+        <p class="text-sm text-slate-500 leading-relaxed">Every property you list shows up automatically here and on the main site.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6">
+        <h3 class="font-display font-semibold text-white mb-2">Diaspora Reach</h3>
+        <p class="text-sm text-slate-500 leading-relaxed">Get matched with relocating Nigerians abroad looking to secure housing before arrival.</p>
+      </div>
+    </div>
+
+    <div class="text-center mt-14">
+      <a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27m%20an%20agent%20interested%20in%20partnering%20with%20you." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-7 py-3.5 rounded-xl transition shadow-lg shadow-brand-600/30">
+        Apply to Partner on WhatsApp
+      </a>
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-white/10 px-6 py-6 text-center text-xs text-slate-500">
+    © 2026 MainTown Realty. Lagos, Nigeria. All rights reserved.
+  </footer>
+
+<script>
+  const SUPABASE_URL = 'https://obtggomfwvravjcnypid.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_GaTnU4FmPc2slbn8BisXXg_DmxH1vl8';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const FALLBACK_AGENT_LISTINGS = [
+    { title: "Spacious 1-Bedroom Self-Compound Mansion", location: "Osapa London, Lagos", rent: "₦3,600,000/mo" },
+    { title: "Master's Studio", location: "Osapa London, Lekki, Lagos", rent: "₦900,000/mo" },
+    { title: "Semi-Room Studio", location: "Osapa London, Lekki, Lagos", rent: "₦800,000/mo" },
+  ];
+
+  function renderAgentListings(items) {
+    const grid = document.getElementById('agentListingsGrid');
+    const empty = document.getElementById('agentListingsEmpty');
+    if (!items || items.length === 0) {
+      grid.innerHTML = '';
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+    grid.innerHTML = items.slice(0, 6).map(l => `
+      <div class="rounded-xl border border-white/10 bg-slate-850/50 p-5 hover:border-brand-500/40 transition">
+        <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/30 rounded-full px-2 py-0.5 mb-3">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Live
+        </span>
+        <h3 class="font-display font-semibold text-white text-sm leading-snug mb-1">${l.title || 'Verified Listing'}</h3>
+        <p class="text-xs text-slate-500 mb-2">${l.location || 'Lagos, Nigeria'}</p>
+        <p class="text-sm font-mono text-brand-400">${l.rent || l.price || ''}</p>
+      </div>
+    `).join('');
+  }
+
+  renderAgentListings(FALLBACK_AGENT_LISTINGS);
+
+  (async function fetchAgentListings() {
+    try {
+      const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false }).limit(6);
+      if (error) throw error;
+      if (data && data.length > 0) renderAgentListings(data);
+    } catch (err) {
+      console.warn('Could not load live listings from Supabase, showing fallback listings.', err);
+    }
+  })();
+</script>
+
+</body>
+</html>
