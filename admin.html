@@ -439,8 +439,11 @@
 
       if (editingId) {
         progressEl.textContent = 'Saving changes...';
-        const { error } = await sb.from('listings').update(payload).eq('id', editingId);
+        const { data: updatedRows, error } = await sb.from('listings').update(payload).eq('id', editingId).select();
         if (error) throw error;
+        if (!updatedRows || !updatedRows.length) {
+          throw new Error('No listing was actually updated on the server — this is almost always a missing UPDATE permission (RLS policy) on the "listings" table in Supabase, not a bug in the form. Your edits were not lost; try again after fixing the policy.');
+        }
         showToast('Listing updated! Your changes are live.');
         exitEditMode();
       } else {
@@ -527,9 +530,10 @@
     const select = e.target.closest('.status-select');
     if (!select) return;
     select.disabled = true;
-    const { error } = await sb.from('listings').update({ status: select.value }).eq('id', select.dataset.id);
+    const { data: updatedRows, error } = await sb.from('listings').update({ status: select.value }).eq('id', select.dataset.id).select();
     select.disabled = false;
     if (error) { showToast('Could not update status: ' + error.message, true); return; }
+    if (!updatedRows || !updatedRows.length) { showToast('Status was not saved — check the UPDATE permission (RLS policy) on "listings" in Supabase.', true); return; }
     showToast('Status updated.');
     loadExistingListings();
   });
