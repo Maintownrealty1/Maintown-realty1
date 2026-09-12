@@ -74,6 +74,11 @@
   .field-input { width: 100%; background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 12px; padding: 13px 16px; font-size: 14px; color: #fff; outline: none; transition: all 0.15s ease; }
   .field-input::placeholder { color: #475569; }
   .field-input:focus { border-color: #a855f7; box-shadow: 0 0 0 3px rgba(168,85,247,0.25); }
+  .field-password-wrap { position: relative; }
+  .field-password-wrap .field-input { padding-right: 44px; }
+  .password-toggle-btn { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: #64748b; cursor: pointer; border-radius: 8px; transition: color 0.15s ease; }
+  .password-toggle-btn:hover { color: #cbd5e1; }
+  .password-toggle-btn svg { width: 18px; height: 18px; pointer-events: none; }
   .phone-row { display: flex; gap: 8px; }
   .country-select { background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 12px; padding: 13px 8px; font-size: 14px; color: #fff; outline: none; flex-shrink: 0; }
   .phone-input { flex: 1; min-width: 0; }
@@ -352,11 +357,23 @@
     </div>
     <div class="field">
       <label class="field-label">Create Password</label>
-      <input class="field-input" id="reg-password" type="password" required minlength="8" placeholder="At least 8 characters" autocomplete="new-password">
+      <div class="field-password-wrap">
+        <input class="field-input" id="reg-password" type="password" required minlength="8" placeholder="At least 8 characters" autocomplete="new-password">
+        <button type="button" class="password-toggle-btn" data-toggle-for="reg-password" aria-label="Show password">
+          <i data-lucide="eye" class="pw-icon-show"></i>
+          <i data-lucide="eye-off" class="pw-icon-hide" style="display:none;"></i>
+        </button>
+      </div>
     </div>
     <div class="field">
       <label class="field-label">Confirm Password</label>
-      <input class="field-input" id="reg-password-confirm" type="password" required placeholder="Re-enter your password" autocomplete="new-password">
+      <div class="field-password-wrap">
+        <input class="field-input" id="reg-password-confirm" type="password" required placeholder="Re-enter your password" autocomplete="new-password">
+        <button type="button" class="password-toggle-btn" data-toggle-for="reg-password-confirm" aria-label="Show password">
+          <i data-lucide="eye" class="pw-icon-show"></i>
+          <i data-lucide="eye-off" class="pw-icon-hide" style="display:none;"></i>
+        </button>
+      </div>
       <p id="password-hint" class="kyc-note" style="display:none; margin:8px 0 0;">Passwords must match and be at least 8 characters.</p>
     </div>
 
@@ -504,6 +521,18 @@
   const passwordInput = document.getElementById('reg-password');
   const passwordConfirmInput = document.getElementById('reg-password-confirm');
   const passwordHint = document.getElementById('password-hint');
+
+  document.querySelectorAll('.password-toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.toggleFor);
+      if (!target) return;
+      const showing = target.type === 'text';
+      target.type = showing ? 'password' : 'text';
+      btn.querySelector('.pw-icon-show').style.display = showing ? '' : 'none';
+      btn.querySelector('.pw-icon-hide').style.display = showing ? 'none' : '';
+      btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    });
+  });
 
   function updateContinueState() {
     const formFilled = fullNameInput.value.trim() && phoneInput.value.trim();
