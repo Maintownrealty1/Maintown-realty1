@@ -9,6 +9,8 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
@@ -130,6 +132,14 @@
   /* Success screen */
   .success-icon-wrap { width: 72px; height: 72px; border-radius: 999px; background: rgba(16,185,129,0.15); border: 1px solid #10b981; display: flex; align-items: center; justify-content: center; margin: 24px auto 24px; }
   .success-icon-wrap svg { width: 36px; height: 36px; color: #10b981; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(16px);
+    background: #141E33; border: 1px solid #10b981; color: #fff; padding: 13px 18px; border-radius: 12px;
+    font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none; transition: all 0.3s ease; z-index: 200;
+    display: flex; align-items: center; gap: 8px; max-width: 88%; box-shadow: 0 14px 30px rgba(0,0,0,0.45);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -153,10 +163,10 @@
 
     <div class="progress-wrap">
       <div class="progress-labels">
-        <span class="progress-step">Step 1 of 3: Tell us about you</span>
-        <span class="progress-pct">33%</span>
+        <span class="progress-step">Step 1 of 4: Tell us about you</span>
+        <span class="progress-pct">25%</span>
       </div>
-      <div class="progress-track"><div class="progress-fill" style="width:33%"></div></div>
+      <div class="progress-track"><div class="progress-fill" style="width:25%"></div></div>
     </div>
 
     <h1 class="title">Create your account</h1>
@@ -199,10 +209,6 @@
         <input class="field-input" id="reg-occupation" type="text" placeholder="e.g. Software Engineer">
       </div>
       <div class="field">
-        <label class="field-label">Email Address</label>
-        <input class="field-input" id="reg-email" type="email" required placeholder="you@example.com">
-      </div>
-      <div class="field">
         <label class="field-label">Phone Number</label>
         <div class="phone-row">
           <select class="country-select" id="country-code">
@@ -213,6 +219,7 @@
           <input class="field-input phone-input" id="reg-phone" type="tel" required placeholder="801 234 5678">
         </div>
       </div>
+      <p class="kyc-note" style="margin:-8px 0 20px;"><i data-lucide="info" class="w-3.5 h-3.5" style="display:inline; vertical-align:-2px;"></i> You'll set up your email and password login in a later step.</p>
       <button type="submit" id="continue-btn" class="btn-primary" disabled>Continue to Verification</button>
       <p id="role-hint" class="role-hint">Select a role above to continue</p>
     </form>
@@ -232,10 +239,10 @@
 
     <div class="progress-wrap">
       <div class="progress-labels">
-        <span class="progress-step">Step 2 of 3: Verification Requirements</span>
-        <span class="progress-pct">66%</span>
+        <span class="progress-step">Step 2 of 4: Verification Requirements</span>
+        <span class="progress-pct">50%</span>
       </div>
-      <div class="progress-track"><div class="progress-fill" style="width:66%"></div></div>
+      <div class="progress-track"><div class="progress-fill" style="width:50%"></div></div>
     </div>
 
     <div class="kyc-icon-wrap">
@@ -248,7 +255,7 @@
     <div id="kyc-role-badge" class="kyc-role-badge" style="justify-content:center; margin-left:auto; margin-right:auto;"></div>
 
     <div id="kyc-list" class="kyc-list"></div>
-    <p class="kyc-note"><i data-lucide="shield-check" class="w-3.5 h-3.5" style="display:inline; vertical-align:-2px;"></i> For your security, documents are shared directly with our verification team on WhatsApp — never uploaded on this page.</p>
+    <p class="kyc-note"><i data-lucide="shield-check" class="w-3.5 h-3.5" style="display:inline; vertical-align:-2px;"></i> Tap any item to upload it — a photo, scan, or PDF works. Your selfie opens your camera on mobile. Everything is uploaded securely and reviewed by our verification team.</p>
 
     <div id="kyc-guarantor-section" style="display:none;">
       <p class="s-section-label"><i data-lucide="user-plus" class="w-4 h-4 text-purple-400"></i>Guarantor / Emergency Contact</p>
@@ -284,10 +291,10 @@
 
     <div class="progress-wrap">
       <div class="progress-labels">
-        <span class="progress-step">Step 3 of 3: Legal Policy &amp; Terms</span>
-        <span class="progress-pct">100%</span>
+        <span class="progress-step">Step 3 of 4: Legal Policy &amp; Terms</span>
+        <span class="progress-pct">75%</span>
       </div>
-      <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+      <div class="progress-track"><div class="progress-fill" style="width:75%"></div></div>
     </div>
 
     <div id="legal-role-badge" class="kyc-role-badge"></div>
@@ -308,13 +315,59 @@
       <input class="field-input signature-input" id="signature-input" type="text" placeholder="Your full name as signature">
     </div>
 
-    <button type="button" id="sign-btn" class="btn-primary" disabled>Sign Agreement &amp; Continue on WhatsApp</button>
+    <button type="button" id="sign-btn" class="btn-primary" disabled>Agree &amp; Continue to Login Setup</button>
     <button type="button" id="legal-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Verification</button>
   </div>
   <!-- ===================== END SCREEN 3 ===================== -->
 
-  <!-- ===================== SCREEN 4: Success ===================== -->
+  <!-- ===================== SCREEN 4: Create Your Login ===================== -->
   <div id="screen-4" class="screen hidden-screen">
+
+    <div class="brand-row">
+      <img class="brand-logo" src="./logo.webp" alt="MainTown Realty">
+      <div>
+        <p class="brand-name">MainTown Realty</p>
+        <p class="brand-tag">Own or rent, on your terms.</p>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-labels">
+        <span class="progress-step">Step 4 of 4: Create Your Login</span>
+        <span class="progress-pct">100%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+    </div>
+
+    <div class="kyc-icon-wrap">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+    </div>
+
+    <h1 class="title" style="text-align:center;">Create your login</h1>
+    <p class="subtitle" style="text-align:center;">Set the email and password you'll use to sign in to MainTown Realty. This creates your real account right now.</p>
+
+    <div class="field">
+      <label class="field-label">Email Address</label>
+      <input class="field-input" id="reg-email" type="email" required placeholder="you@example.com">
+    </div>
+    <div class="field">
+      <label class="field-label">Create Password</label>
+      <input class="field-input" id="reg-password" type="password" required minlength="8" placeholder="At least 8 characters" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label class="field-label">Confirm Password</label>
+      <input class="field-input" id="reg-password-confirm" type="password" required placeholder="Re-enter your password" autocomplete="new-password">
+      <p id="password-hint" class="kyc-note" style="display:none; margin:8px 0 0;">Passwords must match and be at least 8 characters.</p>
+    </div>
+
+    <button type="button" id="create-login-btn" class="btn-primary" disabled>Create Login</button>
+    <p id="sign-status" class="kyc-note" style="display:none; text-align:center; margin:10px 0 0;"></p>
+    <button type="button" id="login-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Legal Policy</button>
+  </div>
+  <!-- ===================== END SCREEN 4 ===================== -->
+
+  <!-- ===================== SCREEN 5: Success ===================== -->
+  <div id="screen-5" class="screen hidden-screen">
     <div class="success-icon-wrap">
       <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
     </div>
@@ -327,12 +380,27 @@
       <i data-lucide="home" class="w-4 h-4"></i> Back to Homepage
     </a>
   </div>
-  <!-- ===================== END SCREEN 4 ===================== -->
+  <!-- ===================== END SCREEN 5 ===================== -->
+
+  <div id="toast" class="toast">
+    <i data-lucide="check-circle" class="w-4 h-4" style="color:#10b981; flex-shrink:0;"></i>
+    <span id="toast-msg"></span>
+  </div>
 
 </div>
 
 <script>
   const WHATSAPP_NUMBER = '2348066611017';
+
+  // ==================================================================
+  // Supabase connection — same project as index.html / admin.html.
+  // Creates the real login (Supabase Auth) and saves KYC + the signed
+  // agreement PDF so it shows up in the admin panel.
+  // ==================================================================
+  const SUPABASE_URL = 'https://obtggomfwvravjcnypid.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_GaTnU4FmPc2slbn8BisXXg_DmxH1vl8';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const ONBOARDING_BUCKET = 'onboarding-media';
 
   const kycContent = {
     tenant: {
@@ -408,11 +476,13 @@
   let currentRole = null;
   let kycConfirmedCount = 0;
   let kycTotalItems = 0;
+  let kycFiles = {}; // { itemIndex: { label, file } } — reset each time screen 2 is (re)built
 
   const screen1 = document.getElementById('screen-1');
   const screen2 = document.getElementById('screen-2');
   const screen3 = document.getElementById('screen-3');
   const screen4 = document.getElementById('screen-4');
+  const screen5 = document.getElementById('screen-5');
 
   function showScreen(fromEl, toEl) {
     fromEl.classList.add('hidden-screen');
@@ -426,11 +496,17 @@
   const continueBtn = document.getElementById('continue-btn');
   const roleHint = document.getElementById('role-hint');
   const fullNameInput = document.getElementById('reg-fullname');
-  const emailInput = document.getElementById('reg-email');
   const phoneInput = document.getElementById('reg-phone');
+  // Email/password live on Screen 4 (Create Your Login) — declared once
+  // that screen's markup exists further down, but referenced here too
+  // since IDs are the same across the whole document.
+  const emailInput = document.getElementById('reg-email');
+  const passwordInput = document.getElementById('reg-password');
+  const passwordConfirmInput = document.getElementById('reg-password-confirm');
+  const passwordHint = document.getElementById('password-hint');
 
   function updateContinueState() {
-    const formFilled = fullNameInput.value.trim() && emailInput.value.trim() && phoneInput.value.trim();
+    const formFilled = fullNameInput.value.trim() && phoneInput.value.trim();
     continueBtn.disabled = !(currentRole && formFilled);
     roleHint.style.display = currentRole ? 'none' : 'block';
   }
@@ -452,7 +528,7 @@
     });
   });
 
-  [fullNameInput, emailInput, phoneInput].forEach(el => el.addEventListener('input', updateContinueState));
+  [fullNameInput, phoneInput].forEach(el => el.addEventListener('input', updateContinueState));
 
   function populateScreen2() {
     const data = kycContent[currentRole];
@@ -460,25 +536,44 @@
 
     kycConfirmedCount = 0;
     kycTotalItems = data.items.length;
+    kycFiles = {};
 
     const list = document.getElementById('kyc-list');
     list.innerHTML = '';
-    data.items.forEach((docItem) => {
-      const item = document.createElement('div');
+    data.items.forEach((docItem, idx) => {
+      // The selfie item gets capture="user" so mobile browsers open the
+      // front camera directly. Desktop browsers ignore "capture" and just
+      // show the normal file picker, so desktop users pick an existing photo.
+      const isSelfie = docItem.icon === 'camera';
+      const accept = isSelfie ? 'image/*' : 'image/*,.pdf,application/pdf';
+      const defaultStatus = isSelfie ? 'Tap to open your camera and take a selfie' : 'Tap to upload a photo or PDF';
+
+      const item = document.createElement('label');
       item.className = 'kyc-item';
       item.innerHTML = `
+        <input type="file" class="kyc-file-input" style="display:none;" accept="${accept}" ${isSelfie ? 'capture="user"' : ''}>
         <div class="kyc-item-icon-wrap"><i data-lucide="${docItem.icon}" class="w-4 h-4"></i></div>
         <div class="kyc-item-text">
           <p class="kyc-item-title">${docItem.text}</p>
-          <p class="kyc-item-status">Tap to confirm you have this ready</p>
+          <p class="kyc-item-status">${defaultStatus}</p>
         </div>
         <div class="kyc-check-circle"><svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
       `;
-      item.addEventListener('click', () => {
-        const nowConfirmed = !item.classList.contains('confirmed');
-        item.classList.toggle('confirmed');
-        item.querySelector('.kyc-item-status').textContent = nowConfirmed ? 'Confirmed' : 'Tap to confirm you have this ready';
-        kycConfirmedCount += nowConfirmed ? 1 : -1;
+      const fileInput = item.querySelector('.kyc-file-input');
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files && fileInput.files[0];
+        const wasConfirmed = item.classList.contains('confirmed');
+        if (file) {
+          kycFiles[idx] = { label: docItem.text, file };
+          item.classList.add('confirmed');
+          item.querySelector('.kyc-item-status').textContent = `Selected: ${file.name}`;
+          if (!wasConfirmed) kycConfirmedCount += 1;
+        } else {
+          delete kycFiles[idx];
+          item.classList.remove('confirmed');
+          item.querySelector('.kyc-item-status').textContent = defaultStatus;
+          if (wasConfirmed) kycConfirmedCount -= 1;
+        }
         updateKycContinueState();
       });
       list.appendChild(item);
@@ -549,29 +644,195 @@
   agreeCheckbox.addEventListener('change', updateSignBtnState);
   signatureInput.addEventListener('input', updateSignBtnState);
 
+  // Agreement is just captured here — the actual login/account creation
+  // happens on Screen 4, so clicking this only advances the screen.
   signBtn.addEventListener('click', () => {
     if (signBtn.disabled) return;
+    showScreen(screen3, screen4);
+  });
+
+  // ---- Screen 4: Create Your Login ----
+  const createLoginBtn = document.getElementById('create-login-btn');
+
+  function updateLoginBtnState() {
+    const emailFilled = emailInput.value.trim().length > 0;
+    const passwordOk = passwordInput.value.length >= 8 && passwordInput.value === passwordConfirmInput.value;
+    const passwordTouched = passwordInput.value.length > 0 || passwordConfirmInput.value.length > 0;
+    passwordHint.style.display = (passwordTouched && !passwordOk) ? 'block' : 'none';
+    createLoginBtn.disabled = !(emailFilled && passwordOk);
+  }
+  [emailInput, passwordInput, passwordConfirmInput].forEach(el => el.addEventListener('input', updateLoginBtnState));
+
+  document.getElementById('login-back-btn').addEventListener('click', () => showScreen(screen4, screen3));
+
+  // Builds the signed legal agreement as an actual PDF (name, role, KYC
+  // attestation, every section of the legal terms, and the typed
+  // signature + timestamp) and returns it as a Blob for upload.
+  function buildAgreementPdf({ name, roleLabel, email, phone, occupation, guarantor, kycItems, signature, signedAt }) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 48;
+    const maxWidth = pageWidth - margin * 2;
+    let y = 56;
+
+    function ensureSpace(lines) {
+      if (y + lines * 14 > doc.internal.pageSize.getHeight() - 48) { doc.addPage(); y = 56; }
+    }
+    function heading(text, size) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(size);
+      ensureSpace(2);
+      doc.text(text, margin, y); y += size * 0.9;
+    }
+    function paragraph(text, size) {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(size || 10);
+      const lines = doc.splitTextToSize(text, maxWidth);
+      ensureSpace(lines.length);
+      doc.text(lines, margin, y);
+      y += lines.length * (size ? size * 1.15 : 12) + 4;
+    }
+
+    heading('MainTown Realty — Signed Onboarding Agreement', 16);
+    y += 6;
+    paragraph(`Role: ${roleLabel}`);
+    paragraph(`Full Name: ${name}`);
+    if (occupation) paragraph(`Occupation: ${occupation}`);
+    paragraph(`Email: ${email}`);
+    paragraph(`Phone: ${phone}`);
+    if (guarantor) paragraph(`Guarantor: ${guarantor.name} (${guarantor.relationship || 'n/a'}) — ${guarantor.phone}`);
+    y += 6;
+
+    heading('KYC Attestation', 12);
+    kycItems.forEach(item => paragraph(`✓ Document uploaded: ${item}`, 10));
+    y += 6;
+
+    heading('Terms of Service', 12);
+    legalContent[currentRole].sections.forEach(s => {
+      paragraph(s.title, 11);
+      paragraph(s.body, 10);
+    });
+
+    y += 10;
+    heading('Signature', 12);
+    paragraph(`Digitally signed by: ${signature}`, 11);
+    paragraph(`Signed at: ${signedAt}`, 10);
+    paragraph('By signing, the above party confirms they have read and agreed to the full MainTown Realty Terms of Service and Default Rules.', 9);
+
+    return doc.output('blob');
+  }
+
+  // Small success/status pop-up (used once login + agreement are saved).
+  function showToast(msg) {
+    const toastEl = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    toastEl.classList.add('show');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(() => toastEl.classList.remove('show'), 3200);
+  }
+
+  createLoginBtn.addEventListener('click', async () => {
+    if (createLoginBtn.disabled) return;
+
+    const statusEl = document.getElementById('sign-status');
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#94a3b8';
 
     const roleLabel = kycContent[currentRole].label;
     const name = fullNameInput.value.trim();
     const occupation = document.getElementById('reg-occupation').value.trim();
     const email = emailInput.value.trim();
+    const password = passwordInput.value;
     const phone = document.getElementById('country-code').value + phoneInput.value.trim();
+    const signature = signatureInput.value.trim();
+    const signedAt = new Date().toISOString();
+
+    let guarantor = null;
+    if (currentRole === 'tenant') {
+      guarantor = {
+        name: document.getElementById('guarantor-name').value.trim(),
+        relationship: document.getElementById('guarantor-relationship').value.trim(),
+        phone: document.getElementById('guarantor-phone').value.trim(),
+      };
+    }
+    const kycItems = Array.from(document.querySelectorAll('#kyc-list .kyc-item-title')).map(el => el.textContent.trim());
+    const kycFileEntries = Object.values(kycFiles); // [{ label, file }, ...]
+    let accountSaved = false;
+
+    createLoginBtn.disabled = true;
+    createLoginBtn.textContent = 'Creating your login…';
+
+    try {
+      // 1. Create the real login — this is what the person signs into once the app is live.
+      const { data: authData, error: authError } = await sb.auth.signUp({ email, password });
+      if (authError) throw new Error(authError.message);
+      const userId = authData.user ? authData.user.id : null;
+
+      // 2. Upload each KYC document/selfie the person selected.
+      createLoginBtn.textContent = 'Uploading your documents…';
+      const kycDocuments = [];
+      for (let i = 0; i < kycFileEntries.length; i++) {
+        const { label, file } = kycFileEntries[i];
+        createLoginBtn.textContent = `Uploading document ${i + 1} of ${kycFileEntries.length}…`;
+        const safeExt = (file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
+        const kycPath = `${userId || 'unlinked'}/kyc-${i}-${Date.now()}.${safeExt}`;
+        const { error: kycUploadError } = await sb.storage.from(ONBOARDING_BUCKET).upload(kycPath, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+        if (kycUploadError) throw new Error(kycUploadError.message);
+        const { data: kycUrlData } = sb.storage.from(ONBOARDING_BUCKET).getPublicUrl(kycPath);
+        kycDocuments.push({ label, url: kycUrlData.publicUrl });
+      }
+
+      // 3. Build the signed agreement as a PDF and upload it to storage.
+      createLoginBtn.textContent = 'Saving your signed agreement…';
+      const pdfBlob = buildAgreementPdf({ name, roleLabel, email, phone, occupation, guarantor, kycItems, signature, signedAt });
+      const pdfPath = `${userId || 'unlinked'}/agreement-${Date.now()}.pdf`;
+      const { error: uploadError } = await sb.storage.from(ONBOARDING_BUCKET).upload(pdfPath, pdfBlob, { contentType: 'application/pdf', upsert: false });
+      if (uploadError) throw new Error(uploadError.message);
+      const { data: pdfUrlData } = sb.storage.from(ONBOARDING_BUCKET).getPublicUrl(pdfPath);
+
+      // 4. Save the login + KYC + agreement record so it shows up on the admin panel.
+      createLoginBtn.textContent = 'Saving to admin…';
+      const { error: insertError } = await sb.from('signups').insert({
+        user_id: userId,
+        full_name: name,
+        email, phone, occupation,
+        role: currentRole,
+        guarantor_name: guarantor ? guarantor.name : null,
+        guarantor_relationship: guarantor ? guarantor.relationship : null,
+        guarantor_phone: guarantor ? guarantor.phone : null,
+        kyc_items: kycItems,
+        kyc_documents: kycDocuments,
+        agreement_pdf_url: pdfUrlData.publicUrl,
+        signature,
+        signed_at: signedAt,
+        status: 'pending',
+      });
+      if (insertError) throw new Error(insertError.message);
+
+      statusEl.style.display = 'none';
+      accountSaved = true;
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = 'Could not finish saving your account: ' + err.message + ' — you can still continue on WhatsApp and our team will follow up.';
+      statusEl.style.color = '#f87171';
+      statusEl.style.display = 'block';
+    }
+
+    if (accountSaved) {
+      showToast('Login saved! Continuing to WhatsApp…');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
 
     let message = `Hello MainTown Realty, I just signed up on the website.\n\nName: ${name}\nRole: ${roleLabel}\nEmail: ${email}\nPhone: ${phone}`;
     if (occupation) message += `\nOccupation: ${occupation}`;
-    if (currentRole === 'tenant') {
-      const gName = document.getElementById('guarantor-name').value.trim();
-      const gRel = document.getElementById('guarantor-relationship').value.trim();
-      const gPhone = document.getElementById('guarantor-phone').value.trim();
-      message += `\nGuarantor: ${gName} (${gRel || 'n/a'}) — ${gPhone}`;
-    }
-    message += `\n\nI've reviewed and agreed to the Terms of Service. Signed: ${signatureInput.value.trim()}`;
+    if (guarantor) message += `\nGuarantor: ${guarantor.name} (${guarantor.relationship || 'n/a'}) — ${guarantor.phone}`;
+    message += `\n\nI've reviewed and agreed to the Terms of Service. Signed: ${signature}`;
 
     const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     document.getElementById('whatsapp-continue-btn').href = waLink;
 
-    showScreen(screen3, screen4);
+    createLoginBtn.disabled = false;
+    createLoginBtn.textContent = 'Create Login';
+    showScreen(screen4, screen5);
     window.open(waLink, '_blank', 'noopener,noreferrer');
   });
 
