@@ -180,11 +180,41 @@
         <span class="text-xl font-extrabold text-white tracking-tight">MainTown <span class="text-purple-400">Realty</span></span>
       </a>
     </div>
-    <div class="flex items-center gap-2 ml-auto">
+
+    <!-- Desktop nav: only visible on larger screens; mirrors the mobile menu links -->
+    <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-200">
+      <a href="#listings" class="hover:text-white transition">Listings</a>
+      <a href="./quick-fix.html" class="hover:text-white transition">Quick Fix</a>
+      <button type="button" id="openUnderwritingModalDesktop" class="hover:text-white transition">AI Underwriting</button>
+      <button type="button" id="openTechModalDesktop" class="hover:text-white transition">Technology</button>
+      <button type="button" id="openVisionModalDesktop" class="hover:text-white transition">Vision &amp; Mission</button>
+      <button type="button" id="openAboutModalDesktop" class="hover:text-white transition">About Us</button>
+      <a href="#onboarding" class="hover:text-white transition">Get Started</a>
+    </nav>
+
+    <div class="flex items-center gap-2 ml-auto lg:ml-0">
+      <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" aria-label="Instagram" class="hidden lg:inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white hover:bg-white/5 transition">
+        <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" aria-hidden="true">
+          <defs>
+            <linearGradient id="igGradientNav" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#FFDD55"/>
+              <stop offset="35%" stop-color="#FD1D1D"/>
+              <stop offset="70%" stop-color="#C13584"/>
+              <stop offset="100%" stop-color="#833AB4"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="20" height="20" rx="6" fill="none" stroke="url(#igGradientNav)" stroke-width="2"/>
+          <circle cx="12" cy="12" r="4.2" fill="none" stroke="url(#igGradientNav)" stroke-width="2"/>
+          <circle cx="17.2" cy="6.8" r="1.15" fill="url(#igGradientNav)"/>
+        </svg>
+      </a>
       <button type="button" id="searchToggle" aria-label="Search listings" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white hover:bg-white/5 transition">
         <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m21 21-4.3-4.3"/></svg>
       </button>
-      <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
+      <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20would%20like%20to%20get%20started%20with%20onboarding%20and%20property%20listing." target="_blank" rel="noopener noreferrer" class="hidden lg:inline-flex items-center text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-lg transition">
+        Get Started on WhatsApp
+      </a>
+      <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
         <span id="mobileMenuIcon">☰</span>
       </button>
     </div>
@@ -200,8 +230,8 @@
     </div>
   </div>
 
-  <!-- Mobile Menu -->
-  <div id="mobileMenu" class="hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
+  <!-- Mobile Menu (mobile/tablet only) -->
+  <div id="mobileMenu" class="hidden lg:hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
     <nav class="flex flex-col px-6 py-4 gap-1 text-sm">
       <a href="#listings" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Listings</a>
       <a href="./quick-fix.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Quick Fix</a>
@@ -1720,6 +1750,7 @@
     setTimeout(() => visionOverlay.classList.add('hidden'), 300);
   }
   document.getElementById('openVisionModalMobile').addEventListener('click', openVisionDrawer);
+  document.getElementById('openVisionModalDesktop').addEventListener('click', openVisionDrawer);
   document.getElementById('closeVisionDrawer').addEventListener('click', closeVisionDrawer);
   visionOverlay.addEventListener('click', closeVisionDrawer);
   document.addEventListener('keydown', (e) => {
@@ -1744,6 +1775,7 @@
     setTimeout(() => aboutOverlay.classList.add('hidden'), 300);
   }
   document.getElementById('openAboutModalMobile').addEventListener('click', openAboutDrawer);
+  document.getElementById('openAboutModalDesktop').addEventListener('click', openAboutDrawer);
   document.getElementById('closeAboutDrawer').addEventListener('click', closeAboutDrawer);
   aboutOverlay.addEventListener('click', closeAboutDrawer);
   document.addEventListener('keydown', (e) => {
@@ -1768,6 +1800,7 @@
     setTimeout(() => underwritingOverlay.classList.add('hidden'), 300);
   }
   document.getElementById('openUnderwritingModalMobile').addEventListener('click', openUnderwritingDrawer);
+  document.getElementById('openUnderwritingModalDesktop').addEventListener('click', openUnderwritingDrawer);
   document.getElementById('closeUnderwritingDrawer').addEventListener('click', closeUnderwritingDrawer);
   underwritingOverlay.addEventListener('click', closeUnderwritingDrawer);
   document.addEventListener('keydown', (e) => {
@@ -1792,6 +1825,7 @@
     setTimeout(() => techOverlay.classList.add('hidden'), 300);
   }
   document.getElementById('openTechModalMobile').addEventListener('click', openTechDrawer);
+  document.getElementById('openTechModalDesktop').addEventListener('click', openTechDrawer);
   document.getElementById('closeTechDrawer').addEventListener('click', closeTechDrawer);
   techOverlay.addEventListener('click', closeTechDrawer);
   document.addEventListener('keydown', (e) => {

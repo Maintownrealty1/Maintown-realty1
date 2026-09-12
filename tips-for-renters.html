@@ -36,17 +36,34 @@
 </head>
 <body class="font-body text-white min-h-screen flex flex-col">
 
-  <header class="border-b border-white/10 px-6 py-5">
-    <div class="max-w-3xl mx-auto flex items-center justify-between">
+  <header class="fixed top-0 inset-x-0 z-50 border-b border-white/5 bg-slate-900/80 backdrop-blur-md">
+    <div class="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
       <a href="./index.html" class="flex items-center gap-2 font-display font-bold text-lg">
         <img src="./favicon-192.png" alt="MainTown Realty" class="h-8 w-8 rounded-lg">
-        MainTown Realty
+        <span class="text-white">MainTown <span class="text-purple-400">Realty</span></span>
       </a>
-      <a href="./index.html" class="text-sm text-slate-400 hover:text-white transition">&larr; Back to Home</a>
+      <div class="flex items-center gap-2">
+        <a href="./index.html" class="hidden sm:inline-flex text-sm text-slate-400 hover:text-white transition px-2">&larr; Back to Home</a>
+        <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
+          <span id="mobileMenuIcon">☰</span>
+        </button>
+      </div>
+    </div>
+    <div id="mobileMenu" class="hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
+      <nav class="flex flex-col px-6 py-4 gap-1 text-sm max-w-3xl mx-auto">
+        <a href="./index.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Home</a>
+        <a href="./index.html#listings" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Find a Home</a>
+        <a href="./quick-fix.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Quick Fix Services</a>
+        <a href="./partner-as-an-agent.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Partner as an Agent</a>
+        <a href="./policies.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Policies</a>
+        <a href="./tips-for-renters.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Tips for Renters</a>
+        <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Instagram</a>
+        <a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%20have%20a%20question%20about%20renting." target="_blank" rel="noopener noreferrer" class="mt-2 text-center text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-3 rounded-full transition">WhatsApp Us</a>
+      </nav>
     </div>
   </header>
 
-  <main class="flex-1 px-6 py-16 sm:py-20">
+  <main class="flex-1 px-6 pt-24 pb-16 sm:pt-28 sm:pb-20">
     <div class="max-w-3xl mx-auto">
 
       <span class="inline-block text-[11px] font-mono uppercase tracking-widest text-brand-400 bg-brand-500/10 border border-brand-500/30 rounded-full px-3 py-1 mb-6">Tips for Renters &amp; Buyers</span>
@@ -148,5 +165,22 @@
     © 2026 MainTown Realty. Lagos, Nigeria. All rights reserved.
   </footer>
 
+<script>
+  const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+  const mobileMenuIcon = document.getElementById('mobileMenuIcon');
+  const mobileMenu = document.getElementById('mobileMenu');
+  mobileMenuToggle.addEventListener('click', () => {
+    const isOpen = !mobileMenu.classList.contains('hidden');
+    if (isOpen) {
+      mobileMenu.classList.add('hidden');
+      mobileMenuToggle.setAttribute('aria-expanded', 'false');
+      mobileMenuIcon.textContent = '☰';
+    } else {
+      mobileMenu.classList.remove('hidden');
+      mobileMenuToggle.setAttribute('aria-expanded', 'true');
+      mobileMenuIcon.textContent = '✕';
+    }
+  });
+</script>
 </body>
 </html>
