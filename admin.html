@@ -334,23 +334,32 @@
   const feesTextarea = document.getElementById('f-fees');
   const feePreview = document.getElementById('feePreview');
 
-  function updateFeePreview() {
+  function refreshFeePreviewDisplay() {
     const monthly = parseInt(rentInput.value, 10) || 0;
     const annual = parseInt(annualRentInput.value, 10) || 0;
-    if (!monthly && !annual) { feePreview.classList.add('hidden'); return; }
+    if (!monthly && !annual) { feePreview.classList.add('hidden'); return { monthly, annual }; }
     feePreview.classList.remove('hidden');
     document.getElementById('fp-monthly').textContent = monthly ? '₦' + monthly.toLocaleString('en-US') : '—';
     if (!annual) {
       document.getElementById('fp-annual').textContent = '—';
       document.getElementById('fp-agent').textContent = '—';
       document.getElementById('fp-legal').textContent = '—';
-      return;
+      return { monthly, annual };
     }
     const agent = Math.round(annual * 0.10);
     const legal = Math.round(annual * 0.05);
     document.getElementById('fp-annual').textContent = '₦' + annual.toLocaleString('en-US');
     document.getElementById('fp-agent').textContent = '₦' + agent.toLocaleString('en-US');
     document.getElementById('fp-legal').textContent = '₦' + legal.toLocaleString('en-US');
+    return { monthly, annual, agent, legal };
+  }
+
+  // Only called from the rent input listeners below (a person actually
+  // typing) — never during edit-population, so it never clobbers fees
+  // that were already saved on a listing.
+  function updateFeePreview() {
+    const { annual, agent, legal } = refreshFeePreviewDisplay();
+    if (!annual) return;
     // Only auto-fills the fees box when an Annual Rent is actually entered —
     // feel free to hand-edit the box afterwards for a custom fee.
     feesTextarea.value = `Agent Fee: 10% (₦${agent.toLocaleString('en-US')})\nLegal Fee: 5% (₦${legal.toLocaleString('en-US')})`;
@@ -427,9 +436,11 @@
         videoUrl = await uploadFile(videoFile);
       }
 
+      const annualRentNum = parseInt(annualRentInput.value, 10) || null;
       const payload = {
         title, location, beds,
         rent: `₦${rentNum.toLocaleString('en-US')}/mo`,
+        annual_rent: annualRentNum,
         fees, color,
         features: selectedFeatures,
         images: imageUrls,
@@ -572,12 +583,12 @@
     document.getElementById('f-beds').value = listing.beds || 0;
     const rentDigits = parseInt(String(listing.rent || '').replace(/[^0-9]/g, ''), 10);
     rentInput.value = rentDigits || '';
-    annualRentInput.value = '';
+    annualRentInput.value = listing.annual_rent || '';
     document.getElementById('f-caution-fee').value = '';
     document.getElementById('f-service-charge').value = '';
     document.getElementById('f-service-charge-freq').value = 'yr';
     feesTextarea.value = (listing.fees || []).join('\n');
-    updateFeePreview();
+    refreshFeePreviewDisplay();
     document.getElementById('f-color').value = listing.color || 'from-brand-500/30 to-slate-900';
     document.getElementById('f-status').value = listing.status || 'available';
     selectedFeatures = Array.isArray(listing.features) ? [...listing.features] : [];
