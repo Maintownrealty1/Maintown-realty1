@@ -130,6 +130,21 @@
   .agree-checkbox { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; accent-color: #9333ea; cursor: pointer; }
   .signature-input { font-family: 'Brush Script MT', cursive, -apple-system, sans-serif; font-size: 18px; }
 
+  .s-section-label-alt { font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin: 4px 0 12px; }
+  .perk-list { display: flex; flex-direction: column; gap: 10px; margin: 0 0 26px; }
+  .perk-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.25); border-radius: 14px; }
+  .perk-item-icon-wrap { width: 34px; height: 34px; border-radius: 10px; background: rgba(16,185,129,0.16); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .perk-item-icon-wrap svg { width: 16px; height: 16px; color: #10b981; }
+  .perk-item-text { margin: 0; font-size: 13px; color: #e2e8f0; font-weight: 500; line-height: 1.4; }
+
+  .commission-box { padding: 16px; border-radius: 14px; background: rgba(15,23,42,0.9); border: 1px solid #1e293b; font-size: 12.5px; color: #cbd5e1; line-height: 1.7; margin-bottom: 8px; }
+  .commission-box h3 { font-size: 12.5px; font-weight: 600; color: #e2e8f0; margin: 0 0 12px; display: flex; align-items: center; gap: 6px; }
+  .commission-box h3 svg { flex-shrink: 0; width: 14px; height: 14px; }
+  .commission-box ul { margin: 0; padding-left: 18px; }
+  .commission-box li { margin-bottom: 10px; }
+  .commission-box li:last-child { margin-bottom: 0; }
+  .commission-box li b { color: #fff; font-weight: 600; }
+
   .screen { animation: fadeIn 0.35s ease; }
   .screen.hidden-screen { display: none; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
@@ -166,7 +181,7 @@
       </div>
     </div>
 
-    <div class="progress-wrap">
+    <div class="progress-wrap" id="progress-wrap-1">
       <div class="progress-labels">
         <span class="progress-step">Step 1 of 4: Tell us about you</span>
         <span class="progress-pct">25%</span>
@@ -231,6 +246,46 @@
   </div>
   <!-- ===================== END SCREEN 1 ===================== -->
 
+  <!-- ===================== SCREEN 1b: Partnership Value & Agreement (Agent/Landlord only) ===================== -->
+  <div id="screen-partnership" class="screen hidden-screen">
+
+    <div class="brand-row">
+      <img class="brand-logo" src="./logo.webp" alt="MainTown Realty">
+      <div>
+        <p class="brand-name">MainTown Realty</p>
+        <p class="brand-tag">Own or rent, on your terms.</p>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap-partnership">
+      <div class="progress-labels">
+        <span class="progress-step">Step 2 of 5: Partnership Benefits &amp; Terms</span>
+        <span class="progress-pct">40%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:40%"></div></div>
+    </div>
+
+    <div id="partnership-role-badge" class="kyc-role-badge"></div>
+
+    <h1 class="title">Partnering with MainTown Realty</h1>
+    <p class="subtitle">Review your partnership perks and earn industry-leading terms on every listing.</p>
+
+    <p class="s-section-label-alt"><i data-lucide="sparkles" class="w-4 h-4 text-purple-400" style="display:inline; vertical-align:-3px;"></i> Your Partnership Perks</p>
+    <div id="partnership-perks" class="perk-list"></div>
+
+    <p class="s-section-label-alt"><i data-lucide="receipt" class="w-4 h-4 text-purple-400" style="display:inline; vertical-align:-3px;"></i> Commission &amp; Fee Structure</p>
+    <div id="partnership-terms" class="commission-box"></div>
+
+    <label class="agree-row">
+      <input type="checkbox" id="partnership-agree-checkbox" class="agree-checkbox">
+      <span>I have read and agree to the Partnership Terms &amp; Commission Structure.</span>
+    </label>
+
+    <button type="button" id="partnership-continue-btn" class="btn-primary" disabled>Accept &amp; Continue to Verification →</button>
+    <button type="button" id="partnership-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Sign Up</button>
+  </div>
+  <!-- ===================== END SCREEN 1b ===================== -->
+
   <!-- ===================== SCREEN 2: KYC Requirements (role-based) ===================== -->
   <div id="screen-2" class="screen hidden-screen">
 
@@ -242,7 +297,7 @@
       </div>
     </div>
 
-    <div class="progress-wrap">
+    <div class="progress-wrap" id="progress-wrap-2">
       <div class="progress-labels">
         <span class="progress-step">Step 2 of 4: Verification Requirements</span>
         <span class="progress-pct">50%</span>
@@ -294,7 +349,7 @@
       </div>
     </div>
 
-    <div class="progress-wrap">
+    <div class="progress-wrap" id="progress-wrap-3">
       <div class="progress-labels">
         <span class="progress-step">Step 3 of 4: Legal Policy &amp; Terms</span>
         <span class="progress-pct">75%</span>
@@ -336,7 +391,7 @@
       </div>
     </div>
 
-    <div class="progress-wrap">
+    <div class="progress-wrap" id="progress-wrap-4">
       <div class="progress-labels">
         <span class="progress-step">Step 4 of 4: Create Your Login</span>
         <span class="progress-pct">100%</span>
@@ -490,12 +545,43 @@
     }
   };
 
+  // Role-isolated partnership perks + commission/fee terms shown only to
+  // Agent and Landlord — Tenants never see this screen or this data.
+  const partnershipContent = {
+    agent: {
+      perks: [
+        { icon: 'wallet', text: 'Zero-upfront listing fees' },
+        { icon: 'shield-check', text: 'Guaranteed escrow payouts' },
+        { icon: 'badge-check', text: 'Cadastral title verification badge' },
+        { icon: 'users', text: 'Direct pipeline to pre-qualified local & diaspora renters' },
+      ],
+      terms: [
+        { label: 'Rental Commission Split', body: '60% to Agent / 40% to MainTown Realty on closed rentals.' },
+        { label: 'Legal Fee', body: 'MainTown Realty collects a 5% legal fee on all transaction processing.' },
+        { label: 'Property Purchase Sales', body: '5% commission paid to MainTown Realty by the Buyer/Tenant + 5% commission paid to the Agent by the Property Owner. MainTown takes a 2.5% legal fee, paid by both the Buyer/Tenant and the Property Owner.' },
+      ],
+    },
+    landlord: {
+      perks: [
+        { icon: 'landmark', text: 'Automated rent collections via bank-grade escrow' },
+        { icon: 'scan-search', text: 'AI tenant underwriting & screening' },
+        { icon: 'zap', text: 'Zero vacancy downtime match engine' },
+        { icon: 'scale', text: 'Legal & dispute protection' },
+      ],
+      terms: [
+        { label: 'Rental Transactions', body: 'MainTown Realty collects the full standard commission fee + a 5% legal fee on closed apartment rentals.' },
+        { label: 'Property Purchase Sales', body: 'Property Owner pays MainTown Realty a 5% sales commission + a 2.5% legal fee upon closed acquisition.' },
+      ],
+    },
+  };
+
   let currentRole = null;
   let kycConfirmedCount = 0;
   let kycTotalItems = 0;
   let kycFiles = {}; // { itemIndex: { label, file } } — reset each time screen 2 is (re)built
 
   const screen1 = document.getElementById('screen-1');
+  const screenPartnership = document.getElementById('screen-partnership');
   const screen2 = document.getElementById('screen-2');
   const screen3 = document.getElementById('screen-3');
   const screen4 = document.getElementById('screen-4');
@@ -506,6 +592,38 @@
     toEl.classList.remove('hidden-screen');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (window.lucide) lucide.createIcons();
+  }
+
+  // The step count differs by role: Agent/Landlord get an extra
+  // "Partnership Benefits & Terms" step that Tenants never see.
+  function getStepPlan(role) {
+    if (role === 'agent' || role === 'landlord') {
+      return [
+        { key: 'account', label: 'Tell us about you' },
+        { key: 'partnership', label: 'Partnership Benefits & Terms' },
+        { key: 'kyc', label: 'Verification Requirements' },
+        { key: 'legal', label: 'Legal Policy & Terms' },
+        { key: 'login', label: 'Create Your Login' },
+      ];
+    }
+    return [
+      { key: 'account', label: 'Tell us about you' },
+      { key: 'kyc', label: 'Verification Requirements' },
+      { key: 'legal', label: 'Legal Policy & Terms' },
+      { key: 'login', label: 'Create Your Login' },
+    ];
+  }
+
+  function setProgress(wrapId, stepKey) {
+    const plan = getStepPlan(currentRole || 'tenant');
+    const idx = plan.findIndex(s => s.key === stepKey);
+    const stepNum = idx === -1 ? 1 : idx + 1;
+    const total = plan.length;
+    const pct = Math.round((stepNum / total) * 100);
+    const wrap = document.getElementById(wrapId);
+    wrap.querySelector('.progress-step').textContent = `Step ${stepNum} of ${total}: ${plan[idx] ? plan[idx].label : ''}`;
+    wrap.querySelector('.progress-pct').textContent = pct + '%';
+    wrap.querySelector('.progress-fill').style.width = pct + '%';
   }
 
   // ---- Screen 1: role + form ----
@@ -546,13 +664,16 @@
       card.classList.add('selected');
       currentRole = card.dataset.role;
       updateContinueState();
+      setProgress('progress-wrap-1', 'account');
 
       const occupationField = document.getElementById('reg-occupation-field');
       if (currentRole === 'tenant') {
         occupationField.style.display = 'block';
+        continueBtn.textContent = 'Continue to Verification';
       } else {
         occupationField.style.display = 'none';
         document.getElementById('reg-occupation').value = '';
+        continueBtn.textContent = 'Continue to Partnership Benefits →';
       }
     });
   });
@@ -562,6 +683,7 @@
   function populateScreen2() {
     const data = kycContent[currentRole];
     document.getElementById('kyc-role-badge').innerHTML = `<i data-lucide="${data.roleIcon}" class="w-4 h-4"></i><span>${data.label}</span>`;
+    setProgress('progress-wrap-2', 'kyc');
 
     kycConfirmedCount = 0;
     kycTotalItems = data.items.length;
@@ -633,15 +755,70 @@
   document.getElementById('reg-form').addEventListener('submit', (e) => {
     e.preventDefault();
     if (continueBtn.disabled) return;
-    populateScreen2();
-    showScreen(screen1, screen2);
+    if (currentRole === 'agent' || currentRole === 'landlord') {
+      populatePartnershipScreen();
+      showScreen(screen1, screenPartnership);
+    } else {
+      populateScreen2();
+      showScreen(screen1, screen2);
+    }
   });
 
-  document.getElementById('kyc-back-btn').addEventListener('click', () => showScreen(screen2, screen1));
+  document.getElementById('kyc-back-btn').addEventListener('click', () => {
+    if (currentRole === 'agent' || currentRole === 'landlord') {
+      showScreen(screen2, screenPartnership);
+    } else {
+      showScreen(screen2, screen1);
+    }
+  });
+
+  // ---- Screen 1b: Partnership Value & Agreement (Agent/Landlord only) ----
+  function populatePartnershipScreen() {
+    const roleData = kycContent[currentRole];
+    document.getElementById('partnership-role-badge').innerHTML = `<i data-lucide="${roleData.roleIcon}" class="w-4 h-4"></i><span>${roleData.label}</span>`;
+    setProgress('progress-wrap-partnership', 'partnership');
+
+    const content = partnershipContent[currentRole];
+
+    const perksEl = document.getElementById('partnership-perks');
+    perksEl.innerHTML = content.perks.map(p => `
+      <div class="perk-item">
+        <div class="perk-item-icon-wrap"><i data-lucide="${p.icon}" class="w-4 h-4"></i></div>
+        <p class="perk-item-text">${p.text}</p>
+      </div>
+    `).join('');
+
+    // Strict role isolation: only this role's own commission terms are
+    // ever rendered here — Agent terms never reach a Landlord and vice versa.
+    const termsEl = document.getElementById('partnership-terms');
+    termsEl.innerHTML = `
+      <h3><i data-lucide="receipt" class="text-purple-400"></i>Commission &amp; Fee Structure — ${roleData.label}</h3>
+      <ul>${content.terms.map(t => `<li><b>${t.label}:</b> ${t.body}</li>`).join('')}</ul>
+    `;
+
+    const checkbox = document.getElementById('partnership-agree-checkbox');
+    checkbox.checked = false;
+    document.getElementById('partnership-continue-btn').disabled = true;
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  document.getElementById('partnership-agree-checkbox').addEventListener('change', (e) => {
+    document.getElementById('partnership-continue-btn').disabled = !e.target.checked;
+  });
+
+  document.getElementById('partnership-continue-btn').addEventListener('click', () => {
+    if (document.getElementById('partnership-continue-btn').disabled) return;
+    populateScreen2();
+    showScreen(screenPartnership, screen2);
+  });
+
+  document.getElementById('partnership-back-btn').addEventListener('click', () => showScreen(screenPartnership, screen1));
 
   function populateScreen3() {
     const data = legalContent[currentRole];
     document.getElementById('legal-role-badge').innerHTML = `<i data-lucide="${data.roleIcon}" class="w-4 h-4"></i><span>${data.label}</span>`;
+    setProgress('progress-wrap-3', 'legal');
 
     const box = document.getElementById('legal-box');
     box.innerHTML = data.sections.map(s => {
@@ -677,6 +854,7 @@
   // happens on Screen 4, so clicking this only advances the screen.
   signBtn.addEventListener('click', () => {
     if (signBtn.disabled) return;
+    setProgress('progress-wrap-4', 'login');
     showScreen(screen3, screen4);
   });
 
