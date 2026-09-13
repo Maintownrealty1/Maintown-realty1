@@ -385,6 +385,11 @@
       <input class="field-input signature-input" id="signature-input" type="text" placeholder="Your full name as signature">
     </div>
 
+    <div id="tenant-notice-box" class="notice-box" style="display:none;">
+      <i data-lucide="info" class="w-4 h-4"></i>
+      <p><b>Platform Status &amp; WhatsApp Verification Notice:</b> Physical property inspections, booking confirmations, and payment verifications are currently handled manually via our dedicated WhatsApp Desk during this web phase. AI underwriting, instant digital scheduling, and automated in-app wallets will be fully enabled upon our upcoming official mobile app release.</p>
+    </div>
+
     <button type="button" id="sign-btn" class="btn-primary" disabled>Agree &amp; Continue to Login Setup</button>
     <button type="button" id="legal-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Verification</button>
   </div>
@@ -830,6 +835,9 @@
     const data = legalContent[currentRole];
     document.getElementById('legal-role-badge').innerHTML = `<i data-lucide="${data.roleIcon}" class="w-4 h-4"></i><span>${data.label}</span>`;
     setProgress('progress-wrap-3', 'legal');
+    // Agent/Landlord already saw the operational notice on the Partnership
+    // screen — Tenants skip that screen, so they see it here instead.
+    document.getElementById('tenant-notice-box').style.display = currentRole === 'tenant' ? 'flex' : 'none';
 
     const box = document.getElementById('legal-box');
     box.innerHTML = data.sections.map(s => {
