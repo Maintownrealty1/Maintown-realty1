@@ -145,6 +145,11 @@
   .commission-box li:last-child { margin-bottom: 0; }
   .commission-box li b { color: #fff; font-weight: 600; }
 
+  .notice-box { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(59,130,246,0.08); border: 1px solid rgba(96,165,250,0.3); margin: 4px 0 18px; }
+  .notice-box svg { width: 18px; height: 18px; color: #60a5fa; flex-shrink: 0; margin-top: 1px; }
+  .notice-box p { margin: 0; font-size: 12px; color: #cbd5e1; line-height: 1.55; }
+  .notice-box p b { color: #93c5fd; font-weight: 600; }
+
   .screen { animation: fadeIn 0.35s ease; }
   .screen.hidden-screen { display: none; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
@@ -280,6 +285,11 @@
       <input type="checkbox" id="partnership-agree-checkbox" class="agree-checkbox">
       <span>I have read and agree to the Partnership Terms &amp; Commission Structure.</span>
     </label>
+
+    <div class="notice-box">
+      <i data-lucide="info" class="w-4 h-4"></i>
+      <p><b>Platform Status &amp; WhatsApp Verification Notice:</b> Physical property inspections, booking confirmations, and payment verifications are currently handled manually via our dedicated WhatsApp Desk during this web phase. AI underwriting, instant digital scheduling, and automated in-app wallets will be fully enabled upon our upcoming official mobile app release.</p>
+    </div>
 
     <button type="button" id="partnership-continue-btn" class="btn-primary" disabled>Accept &amp; Continue to Verification →</button>
     <button type="button" id="partnership-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Sign Up</button>
@@ -569,8 +579,9 @@
         { icon: 'scale', text: 'Legal & dispute protection' },
       ],
       terms: [
-        { label: 'Rental Transactions', body: 'MainTown Realty collects the full standard commission fee + a 5% legal fee on closed apartment rentals.' },
-        { label: 'Property Purchase Sales', body: 'Property Owner pays MainTown Realty a 5% sales commission + a 2.5% legal fee upon closed acquisition.' },
+        { label: 'Upfront & Payout Terms', body: 'Receive your first payment upfront upon escrow confirmation. Monthly rent and installment payments are credited to your account for bank withdrawal via our operations desk.' },
+        { label: 'Rental Transactions', body: 'Landlords receive 100% of their net listed rent. Standard agency fees and 5% legal documentation are collected directly via tenant onboarding.' },
+        { label: 'Property Purchase Sales', body: 'Property Owner pays MainTown Realty 5% sales commission + 2.5% legal fee upon closed sales.' },
       ],
     },
   };
