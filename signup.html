@@ -165,6 +165,23 @@
     display: flex; align-items: center; gap: 8px; max-width: 88%; box-shadow: 0 14px 30px rgba(0,0,0,0.45);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .legal-preview-card { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: rgba(147,51,234,0.08); border: 1px solid rgba(147,51,234,0.3); cursor: pointer; text-align: left; color: inherit; font: inherit; margin-bottom: 4px; transition: border-color 0.15s ease; }
+  .legal-preview-card:hover { border-color: rgba(147,51,234,0.55); }
+  .legal-preview-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(147,51,234,0.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #c084fc; }
+  .legal-preview-text { flex: 1; min-width: 0; }
+  .legal-preview-title { margin: 0; font-size: 13px; font-weight: 600; color: #fff; }
+  .legal-preview-sub { margin: 2px 0 0; font-size: 11.5px; color: #64748b; }
+  .legal-preview-chevron { color: #64748b; flex-shrink: 0; }
+
+  .legal-drawer-overlay { position: fixed; inset: 0; background: rgba(2,6,15,0.72); backdrop-filter: blur(2px); z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+  .legal-drawer-overlay.show { opacity: 1; pointer-events: auto; }
+  .legal-drawer { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%) translateY(100%); width: 100%; max-width: 460px; max-height: 85vh; background: #0F172A; border: 1px solid #1e293b; border-bottom: none; border-radius: 20px 20px 0 0; box-shadow: 0 -20px 50px rgba(0,0,0,0.5); z-index: 301; padding: 10px 20px 24px; overflow-y: auto; transition: transform 0.3s ease; }
+  .legal-drawer.show { transform: translateX(-50%) translateY(0); }
+  .legal-drawer-handle { width: 40px; height: 4px; background: #334155; border-radius: 999px; margin: 4px auto 16px; }
+  .legal-drawer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .legal-drawer-close { width: 30px; height: 30px; border-radius: 999px; background: rgba(15,23,42,0.9); border: 1px solid #1e293b; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; flex-shrink: 0; }
+  .legal-drawer-title { font-size: 17px; font-weight: 600; color: #fff; margin: 4px 0 14px; }
 </style>
 </head>
 <body>
@@ -188,10 +205,10 @@
 
     <div class="progress-wrap" id="progress-wrap-1">
       <div class="progress-labels">
-        <span class="progress-step">Step 1 of 4: Tell us about you</span>
-        <span class="progress-pct">25%</span>
+        <span class="progress-step">Step 1 of 2: Tell us about you</span>
+        <span class="progress-pct">50%</span>
       </div>
-      <div class="progress-track"><div class="progress-fill" style="width:25%"></div></div>
+      <div class="progress-track"><div class="progress-fill" style="width:50%"></div></div>
     </div>
 
     <h1 class="title">Create your account</h1>
@@ -244,8 +261,8 @@
           <input class="field-input phone-input" id="reg-phone" type="tel" required placeholder="801 234 5678">
         </div>
       </div>
-      <p class="kyc-note" style="margin:-8px 0 20px;"><i data-lucide="info" class="w-3.5 h-3.5" style="display:inline; vertical-align:-2px;"></i> You'll set up your email and password login in a later step.</p>
-      <button type="submit" id="continue-btn" class="btn-primary" disabled>Continue to Verification</button>
+      <p class="kyc-note" style="margin:-8px 0 20px;"><i data-lucide="info" class="w-3.5 h-3.5" style="display:inline; vertical-align:-2px;"></i> You'll set up your email and password login in the next step.</p>
+      <button type="submit" id="continue-btn" class="btn-primary" disabled>Continue</button>
       <p id="role-hint" class="role-hint">Select a role above to continue</p>
     </form>
   </div>
@@ -264,10 +281,10 @@
 
     <div class="progress-wrap" id="progress-wrap-partnership">
       <div class="progress-labels">
-        <span class="progress-step">Step 2 of 5: Partnership Benefits &amp; Terms</span>
-        <span class="progress-pct">40%</span>
+        <span class="progress-step">Step 2 of 3: Partnership Benefits &amp; Terms</span>
+        <span class="progress-pct">67%</span>
       </div>
-      <div class="progress-track"><div class="progress-fill" style="width:40%"></div></div>
+      <div class="progress-track"><div class="progress-fill" style="width:67%"></div></div>
     </div>
 
     <div id="partnership-role-badge" class="kyc-role-badge"></div>
@@ -291,130 +308,10 @@
       <p><b>Platform Status &amp; WhatsApp Verification Notice:</b> Physical property inspections, booking confirmations, and payment verifications are currently handled manually via our dedicated WhatsApp Desk during this web phase. AI underwriting, instant digital scheduling, and automated in-app wallets will be fully enabled upon our upcoming official mobile app release.</p>
     </div>
 
-    <button type="button" id="partnership-continue-btn" class="btn-primary" disabled>Accept &amp; Continue to Verification →</button>
+    <button type="button" id="partnership-continue-btn" class="btn-primary" disabled>Accept &amp; Continue to Create Login →</button>
     <button type="button" id="partnership-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Sign Up</button>
   </div>
   <!-- ===================== END SCREEN 1b ===================== -->
-
-  <!-- ===================== SCREEN 2: KYC Requirements (role-based) ===================== -->
-  <div id="screen-2" class="screen hidden-screen">
-
-    <div class="brand-row">
-      <img class="brand-logo" src="./logo.webp" alt="MainTown Realty">
-      <div>
-        <p class="brand-name">MainTown Realty</p>
-        <p class="brand-tag">Own or rent, on your terms.</p>
-      </div>
-    </div>
-
-    <div class="progress-wrap" id="progress-wrap-2">
-      <div class="progress-labels">
-        <span class="progress-step">Step 2 of 4: Verification Requirements</span>
-        <span class="progress-pct">50%</span>
-      </div>
-      <div class="progress-track"><div class="progress-fill" style="width:50%"></div></div>
-    </div>
-
-    <div class="kyc-icon-wrap">
-      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 4.556-3.04 8.4-7.2 9.618a2.25 2.25 0 01-1.6 0C7.04 20.4 4 16.556 4 12V6.108c0-.53.24-1.024.657-1.35A11.99 11.99 0 0112 3c1.93 0 3.76.474 5.343 1.257.417.326.657.82.657 1.35V12z"/></svg>
-    </div>
-
-    <h1 class="title" style="text-align:center;">Verify your identity</h1>
-    <p class="subtitle" style="text-align:center;">Confirm you have these ready — our team will collect and review them with you on WhatsApp.</p>
-
-    <div id="kyc-role-badge" class="kyc-role-badge" style="justify-content:center; margin-left:auto; margin-right:auto;"></div>
-
-    <div id="kyc-list" class="kyc-list"></div>
-    <p class="kyc-note"><i data-lucide="shield-check" class="w-3.5 h-3.5" style="display:inline; vertical-align:-2px;"></i> Tap any item to upload it — a photo, scan, or PDF works. Your selfie opens your camera on mobile. Everything is uploaded securely and reviewed by our verification team.</p>
-
-    <div id="kyc-income-section" style="display:none;">
-      <p class="s-section-label"><i data-lucide="banknote" class="w-4 h-4 text-purple-400"></i>Income Earning Status</p>
-      <div class="field">
-        <label class="field-label">Monthly Income Range (₦)</label>
-        <select class="field-input" id="tenant-income-range">
-          <option value="">Select a range</option>
-          <option value="Under ₦200,000">Under ₦200,000</option>
-          <option value="₦200,000 – ₦300,000">₦200,000 – ₦300,000</option>
-          <option value="₦300,000 – ₦500,000">₦300,000 – ₦500,000</option>
-          <option value="₦500,000 – ₦750,000">₦500,000 – ₦750,000</option>
-          <option value="₦750,000 – ₦1,000,000">₦750,000 – ₦1,000,000</option>
-          <option value="₦1,000,000 – ₦2,000,000">₦1,000,000 – ₦2,000,000</option>
-          <option value="₦2,000,000 – ₦5,000,000">₦2,000,000 – ₦5,000,000</option>
-          <option value="₦5,000,000 – ₦10,000,000">₦5,000,000 – ₦10,000,000</option>
-          <option value="₦10,000,000 – ₦20,000,000">₦10,000,000 – ₦20,000,000</option>
-          <option value="₦20,000,000 – ₦50,000,000">₦20,000,000 – ₦50,000,000</option>
-          <option value="₦50,000,000+">₦50,000,000+</option>
-        </select>
-      </div>
-    </div>
-
-    <div id="kyc-guarantor-section" style="display:none;">
-      <p class="s-section-label"><i data-lucide="user-plus" class="w-4 h-4 text-purple-400"></i>Guarantor / Emergency Contact</p>
-      <div class="field">
-        <label class="field-label">Full Name</label>
-        <input class="field-input" id="guarantor-name" type="text" placeholder="Guarantor's full name">
-      </div>
-      <div class="field">
-        <label class="field-label">Relationship</label>
-        <input class="field-input" id="guarantor-relationship" type="text" placeholder="e.g. Sibling, Employer, Friend">
-      </div>
-      <div class="field">
-        <label class="field-label">Phone Number</label>
-        <input class="field-input" id="guarantor-phone" type="tel" placeholder="080X XXX XXXX">
-      </div>
-    </div>
-
-    <button type="button" id="kyc-continue-btn" class="btn-primary" disabled>Proceed to Step 3: Legal Policy</button>
-    <button type="button" id="kyc-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Account Setup</button>
-  </div>
-  <!-- ===================== END SCREEN 2 ===================== -->
-
-  <!-- ===================== SCREEN 3: Legal Policy & Terms ===================== -->
-  <div id="screen-3" class="screen hidden-screen">
-
-    <div class="brand-row">
-      <img class="brand-logo" src="./logo.webp" alt="MainTown Realty">
-      <div>
-        <p class="brand-name">MainTown Realty</p>
-        <p class="brand-tag">Own or rent, on your terms.</p>
-      </div>
-    </div>
-
-    <div class="progress-wrap" id="progress-wrap-3">
-      <div class="progress-labels">
-        <span class="progress-step">Step 3 of 4: Legal Policy &amp; Terms</span>
-        <span class="progress-pct">75%</span>
-      </div>
-      <div class="progress-track"><div class="progress-fill" style="width:75%"></div></div>
-    </div>
-
-    <div id="legal-role-badge" class="kyc-role-badge"></div>
-
-    <h1 class="title">Terms of Service</h1>
-    <p class="subtitle">Please review the agreement below before signing.</p>
-
-    <div id="legal-box" class="legal-box"></div>
-    <p class="scroll-hint" style="display:flex; align-items:center; justify-content:center; gap:5px;"><i data-lucide="move-vertical" class="w-3.5 h-3.5"></i> Scroll to read the complete agreement</p>
-
-    <label class="agree-row">
-      <input type="checkbox" id="agree-checkbox" class="agree-checkbox">
-      <span>I have read and agree to the full MainTown Realty Terms of Service and Default Rules.</span>
-    </label>
-
-    <div class="field">
-      <label class="field-label">Digital Signature (type your full legal name)</label>
-      <input class="field-input signature-input" id="signature-input" type="text" placeholder="Your full name as signature">
-    </div>
-
-    <div id="tenant-notice-box" class="notice-box" style="display:none;">
-      <i data-lucide="info" class="w-4 h-4"></i>
-      <p><b>Platform Status &amp; WhatsApp Verification Notice:</b> Physical property inspections, booking confirmations, and payment verifications are currently handled manually via our dedicated WhatsApp Desk during this web phase. AI underwriting, instant digital scheduling, and automated in-app wallets will be fully enabled upon our upcoming official mobile app release.</p>
-    </div>
-
-    <button type="button" id="sign-btn" class="btn-primary" disabled>Agree &amp; Continue to Login Setup</button>
-    <button type="button" id="legal-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Verification</button>
-  </div>
-  <!-- ===================== END SCREEN 3 ===================== -->
 
   <!-- ===================== SCREEN 4: Create Your Login ===================== -->
   <div id="screen-4" class="screen hidden-screen">
@@ -429,7 +326,7 @@
 
     <div class="progress-wrap" id="progress-wrap-4">
       <div class="progress-labels">
-        <span class="progress-step">Step 4 of 4: Create Your Login</span>
+        <span class="progress-step">Step 2 of 2: Create Your Login</span>
         <span class="progress-pct">100%</span>
       </div>
       <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
@@ -440,7 +337,7 @@
     </div>
 
     <h1 class="title" style="text-align:center;">Create your login</h1>
-    <p class="subtitle" style="text-align:center;">Set the email and password you'll use to sign in to MainTown Realty. This creates your real account right now.</p>
+    <p class="subtitle" style="text-align:center;">Set your email and password, then review and accept our Terms of Service to finish creating your account.</p>
 
     <div class="field">
       <label class="field-label">Email Address</label>
@@ -468,11 +365,50 @@
       <p id="password-hint" class="kyc-note" style="display:none; margin:8px 0 0;">Passwords must match and be at least 8 characters.</p>
     </div>
 
+    <p class="s-section-label"><i data-lucide="scale" class="w-4 h-4 text-purple-400"></i>Terms of Service</p>
+    <button type="button" id="open-legal-drawer-btn" class="legal-preview-card">
+      <div class="legal-preview-icon"><i data-lucide="file-text" class="w-4 h-4"></i></div>
+      <div class="legal-preview-text">
+        <p class="legal-preview-title">Review the MainTown Realty Terms of Service</p>
+        <p class="legal-preview-sub">Tap to read the full agreement for your role</p>
+      </div>
+      <i data-lucide="chevron-right" class="w-4 h-4 legal-preview-chevron"></i>
+    </button>
+
+    <label class="agree-row">
+      <input type="checkbox" id="agree-checkbox" class="agree-checkbox">
+      <span>I have read and agree to the full MainTown Realty Terms of Service and Default Rules.</span>
+    </label>
+
+    <div class="field">
+      <label class="field-label">Digital Signature (type your full legal name)</label>
+      <input class="field-input signature-input" id="signature-input" type="text" placeholder="Your full name as signature">
+    </div>
+
+    <div id="tenant-notice-box" class="notice-box" style="display:none;">
+      <i data-lucide="info" class="w-4 h-4"></i>
+      <p><b>Platform Status &amp; WhatsApp Verification Notice:</b> Physical property inspections, booking confirmations, and payment verifications are currently handled manually via our dedicated WhatsApp Desk during this web phase. AI underwriting, instant digital scheduling, and automated in-app wallets will be fully enabled upon our upcoming official mobile app release.</p>
+    </div>
+
     <button type="button" id="create-login-btn" class="btn-primary" disabled>Create Login</button>
     <p id="sign-status" class="kyc-note" style="display:none; text-align:center; margin:10px 0 0;"></p>
-    <button type="button" id="login-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Legal Policy</button>
+    <button type="button" id="login-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
   </div>
   <!-- ===================== END SCREEN 4 ===================== -->
+
+  <!-- ===================== Terms of Service Drawer (opens from Screen 4) ===================== -->
+  <div id="legal-drawer-overlay" class="legal-drawer-overlay"></div>
+  <div id="legal-drawer" class="legal-drawer" aria-hidden="true">
+    <div class="legal-drawer-handle"></div>
+    <div class="legal-drawer-header">
+      <div id="legal-drawer-role-badge" class="kyc-role-badge" style="margin:0;"></div>
+      <button type="button" id="close-legal-drawer-btn" aria-label="Close" class="legal-drawer-close">✕</button>
+    </div>
+    <h2 class="legal-drawer-title">Terms of Service</h2>
+    <div id="legal-box" class="legal-box"></div>
+    <p class="scroll-hint" style="display:flex; align-items:center; justify-content:center; gap:5px;"><i data-lucide="move-vertical" class="w-3.5 h-3.5"></i> Scroll to read the complete agreement</p>
+    <button type="button" id="drawer-done-btn" class="btn-primary">Done Reading</button>
+  </div>
 
   <!-- ===================== SCREEN 5: Success ===================== -->
   <div id="screen-5" class="screen hidden-screen">
@@ -613,14 +549,9 @@
   };
 
   let currentRole = null;
-  let kycConfirmedCount = 0;
-  let kycTotalItems = 0;
-  let kycFiles = {}; // { itemIndex: { label, file } } — reset each time screen 2 is (re)built
 
   const screen1 = document.getElementById('screen-1');
   const screenPartnership = document.getElementById('screen-partnership');
-  const screen2 = document.getElementById('screen-2');
-  const screen3 = document.getElementById('screen-3');
   const screen4 = document.getElementById('screen-4');
   const screen5 = document.getElementById('screen-5');
 
@@ -638,15 +569,11 @@
       return [
         { key: 'account', label: 'Tell us about you' },
         { key: 'partnership', label: 'Partnership Benefits & Terms' },
-        { key: 'kyc', label: 'Verification Requirements' },
-        { key: 'legal', label: 'Legal Policy & Terms' },
         { key: 'login', label: 'Create Your Login' },
       ];
     }
     return [
       { key: 'account', label: 'Tell us about you' },
-      { key: 'kyc', label: 'Verification Requirements' },
-      { key: 'legal', label: 'Legal Policy & Terms' },
       { key: 'login', label: 'Create Your Login' },
     ];
   }
@@ -676,6 +603,8 @@
   const passwordInput = document.getElementById('reg-password');
   const passwordConfirmInput = document.getElementById('reg-password-confirm');
   const passwordHint = document.getElementById('password-hint');
+  const agreeCheckbox = document.getElementById('agree-checkbox');
+  const signatureInput = document.getElementById('signature-input');
 
   document.querySelectorAll('.password-toggle-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -706,7 +635,7 @@
       const occupationField = document.getElementById('reg-occupation-field');
       if (currentRole === 'tenant') {
         occupationField.style.display = 'block';
-        continueBtn.textContent = 'Continue to Verification';
+        continueBtn.textContent = 'Continue to Create Login';
       } else {
         occupationField.style.display = 'none';
         document.getElementById('reg-occupation').value = '';
@@ -717,79 +646,16 @@
 
   [fullNameInput, phoneInput].forEach(el => el.addEventListener('input', updateContinueState));
 
-  function populateScreen2() {
-    const data = kycContent[currentRole];
-    document.getElementById('kyc-role-badge').innerHTML = `<i data-lucide="${data.roleIcon}" class="w-4 h-4"></i><span>${data.label}</span>`;
-    setProgress('progress-wrap-2', 'kyc');
-
-    kycConfirmedCount = 0;
-    kycTotalItems = data.items.length;
-    kycFiles = {};
-
-    const list = document.getElementById('kyc-list');
-    list.innerHTML = '';
-    data.items.forEach((docItem, idx) => {
-      // The selfie item gets capture="user" so mobile browsers open the
-      // front camera directly. Desktop browsers ignore "capture" and just
-      // show the normal file picker, so desktop users pick an existing photo.
-      const isSelfie = docItem.icon === 'camera';
-      const accept = isSelfie ? 'image/*' : 'image/*,.pdf,application/pdf';
-      const defaultStatus = isSelfie ? 'Tap to open your camera and take a selfie' : 'Tap to upload a photo or PDF';
-
-      const item = document.createElement('label');
-      item.className = 'kyc-item';
-      item.innerHTML = `
-        <input type="file" class="kyc-file-input" style="display:none;" accept="${accept}" ${isSelfie ? 'capture="user"' : ''}>
-        <div class="kyc-item-icon-wrap"><i data-lucide="${docItem.icon}" class="w-4 h-4"></i></div>
-        <div class="kyc-item-text">
-          <p class="kyc-item-title">${docItem.text}</p>
-          <p class="kyc-item-status">${defaultStatus}</p>
-        </div>
-        <div class="kyc-check-circle"><svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
-      `;
-      const fileInput = item.querySelector('.kyc-file-input');
-      fileInput.addEventListener('change', () => {
-        const file = fileInput.files && fileInput.files[0];
-        const wasConfirmed = item.classList.contains('confirmed');
-        if (file) {
-          kycFiles[idx] = { label: docItem.text, file };
-          item.classList.add('confirmed');
-          item.querySelector('.kyc-item-status').textContent = `Selected: ${file.name}`;
-          if (!wasConfirmed) kycConfirmedCount += 1;
-        } else {
-          delete kycFiles[idx];
-          item.classList.remove('confirmed');
-          item.querySelector('.kyc-item-status').textContent = defaultStatus;
-          if (wasConfirmed) kycConfirmedCount -= 1;
-        }
-        updateKycContinueState();
-      });
-      list.appendChild(item);
-    });
-
-    const guarantorSection = document.getElementById('kyc-guarantor-section');
-    guarantorSection.style.display = currentRole === 'tenant' ? 'block' : 'none';
-    document.getElementById('kyc-income-section').style.display = currentRole === 'tenant' ? 'block' : 'none';
-    if (currentRole !== 'tenant') document.getElementById('tenant-income-range').value = '';
-
-    updateKycContinueState();
-    if (window.lucide) lucide.createIcons();
+  // ---- Screen 4: Create Your Login (also owns the Terms of Service drawer) ----
+  function populateLoginScreen() {
+    setProgress('progress-wrap-4', 'login');
+    // Agent/Landlord already saw the WhatsApp operational notice on the
+    // Partnership screen — Tenants skip that screen, so they see it here.
+    document.getElementById('tenant-notice-box').style.display = currentRole === 'tenant' ? 'flex' : 'none';
+    agreeCheckbox.checked = false;
+    signatureInput.value = '';
+    updateLoginBtnState();
   }
-
-  function updateKycContinueState() {
-    const btn = document.getElementById('kyc-continue-btn');
-    const itemsDone = kycTotalItems > 0 && kycConfirmedCount >= kycTotalItems;
-    let guarantorDone = true;
-    if (currentRole === 'tenant') {
-      const name = document.getElementById('guarantor-name').value.trim();
-      const phone = document.getElementById('guarantor-phone').value.trim();
-      guarantorDone = !!name && !!phone;
-    }
-    btn.disabled = !(itemsDone && guarantorDone);
-  }
-
-  document.getElementById('guarantor-name').addEventListener('input', updateKycContinueState);
-  document.getElementById('guarantor-phone').addEventListener('input', updateKycContinueState);
 
   document.getElementById('reg-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -798,18 +664,62 @@
       populatePartnershipScreen();
       showScreen(screen1, screenPartnership);
     } else {
-      populateScreen2();
-      showScreen(screen1, screen2);
+      populateLoginScreen();
+      showScreen(screen1, screen4);
     }
   });
 
-  document.getElementById('kyc-back-btn').addEventListener('click', () => {
+  document.getElementById('login-back-btn').addEventListener('click', () => {
     if (currentRole === 'agent' || currentRole === 'landlord') {
-      showScreen(screen2, screenPartnership);
+      showScreen(screen4, screenPartnership);
     } else {
-      showScreen(screen2, screen1);
+      showScreen(screen4, screen1);
     }
   });
+
+  // ---- Terms of Service drawer ----
+  const legalDrawerOverlay = document.getElementById('legal-drawer-overlay');
+  const legalDrawer = document.getElementById('legal-drawer');
+
+  function openLegalDrawer() {
+    const data = legalContent[currentRole];
+    document.getElementById('legal-drawer-role-badge').innerHTML = `<i data-lucide="${data.roleIcon}" class="w-4 h-4"></i><span>${data.label}</span>`;
+    const box = document.getElementById('legal-box');
+    box.innerHTML = data.sections.map(s => {
+      const heading = `<h3><i data-lucide="scale" class="text-purple-400"></i>${s.title}</h3>`;
+      if (s.critical) {
+        return `<div class="critical-section"><div class="critical-badge"><i data-lucide="alert-triangle" class="text-amber-400"></i>Compliance Warning</div>${heading}<p>${s.body}</p></div>`;
+      }
+      return `${heading}<p>${s.body}</p>`;
+    }).join('');
+    legalDrawerOverlay.classList.add('show');
+    legalDrawer.classList.add('show');
+    legalDrawer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    if (window.lucide) lucide.createIcons();
+  }
+  function closeLegalDrawer() {
+    legalDrawerOverlay.classList.remove('show');
+    legalDrawer.classList.remove('show');
+    legalDrawer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('open-legal-drawer-btn').addEventListener('click', openLegalDrawer);
+  document.getElementById('close-legal-drawer-btn').addEventListener('click', closeLegalDrawer);
+  document.getElementById('drawer-done-btn').addEventListener('click', closeLegalDrawer);
+  legalDrawerOverlay.addEventListener('click', closeLegalDrawer);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && legalDrawer.classList.contains('show')) closeLegalDrawer();
+  });
+
+  function updateLoginBtnState() {
+    const emailFilled = emailInput.value.trim().length > 0;
+    const passwordOk = passwordInput.value.length >= 8 && passwordInput.value === passwordConfirmInput.value;
+    const passwordTouched = passwordInput.value.length > 0 || passwordConfirmInput.value.length > 0;
+    passwordHint.style.display = (passwordTouched && !passwordOk) ? 'block' : 'none';
+    const agreedToTerms = agreeCheckbox.checked && signatureInput.value.trim().length > 1;
+    createLoginBtn.disabled = !(emailFilled && passwordOk && agreedToTerms);
+  }
 
   // ---- Screen 1b: Partnership Value & Agreement (Agent/Landlord only) ----
   function populatePartnershipScreen() {
@@ -848,71 +758,17 @@
 
   document.getElementById('partnership-continue-btn').addEventListener('click', () => {
     if (document.getElementById('partnership-continue-btn').disabled) return;
-    populateScreen2();
-    showScreen(screenPartnership, screen2);
+    populateLoginScreen();
+    showScreen(screenPartnership, screen4);
   });
 
   document.getElementById('partnership-back-btn').addEventListener('click', () => showScreen(screenPartnership, screen1));
 
-  function populateScreen3() {
-    const data = legalContent[currentRole];
-    document.getElementById('legal-role-badge').innerHTML = `<i data-lucide="${data.roleIcon}" class="w-4 h-4"></i><span>${data.label}</span>`;
-    setProgress('progress-wrap-3', 'legal');
-    // Agent/Landlord already saw the operational notice on the Partnership
-    // screen — Tenants skip that screen, so they see it here instead.
-    document.getElementById('tenant-notice-box').style.display = currentRole === 'tenant' ? 'flex' : 'none';
-
-    const box = document.getElementById('legal-box');
-    box.innerHTML = data.sections.map(s => {
-      const heading = `<h3><i data-lucide="scale" class="text-purple-400"></i>${s.title}</h3>`;
-      if (s.critical) {
-        return `<div class="critical-section"><div class="critical-badge"><i data-lucide="alert-triangle" class="text-amber-400"></i>Compliance Warning</div>${heading}<p>${s.body}</p></div>`;
-      }
-      return `${heading}<p>${s.body}</p>`;
-    }).join('');
-
-    if (window.lucide) lucide.createIcons();
-  }
-
-  document.getElementById('kyc-continue-btn').addEventListener('click', () => {
-    if (document.getElementById('kyc-continue-btn').disabled) return;
-    populateScreen3();
-    showScreen(screen2, screen3);
-  });
-
-  document.getElementById('legal-back-btn').addEventListener('click', () => showScreen(screen3, screen2));
-
-  const agreeCheckbox = document.getElementById('agree-checkbox');
-  const signatureInput = document.getElementById('signature-input');
-  const signBtn = document.getElementById('sign-btn');
-
-  function updateSignBtnState() {
-    signBtn.disabled = !(agreeCheckbox.checked && signatureInput.value.trim().length > 1);
-  }
-  agreeCheckbox.addEventListener('change', updateSignBtnState);
-  signatureInput.addEventListener('input', updateSignBtnState);
-
-  // Agreement is just captured here — the actual login/account creation
-  // happens on Screen 4, so clicking this only advances the screen.
-  signBtn.addEventListener('click', () => {
-    if (signBtn.disabled) return;
-    setProgress('progress-wrap-4', 'login');
-    showScreen(screen3, screen4);
-  });
-
   // ---- Screen 4: Create Your Login ----
   const createLoginBtn = document.getElementById('create-login-btn');
-
-  function updateLoginBtnState() {
-    const emailFilled = emailInput.value.trim().length > 0;
-    const passwordOk = passwordInput.value.length >= 8 && passwordInput.value === passwordConfirmInput.value;
-    const passwordTouched = passwordInput.value.length > 0 || passwordConfirmInput.value.length > 0;
-    passwordHint.style.display = (passwordTouched && !passwordOk) ? 'block' : 'none';
-    createLoginBtn.disabled = !(emailFilled && passwordOk);
-  }
   [emailInput, passwordInput, passwordConfirmInput].forEach(el => el.addEventListener('input', updateLoginBtnState));
-
-  document.getElementById('login-back-btn').addEventListener('click', () => showScreen(screen4, screen3));
+  agreeCheckbox.addEventListener('change', updateLoginBtnState);
+  signatureInput.addEventListener('input', updateLoginBtnState);
 
   // Builds the signed legal agreement as an actual PDF (name, role, KYC
   // attestation, every section of the legal terms, and the typed
@@ -987,7 +843,7 @@
     statusEl.style.display = 'block';
     statusEl.style.color = '#94a3b8';
 
-    const roleLabel = kycContent[currentRole].label;
+    const roleLabel = legalContent[currentRole].label;
     const name = fullNameInput.value.trim();
     const occupation = document.getElementById('reg-occupation').value.trim();
     const email = emailInput.value.trim();
@@ -995,19 +851,6 @@
     const phone = document.getElementById('country-code').value + phoneInput.value.trim();
     const signature = signatureInput.value.trim();
     const signedAt = new Date().toISOString();
-
-    let guarantor = null;
-    let incomeRange = null;
-    if (currentRole === 'tenant') {
-      guarantor = {
-        name: document.getElementById('guarantor-name').value.trim(),
-        relationship: document.getElementById('guarantor-relationship').value.trim(),
-        phone: document.getElementById('guarantor-phone').value.trim(),
-      };
-      incomeRange = document.getElementById('tenant-income-range').value || null;
-    }
-    const kycItems = Array.from(document.querySelectorAll('#kyc-list .kyc-item-title')).map(el => el.textContent.trim());
-    const kycFileEntries = Object.values(kycFiles); // [{ label, file }, ...]
     let accountSaved = false;
 
     createLoginBtn.disabled = true;
@@ -1019,41 +862,30 @@
       if (authError) throw new Error(authError.message);
       const userId = authData.user ? authData.user.id : null;
 
-      // 2. Upload each KYC document/selfie the person selected.
-      createLoginBtn.textContent = 'Uploading your documents…';
-      const kycDocuments = [];
-      for (let i = 0; i < kycFileEntries.length; i++) {
-        const { label, file } = kycFileEntries[i];
-        createLoginBtn.textContent = `Uploading document ${i + 1} of ${kycFileEntries.length}…`;
-        const safeExt = (file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
-        const kycPath = `${userId || 'unlinked'}/kyc-${i}-${Date.now()}.${safeExt}`;
-        const { error: kycUploadError } = await sb.storage.from(ONBOARDING_BUCKET).upload(kycPath, file, { contentType: file.type || 'application/octet-stream', upsert: false });
-        if (kycUploadError) throw new Error(kycUploadError.message);
-        const { data: kycUrlData } = sb.storage.from(ONBOARDING_BUCKET).getPublicUrl(kycPath);
-        kycDocuments.push({ label, url: kycUrlData.publicUrl });
-      }
-
-      // 3. Build the signed agreement as a PDF and upload it to storage.
+      // 2. Build the signed agreement as a PDF and upload it to storage.
       createLoginBtn.textContent = 'Saving your signed agreement…';
-      const pdfBlob = buildAgreementPdf({ name, roleLabel, email, phone, occupation, guarantor, incomeRange, kycItems, signature, signedAt });
+      const pdfBlob = buildAgreementPdf({ name, roleLabel, email, phone, occupation, guarantor: null, incomeRange: null, kycItems: [], signature, signedAt });
       const pdfPath = `${userId || 'unlinked'}/agreement-${Date.now()}.pdf`;
       const { error: uploadError } = await sb.storage.from(ONBOARDING_BUCKET).upload(pdfPath, pdfBlob, { contentType: 'application/pdf', upsert: false });
       if (uploadError) throw new Error(uploadError.message);
       const { data: pdfUrlData } = sb.storage.from(ONBOARDING_BUCKET).getPublicUrl(pdfPath);
 
-      // 4. Save the login + KYC + agreement record so it shows up on the admin panel.
+      // 3. Save the login + agreement record so it shows up on the admin panel.
+      // Identity/KYC documents and guarantor details are now collected
+      // manually by the team on WhatsApp, per the operational notice shown
+      // during onboarding — so those fields are intentionally left blank here.
       createLoginBtn.textContent = 'Saving to admin…';
       const { error: insertError } = await sb.from('signups').insert({
         user_id: userId,
         full_name: name,
         email, phone, occupation,
         role: currentRole,
-        guarantor_name: guarantor ? guarantor.name : null,
-        guarantor_relationship: guarantor ? guarantor.relationship : null,
-        guarantor_phone: guarantor ? guarantor.phone : null,
-        income_range: incomeRange,
-        kyc_items: kycItems,
-        kyc_documents: kycDocuments,
+        guarantor_name: null,
+        guarantor_relationship: null,
+        guarantor_phone: null,
+        income_range: null,
+        kyc_items: [],
+        kyc_documents: [],
         agreement_pdf_url: pdfUrlData.publicUrl,
         signature,
         signed_at: signedAt,
@@ -1077,7 +909,6 @@
 
     let message = `Hello MainTown Realty, I just signed up on the website.\n\nName: ${name}\nRole: ${roleLabel}\nEmail: ${email}\nPhone: ${phone}`;
     if (occupation) message += `\nOccupation: ${occupation}`;
-    if (guarantor) message += `\nGuarantor: ${guarantor.name} (${guarantor.relationship || 'n/a'}) — ${guarantor.phone}`;
     message += `\n\nI've reviewed and agreed to the Terms of Service. Signed: ${signature}`;
 
     const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
