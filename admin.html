@@ -670,6 +670,9 @@
       const guarantorHtml = s.guarantor_name
         ? `<p class="text-xs text-slate-500 mt-2">Guarantor: ${s.guarantor_name} (${s.guarantor_relationship || 'n/a'}) — ${s.guarantor_phone || ''}</p>`
         : '';
+      const incomeHtml = s.income_range
+        ? `<p class="text-xs text-slate-500 mt-1">Monthly Income Range: <span class="text-slate-300">${s.income_range}</span></p>`
+        : '';
       return `
       <div class="signup-card bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         <div class="signup-header flex items-start justify-between gap-3 flex-wrap px-4 py-4 cursor-pointer select-none">
@@ -682,6 +685,7 @@
               </p>
               <p class="text-xs text-slate-500 mt-0.5">${s.phone || ''}${s.occupation ? ' · ' + s.occupation : ''}</p>
               ${guarantorHtml}
+            ${incomeHtml}
             </div>
           </div>
           <select class="signup-status-select shrink-0 !w-auto !py-1.5 !text-xs" data-id="${s.id}">

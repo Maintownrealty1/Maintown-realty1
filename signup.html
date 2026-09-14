@@ -327,6 +327,27 @@
     <div id="kyc-list" class="kyc-list"></div>
     <p class="kyc-note"><i data-lucide="shield-check" class="w-3.5 h-3.5" style="display:inline; vertical-align:-2px;"></i> Tap any item to upload it — a photo, scan, or PDF works. Your selfie opens your camera on mobile. Everything is uploaded securely and reviewed by our verification team.</p>
 
+    <div id="kyc-income-section" style="display:none;">
+      <p class="s-section-label"><i data-lucide="banknote" class="w-4 h-4 text-purple-400"></i>Income Earning Status</p>
+      <div class="field">
+        <label class="field-label">Monthly Income Range (₦)</label>
+        <select class="field-input" id="tenant-income-range">
+          <option value="">Select a range</option>
+          <option value="Under ₦200,000">Under ₦200,000</option>
+          <option value="₦200,000 – ₦300,000">₦200,000 – ₦300,000</option>
+          <option value="₦300,000 – ₦500,000">₦300,000 – ₦500,000</option>
+          <option value="₦500,000 – ₦750,000">₦500,000 – ₦750,000</option>
+          <option value="₦750,000 – ₦1,000,000">₦750,000 – ₦1,000,000</option>
+          <option value="₦1,000,000 – ₦2,000,000">₦1,000,000 – ₦2,000,000</option>
+          <option value="₦2,000,000 – ₦5,000,000">₦2,000,000 – ₦5,000,000</option>
+          <option value="₦5,000,000 – ₦10,000,000">₦5,000,000 – ₦10,000,000</option>
+          <option value="₦10,000,000 – ₦20,000,000">₦10,000,000 – ₦20,000,000</option>
+          <option value="₦20,000,000 – ₦50,000,000">₦20,000,000 – ₦50,000,000</option>
+          <option value="₦50,000,000+">₦50,000,000+</option>
+        </select>
+      </div>
+    </div>
+
     <div id="kyc-guarantor-section" style="display:none;">
       <p class="s-section-label"><i data-lucide="user-plus" class="w-4 h-4 text-purple-400"></i>Guarantor / Emergency Contact</p>
       <div class="field">
@@ -748,6 +769,8 @@
 
     const guarantorSection = document.getElementById('kyc-guarantor-section');
     guarantorSection.style.display = currentRole === 'tenant' ? 'block' : 'none';
+    document.getElementById('kyc-income-section').style.display = currentRole === 'tenant' ? 'block' : 'none';
+    if (currentRole !== 'tenant') document.getElementById('tenant-income-range').value = '';
 
     updateKycContinueState();
     if (window.lucide) lucide.createIcons();
@@ -894,7 +917,7 @@
   // Builds the signed legal agreement as an actual PDF (name, role, KYC
   // attestation, every section of the legal terms, and the typed
   // signature + timestamp) and returns it as a Blob for upload.
-  function buildAgreementPdf({ name, roleLabel, email, phone, occupation, guarantor, kycItems, signature, signedAt }) {
+  function buildAgreementPdf({ name, roleLabel, email, phone, occupation, guarantor, incomeRange, kycItems, signature, signedAt }) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -926,6 +949,7 @@
     paragraph(`Email: ${email}`);
     paragraph(`Phone: ${phone}`);
     if (guarantor) paragraph(`Guarantor: ${guarantor.name} (${guarantor.relationship || 'n/a'}) — ${guarantor.phone}`);
+    if (incomeRange) paragraph(`Monthly Income Range: ${incomeRange}`);
     y += 6;
 
     heading('KYC Attestation', 12);
@@ -973,12 +997,14 @@
     const signedAt = new Date().toISOString();
 
     let guarantor = null;
+    let incomeRange = null;
     if (currentRole === 'tenant') {
       guarantor = {
         name: document.getElementById('guarantor-name').value.trim(),
         relationship: document.getElementById('guarantor-relationship').value.trim(),
         phone: document.getElementById('guarantor-phone').value.trim(),
       };
+      incomeRange = document.getElementById('tenant-income-range').value || null;
     }
     const kycItems = Array.from(document.querySelectorAll('#kyc-list .kyc-item-title')).map(el => el.textContent.trim());
     const kycFileEntries = Object.values(kycFiles); // [{ label, file }, ...]
@@ -1009,7 +1035,7 @@
 
       // 3. Build the signed agreement as a PDF and upload it to storage.
       createLoginBtn.textContent = 'Saving your signed agreement…';
-      const pdfBlob = buildAgreementPdf({ name, roleLabel, email, phone, occupation, guarantor, kycItems, signature, signedAt });
+      const pdfBlob = buildAgreementPdf({ name, roleLabel, email, phone, occupation, guarantor, incomeRange, kycItems, signature, signedAt });
       const pdfPath = `${userId || 'unlinked'}/agreement-${Date.now()}.pdf`;
       const { error: uploadError } = await sb.storage.from(ONBOARDING_BUCKET).upload(pdfPath, pdfBlob, { contentType: 'application/pdf', upsert: false });
       if (uploadError) throw new Error(uploadError.message);
@@ -1025,6 +1051,7 @@
         guarantor_name: guarantor ? guarantor.name : null,
         guarantor_relationship: guarantor ? guarantor.relationship : null,
         guarantor_phone: guarantor ? guarantor.phone : null,
+        income_range: incomeRange,
         kyc_items: kycItems,
         kyc_documents: kycDocuments,
         agreement_pdf_url: pdfUrlData.publicUrl,
