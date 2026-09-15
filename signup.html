@@ -69,7 +69,7 @@
   .role-card.selected .check-mark { display: flex; }
   .check-mark svg { width: 12px; height: 12px; color: #fff; }
 
-  .field { margin-bottom: 16px; }
+  .field { margin-bottom: 16px; flex-shrink: 0; }
   .field-label { display: block; font-size: 12px; font-weight: 500; color: #94a3b8; margin-bottom: 6px; }
   .field-input { width: 100%; background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 12px; padding: 13px 16px; font-size: 14px; color: #fff; outline: none; transition: all 0.15s ease; }
   .field-input::placeholder { color: #475569; }
@@ -112,7 +112,7 @@
 
   .s-section-label { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin: 4px 0 14px; }
 
-  .legal-box { max-height: 320px; overflow-y: auto; padding: 16px; border-radius: 14px; background: rgba(15,23,42,0.9); border: 1px solid #1e293b; font-size: 12px; color: #cbd5e1; line-height: 1.6; }
+  .legal-box { flex: 1; min-height: 120px; overflow-y: auto; padding: 16px; border-radius: 14px; background: rgba(15,23,42,0.9); border: 1px solid #1e293b; font-size: 12px; color: #cbd5e1; line-height: 1.65; }
   .legal-box::-webkit-scrollbar { width: 6px; }
   .legal-box::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
   .legal-box h3 { font-size: 12.5px; font-weight: 600; color: #e2e8f0; margin: 18px 0 6px; display: flex; align-items: center; gap: 6px; }
@@ -124,9 +124,9 @@
   .legal-box .critical-section h3 { color: #f87171; }
   .legal-box .critical-section p { color: #fca5a5; }
   .legal-box .critical-section { background: rgba(127,29,29,0.15); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
-  .scroll-hint { font-size: 11px; color: #64748b; text-align: center; margin: 8px 0 20px; }
+  .scroll-hint { font-size: 11px; color: #64748b; text-align: center; margin: 8px 0 2px; flex-shrink: 0; }
 
-  .agree-row { display: flex; align-items: flex-start; gap: 10px; margin: 20px 0 16px; font-size: 12.5px; color: #cbd5e1; line-height: 1.5; cursor: pointer; }
+  .agree-row { display: flex; align-items: flex-start; gap: 10px; margin: 16px 0 14px; font-size: 12.5px; color: #cbd5e1; line-height: 1.5; cursor: pointer; flex-shrink: 0; }
   .agree-checkbox { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; accent-color: #9333ea; cursor: pointer; }
   .signature-input { font-family: 'Brush Script MT', cursive, -apple-system, sans-serif; font-size: 18px; }
 
@@ -174,12 +174,12 @@
 
   .legal-drawer-overlay { position: fixed; inset: 0; background: rgba(2,6,15,0.72); backdrop-filter: blur(2px); z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
   .legal-drawer-overlay.show { opacity: 1; pointer-events: auto; }
-  .legal-drawer { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); opacity: 0; pointer-events: none; width: calc(100% - 40px); max-width: 420px; max-height: 82vh; background: #0F172A; border: 1px solid #1e293b; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.55); z-index: 301; padding: 18px 20px 24px; overflow-y: auto; transition: transform 0.22s ease, opacity 0.22s ease; }
+  .legal-drawer { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); opacity: 0; pointer-events: none; width: calc(100% - 32px); max-width: 420px; max-height: 85vh; background: #0F172A; border: 1px solid #1e293b; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.55); z-index: 301; padding: 22px 20px 22px; display: flex; flex-direction: column; overflow: hidden; transition: transform 0.22s ease, opacity 0.22s ease; }
   .legal-drawer.show { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
   .legal-drawer-handle { display: none; }
-  .legal-drawer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .legal-drawer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-shrink: 0; }
   .legal-drawer-close { width: 30px; height: 30px; border-radius: 999px; background: rgba(15,23,42,0.9); border: 1px solid #1e293b; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; flex-shrink: 0; }
-  .legal-drawer-title { font-size: 17px; font-weight: 600; color: #fff; margin: 4px 0 14px; }
+  .legal-drawer-title { font-size: 17px; font-weight: 600; color: #fff; margin: 4px 0 16px; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -396,7 +396,7 @@
       <input class="field-input signature-input" id="signature-input" type="text" placeholder="Your full name as signature">
     </div>
 
-    <button type="button" id="drawer-done-btn" class="btn-primary" disabled>Sign &amp; Continue</button>
+    <button type="button" id="drawer-done-btn" class="btn-primary" style="flex-shrink:0; margin-top:4px;" disabled>Sign &amp; Continue</button>
   </div>
 
   <!-- ===================== SCREEN 5: Success ===================== -->
@@ -948,7 +948,7 @@
       // Identity/KYC documents and guarantor details are now collected
       // manually by the team on WhatsApp, per the operational notice shown
       // during onboarding — so those fields are intentionally left blank here.
-      createLoginBtn.textContent = 'Saving to admin…';
+      createLoginBtn.textContent = 'Finishing setup…';
       const { error: insertError } = await sb.from('signups').insert({
         user_id: userId,
         full_name: name,
