@@ -245,8 +245,8 @@
         <input class="field-input" id="reg-fullname" type="text" required placeholder="e.g. Onwochei Precious Ebuka">
       </div>
       <div class="field" id="reg-occupation-field" style="display:none;">
-        <label class="field-label">Occupation</label>
-        <input class="field-input" id="reg-occupation" type="text" placeholder="e.g. Software Engineer">
+        <label class="field-label">Occupation *</label>
+        <input class="field-input" id="reg-occupation" type="text" required placeholder="e.g. Software Engineer / Student / Self-employed">
       </div>
       <div class="field">
         <label class="field-label">Phone Number</label>
@@ -647,7 +647,10 @@
   });
 
   function updateContinueState() {
-    const formFilled = fullNameInput.value.trim() && phoneInput.value.trim();
+    const occupationField = document.getElementById('reg-occupation-field');
+    const occupationRequired = occupationField.style.display !== 'none';
+    const occupationOk = !occupationRequired || document.getElementById('reg-occupation').value.trim().length > 0;
+    const formFilled = fullNameInput.value.trim() && phoneInput.value.trim() && occupationOk;
     continueBtn.disabled = !(currentRole && formFilled);
     roleHint.style.display = currentRole ? 'none' : 'block';
   }
@@ -657,7 +660,6 @@
       roleCards.forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       currentRole = card.dataset.role;
-      updateContinueState();
       setProgress('progress-wrap-1', 'account');
 
       const occupationField = document.getElementById('reg-occupation-field');
@@ -669,6 +671,7 @@
         document.getElementById('reg-occupation').value = '';
         continueBtn.textContent = 'Continue to Partnership Benefits →';
       }
+      updateContinueState();
       saveState();
     });
   });
