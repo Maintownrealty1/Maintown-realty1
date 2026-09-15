@@ -166,21 +166,17 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  .legal-preview-card { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: rgba(147,51,234,0.08); border: 1px solid rgba(147,51,234,0.3); cursor: pointer; text-align: left; color: inherit; font: inherit; margin-bottom: 4px; transition: border-color 0.15s ease; }
-  .legal-preview-card:hover { border-color: rgba(147,51,234,0.55); }
-  .legal-preview-card.confirmed-terms { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.08); }
-  .legal-preview-card.confirmed-terms .legal-preview-icon { background: rgba(16,185,129,0.18); color: #10b981; }
-  .legal-preview-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(147,51,234,0.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #c084fc; }
-  .legal-preview-text { flex: 1; min-width: 0; }
-  .legal-preview-title { margin: 0; font-size: 13px; font-weight: 600; color: #fff; }
-  .legal-preview-sub { margin: 2px 0 0; font-size: 11.5px; color: #64748b; }
-  .legal-preview-chevron { color: #64748b; flex-shrink: 0; }
+  .legal-link-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 2px; cursor: pointer; background: none; border: none; width: 100%; text-align: left; color: inherit; font: inherit; margin-bottom: 4px; }
+  .legal-link-text { font-size: 13.5px; font-weight: 600; color: #c084fc; text-decoration: underline; text-underline-offset: 2px; }
+  .legal-link-row.confirmed-terms .legal-link-text { color: #10b981; }
+  .legal-link-status { font-size: 11.5px; color: #64748b; }
+  .legal-link-row.confirmed-terms .legal-link-status { color: #10b981; }
 
-  .legal-drawer-overlay { position: fixed; inset: 0; background: rgba(2,6,15,0.72); backdrop-filter: blur(2px); z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+  .legal-drawer-overlay { position: fixed; inset: 0; background: rgba(2,6,15,0.72); backdrop-filter: blur(2px); z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; display: flex; align-items: center; justify-content: center; padding: 20px; }
   .legal-drawer-overlay.show { opacity: 1; pointer-events: auto; }
-  .legal-drawer { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%) translateY(100%); width: 100%; max-width: 460px; max-height: 85vh; background: #0F172A; border: 1px solid #1e293b; border-bottom: none; border-radius: 20px 20px 0 0; box-shadow: 0 -20px 50px rgba(0,0,0,0.5); z-index: 301; padding: 10px 20px 24px; overflow-y: auto; transition: transform 0.3s ease; }
-  .legal-drawer.show { transform: translateX(-50%) translateY(0); }
-  .legal-drawer-handle { width: 40px; height: 4px; background: #334155; border-radius: 999px; margin: 4px auto 16px; }
+  .legal-drawer { position: relative; left: auto; bottom: auto; transform: scale(0.95) translateY(8px); opacity: 0; width: 100%; max-width: 420px; max-height: 82vh; background: #0F172A; border: 1px solid #1e293b; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.55); z-index: 301; padding: 18px 20px 24px; overflow-y: auto; transition: transform 0.22s ease, opacity 0.22s ease; margin: auto; }
+  .legal-drawer-overlay.show .legal-drawer { transform: scale(1) translateY(0); opacity: 1; }
+  .legal-drawer-handle { display: none; }
   .legal-drawer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   .legal-drawer-close { width: 30px; height: 30px; border-radius: 999px; background: rgba(15,23,42,0.9); border: 1px solid #1e293b; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; flex-shrink: 0; }
   .legal-drawer-title { font-size: 17px; font-weight: 600; color: #fff; margin: 4px 0 14px; }
@@ -358,13 +354,9 @@
     </div>
 
     <p class="s-section-label"><i data-lucide="scale" class="w-4 h-4 text-purple-400"></i>Terms of Service</p>
-    <button type="button" id="open-legal-drawer-btn" class="legal-preview-card">
-      <div class="legal-preview-icon"><i data-lucide="file-text" class="w-4 h-4"></i></div>
-      <div class="legal-preview-text">
-        <p id="legal-preview-title" class="legal-preview-title">Review &amp; sign the MainTown Realty Terms of Service</p>
-        <p id="legal-preview-sub" class="legal-preview-sub">Required — tap to read, agree, and sign</p>
-      </div>
-      <i data-lucide="chevron-right" class="w-4 h-4 legal-preview-chevron"></i>
+    <button type="button" id="open-legal-drawer-btn" class="legal-link-row">
+      <span id="legal-preview-title" class="legal-link-text">Read Terms of Service</span>
+      <span id="legal-preview-sub" class="legal-link-status">Required — tap to read, agree &amp; sign</span>
     </button>
 
     <button type="button" id="tenant-notice-toggle" class="notice-box" style="display:none; width:100%; cursor:pointer; font:inherit; text-align:left;">
@@ -552,10 +544,50 @@
   const screen4 = document.getElementById('screen-4');
   const screen5 = document.getElementById('screen-5');
 
+  // ---- Reload persistence ----
+  // Keeps the user on whatever step/role/fields they had so a reload
+  // doesn't send them back to Step 1. Password, the agreement checkbox,
+  // and the signature are deliberately NOT saved — those must always be
+  // re-entered/re-confirmed, so "must agree before login is created"
+  // still holds after a reload.
+  const STORAGE_KEY = 'mtRealtySignupState';
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        role: currentRole,
+        screen: currentScreenKey,
+        fullname: fullNameInput.value,
+        occupation: document.getElementById('reg-occupation').value,
+        countryCode: document.getElementById('country-code').value,
+        phone: phoneInput.value,
+        email: emailInput.value,
+      }));
+    } catch (e) { /* storage unavailable (private mode, etc.) — fail silently */ }
+  }
+
+  function clearSavedState() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+  }
+
+  let currentScreenKey = 'screen-1';
+
   function showScreen(fromEl, toEl) {
     fromEl.classList.add('hidden-screen');
     toEl.classList.remove('hidden-screen');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    currentScreenKey = toEl.id;
+    saveState();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // Same as showScreen but with no transition/scroll — used only when
+  // restoring straight to a saved step on page load.
+  function jumpToScreen(id) {
+    [screen1, screenPartnership, screen4, screen5].forEach(s => s.classList.add('hidden-screen'));
+    const target = document.getElementById(id) || screen1;
+    target.classList.remove('hidden-screen');
+    currentScreenKey = target.id;
     if (window.lucide) lucide.createIcons();
   }
 
@@ -637,10 +669,13 @@
         document.getElementById('reg-occupation').value = '';
         continueBtn.textContent = 'Continue to Partnership Benefits →';
       }
+      saveState();
     });
   });
 
-  [fullNameInput, phoneInput].forEach(el => el.addEventListener('input', updateContinueState));
+  [fullNameInput, phoneInput, document.getElementById('reg-occupation'), document.getElementById('country-code')]
+    .forEach(el => el.addEventListener('input', () => { updateContinueState(); saveState(); }));
+  document.getElementById('country-code').addEventListener('change', saveState);
 
   // ---- Screen 4: Create Your Login (also owns the Terms of Service drawer) ----
   function populateLoginScreen() {
@@ -660,18 +695,18 @@
   // Reflects agreement/signature status on the main screen's Terms card,
   // since the checkbox + signature now live inside the drawer itself.
   function updateTermsPreview() {
-    const previewCard = document.getElementById('open-legal-drawer-btn');
+    const linkRow = document.getElementById('open-legal-drawer-btn');
     const title = document.getElementById('legal-preview-title');
     const sub = document.getElementById('legal-preview-sub');
     const signed = agreeCheckbox.checked && signatureInput.value.trim().length > 1;
     if (signed) {
-      previewCard.classList.add('confirmed-terms');
+      linkRow.classList.add('confirmed-terms');
       title.textContent = 'Terms of Service — signed ✓';
-      sub.textContent = `Signed as ${signatureInput.value.trim()} · Tap to review`;
+      sub.textContent = `Signed as ${signatureInput.value.trim()}`;
     } else {
-      previewCard.classList.remove('confirmed-terms');
-      title.textContent = 'Review & sign the MainTown Realty Terms of Service';
-      sub.textContent = 'Required — tap to read, agree, and sign';
+      linkRow.classList.remove('confirmed-terms');
+      title.textContent = 'Read Terms of Service';
+      sub.textContent = 'Required — tap to read, agree & sign';
     }
   }
 
@@ -807,6 +842,7 @@
   // ---- Screen 4: Create Your Login ----
   const createLoginBtn = document.getElementById('create-login-btn');
   [emailInput, passwordInput].forEach(el => el.addEventListener('input', updateLoginBtnState));
+  emailInput.addEventListener('input', saveState);
 
   // Builds the signed legal agreement as an actual PDF (name, role, KYC
   // attestation, every section of the legal terms, and the typed
@@ -954,10 +990,58 @@
 
     createLoginBtn.disabled = false;
     createLoginBtn.textContent = 'Create Login';
+    clearSavedState();
     showScreen(screen4, screen5);
     window.open(waLink, '_blank', 'noopener,noreferrer');
   });
 
+  // ---- Restore saved progress on page load ----
+  function restoreState() {
+    let saved;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      saved = JSON.parse(raw);
+    } catch (e) { return; }
+    if (!saved || !saved.role) return;
+
+    const card = document.querySelector(`.role-card[data-role="${saved.role}"]`);
+    if (!card) return;
+
+    roleCards.forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    currentRole = saved.role;
+
+    const occupationField = document.getElementById('reg-occupation-field');
+    if (currentRole === 'tenant') {
+      occupationField.style.display = 'block';
+      continueBtn.textContent = 'Continue to Create Login';
+    } else {
+      occupationField.style.display = 'none';
+      continueBtn.textContent = 'Continue to Partnership Benefits →';
+    }
+
+    if (saved.fullname) fullNameInput.value = saved.fullname;
+    if (saved.occupation) document.getElementById('reg-occupation').value = saved.occupation;
+    if (saved.countryCode) document.getElementById('country-code').value = saved.countryCode;
+    if (saved.phone) phoneInput.value = saved.phone;
+    if (saved.email) emailInput.value = saved.email;
+
+    updateContinueState();
+    setProgress('progress-wrap-1', 'account');
+
+    if (saved.screen === 'screen-partnership') {
+      populatePartnershipScreen();
+      jumpToScreen('screen-partnership');
+    } else if (saved.screen === 'screen-4') {
+      populateLoginScreen();
+      jumpToScreen('screen-4');
+    }
+    // Password, the agreement checkbox, and the signature always start
+    // blank — those stay a fresh, required step even after a reload.
+  }
+
+  restoreState();
   if (window.lucide) lucide.createIcons();
 </script>
 
