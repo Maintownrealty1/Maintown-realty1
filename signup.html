@@ -168,6 +168,8 @@
 
   .legal-preview-card { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: rgba(147,51,234,0.08); border: 1px solid rgba(147,51,234,0.3); cursor: pointer; text-align: left; color: inherit; font: inherit; margin-bottom: 4px; transition: border-color 0.15s ease; }
   .legal-preview-card:hover { border-color: rgba(147,51,234,0.55); }
+  .legal-preview-card.confirmed-terms { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.08); }
+  .legal-preview-card.confirmed-terms .legal-preview-icon { background: rgba(16,185,129,0.18); color: #10b981; }
   .legal-preview-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(147,51,234,0.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #c084fc; }
   .legal-preview-text { flex: 1; min-width: 0; }
   .legal-preview-title { margin: 0; font-size: 13px; font-weight: 600; color: #fff; }
@@ -352,45 +354,29 @@
           <i data-lucide="eye-off" class="pw-icon-hide" style="display:none;"></i>
         </button>
       </div>
-    </div>
-    <div class="field">
-      <label class="field-label">Confirm Password</label>
-      <div class="field-password-wrap">
-        <input class="field-input" id="reg-password-confirm" type="password" required placeholder="Re-enter your password" autocomplete="new-password">
-        <button type="button" class="password-toggle-btn" data-toggle-for="reg-password-confirm" aria-label="Show password">
-          <i data-lucide="eye" class="pw-icon-show"></i>
-          <i data-lucide="eye-off" class="pw-icon-hide" style="display:none;"></i>
-        </button>
-      </div>
-      <p id="password-hint" class="kyc-note" style="display:none; margin:8px 0 0;">Passwords must match and be at least 8 characters.</p>
+      <p id="password-hint" class="kyc-note" style="display:none; margin:8px 0 0;">Password must be at least 8 characters.</p>
     </div>
 
     <p class="s-section-label"><i data-lucide="scale" class="w-4 h-4 text-purple-400"></i>Terms of Service</p>
     <button type="button" id="open-legal-drawer-btn" class="legal-preview-card">
       <div class="legal-preview-icon"><i data-lucide="file-text" class="w-4 h-4"></i></div>
       <div class="legal-preview-text">
-        <p class="legal-preview-title">Review the MainTown Realty Terms of Service</p>
-        <p class="legal-preview-sub">Tap to read the full agreement for your role</p>
+        <p id="legal-preview-title" class="legal-preview-title">Review &amp; sign the MainTown Realty Terms of Service</p>
+        <p id="legal-preview-sub" class="legal-preview-sub">Required — tap to read, agree, and sign</p>
       </div>
       <i data-lucide="chevron-right" class="w-4 h-4 legal-preview-chevron"></i>
     </button>
 
-    <label class="agree-row">
-      <input type="checkbox" id="agree-checkbox" class="agree-checkbox">
-      <span>I have read and agree to the full MainTown Realty Terms of Service and Default Rules.</span>
-    </label>
-
-    <div class="field">
-      <label class="field-label">Digital Signature (type your full legal name)</label>
-      <input class="field-input signature-input" id="signature-input" type="text" placeholder="Your full name as signature">
-    </div>
-
-    <div id="tenant-notice-box" class="notice-box" style="display:none;">
+    <button type="button" id="tenant-notice-toggle" class="notice-box" style="display:none; width:100%; cursor:pointer; font:inherit; text-align:left;">
+      <i data-lucide="info" class="w-4 h-4"></i>
+      <p><b>Platform Status &amp; WhatsApp Verification Notice</b> — manual verification during this web phase. <span style="color:#93c5fd; font-weight:600;">Tap to learn more</span></p>
+    </button>
+    <div id="tenant-notice-full" class="notice-box" style="display:none;">
       <i data-lucide="info" class="w-4 h-4"></i>
       <p><b>Platform Status &amp; WhatsApp Verification Notice:</b> Physical property inspections, booking confirmations, and payment verifications are currently handled manually via our dedicated WhatsApp Desk during this web phase. AI underwriting, instant digital scheduling, and automated in-app wallets will be fully enabled upon our upcoming official mobile app release.</p>
     </div>
 
-    <button type="button" id="create-login-btn" class="btn-primary" disabled>Create Login</button>
+    <button type="button" id="create-login-btn" class="btn-primary" disabled>Agree to Terms to Continue</button>
     <p id="sign-status" class="kyc-note" style="display:none; text-align:center; margin:10px 0 0;"></p>
     <button type="button" id="login-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
   </div>
@@ -407,7 +393,18 @@
     <h2 class="legal-drawer-title">Terms of Service</h2>
     <div id="legal-box" class="legal-box"></div>
     <p class="scroll-hint" style="display:flex; align-items:center; justify-content:center; gap:5px;"><i data-lucide="move-vertical" class="w-3.5 h-3.5"></i> Scroll to read the complete agreement</p>
-    <button type="button" id="drawer-done-btn" class="btn-primary">Done Reading</button>
+
+    <label class="agree-row">
+      <input type="checkbox" id="agree-checkbox" class="agree-checkbox">
+      <span>I have read and agree to the full MainTown Realty Terms of Service and Default Rules.</span>
+    </label>
+
+    <div class="field">
+      <label class="field-label">Digital Signature (type your full legal name)</label>
+      <input class="field-input signature-input" id="signature-input" type="text" placeholder="Your full name as signature">
+    </div>
+
+    <button type="button" id="drawer-done-btn" class="btn-primary" disabled>Sign &amp; Continue</button>
   </div>
 
   <!-- ===================== SCREEN 5: Success ===================== -->
@@ -601,7 +598,6 @@
   // since IDs are the same across the whole document.
   const emailInput = document.getElementById('reg-email');
   const passwordInput = document.getElementById('reg-password');
-  const passwordConfirmInput = document.getElementById('reg-password-confirm');
   const passwordHint = document.getElementById('password-hint');
   const agreeCheckbox = document.getElementById('agree-checkbox');
   const signatureInput = document.getElementById('signature-input');
@@ -650,12 +646,39 @@
   function populateLoginScreen() {
     setProgress('progress-wrap-4', 'login');
     // Agent/Landlord already saw the WhatsApp operational notice on the
-    // Partnership screen — Tenants skip that screen, so they see it here.
-    document.getElementById('tenant-notice-box').style.display = currentRole === 'tenant' ? 'flex' : 'none';
+    // Partnership screen — Tenants skip that screen, so they see it here,
+    // collapsed to one line until tapped.
+    const isTenant = currentRole === 'tenant';
+    document.getElementById('tenant-notice-toggle').style.display = isTenant ? 'flex' : 'none';
+    document.getElementById('tenant-notice-full').style.display = 'none';
     agreeCheckbox.checked = false;
     signatureInput.value = '';
+    updateTermsPreview();
     updateLoginBtnState();
   }
+
+  // Reflects agreement/signature status on the main screen's Terms card,
+  // since the checkbox + signature now live inside the drawer itself.
+  function updateTermsPreview() {
+    const previewCard = document.getElementById('open-legal-drawer-btn');
+    const title = document.getElementById('legal-preview-title');
+    const sub = document.getElementById('legal-preview-sub');
+    const signed = agreeCheckbox.checked && signatureInput.value.trim().length > 1;
+    if (signed) {
+      previewCard.classList.add('confirmed-terms');
+      title.textContent = 'Terms of Service — signed ✓';
+      sub.textContent = `Signed as ${signatureInput.value.trim()} · Tap to review`;
+    } else {
+      previewCard.classList.remove('confirmed-terms');
+      title.textContent = 'Review & sign the MainTown Realty Terms of Service';
+      sub.textContent = 'Required — tap to read, agree, and sign';
+    }
+  }
+
+  document.getElementById('tenant-notice-toggle').addEventListener('click', () => {
+    document.getElementById('tenant-notice-toggle').style.display = 'none';
+    document.getElementById('tenant-notice-full').style.display = 'flex';
+  });
 
   document.getElementById('reg-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -696,6 +719,7 @@
     legalDrawer.classList.add('show');
     legalDrawer.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    updateDrawerSignState();
     if (window.lucide) lucide.createIcons();
   }
   function closeLegalDrawer() {
@@ -704,9 +728,24 @@
     legalDrawer.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
   }
+  const drawerDoneBtn = document.getElementById('drawer-done-btn');
+
+  // The drawer's own "Sign & Continue" stays disabled until both the
+  // checkbox is ticked AND a signature is typed — this is the one and
+  // only gate for agreeing to terms, enforced right where the terms live.
+  function updateDrawerSignState() {
+    const signed = agreeCheckbox.checked && signatureInput.value.trim().length > 1;
+    drawerDoneBtn.disabled = !signed;
+  }
+  agreeCheckbox.addEventListener('change', () => { updateDrawerSignState(); updateTermsPreview(); updateLoginBtnState(); });
+  signatureInput.addEventListener('input', () => { updateDrawerSignState(); updateTermsPreview(); updateLoginBtnState(); });
+
   document.getElementById('open-legal-drawer-btn').addEventListener('click', openLegalDrawer);
   document.getElementById('close-legal-drawer-btn').addEventListener('click', closeLegalDrawer);
-  document.getElementById('drawer-done-btn').addEventListener('click', closeLegalDrawer);
+  drawerDoneBtn.addEventListener('click', () => {
+    if (drawerDoneBtn.disabled) return; // can't leave the drawer signed off without agreeing
+    closeLegalDrawer();
+  });
   legalDrawerOverlay.addEventListener('click', closeLegalDrawer);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && legalDrawer.classList.contains('show')) closeLegalDrawer();
@@ -714,11 +753,12 @@
 
   function updateLoginBtnState() {
     const emailFilled = emailInput.value.trim().length > 0;
-    const passwordOk = passwordInput.value.length >= 8 && passwordInput.value === passwordConfirmInput.value;
-    const passwordTouched = passwordInput.value.length > 0 || passwordConfirmInput.value.length > 0;
+    const passwordOk = passwordInput.value.length >= 8;
+    const passwordTouched = passwordInput.value.length > 0;
     passwordHint.style.display = (passwordTouched && !passwordOk) ? 'block' : 'none';
     const agreedToTerms = agreeCheckbox.checked && signatureInput.value.trim().length > 1;
     createLoginBtn.disabled = !(emailFilled && passwordOk && agreedToTerms);
+    createLoginBtn.textContent = agreedToTerms ? 'Create Login' : 'Agree to Terms to Continue';
   }
 
   // ---- Screen 1b: Partnership Value & Agreement (Agent/Landlord only) ----
@@ -766,9 +806,7 @@
 
   // ---- Screen 4: Create Your Login ----
   const createLoginBtn = document.getElementById('create-login-btn');
-  [emailInput, passwordInput, passwordConfirmInput].forEach(el => el.addEventListener('input', updateLoginBtnState));
-  agreeCheckbox.addEventListener('change', updateLoginBtnState);
-  signatureInput.addEventListener('input', updateLoginBtnState);
+  [emailInput, passwordInput].forEach(el => el.addEventListener('input', updateLoginBtnState));
 
   // Builds the signed legal agreement as an actual PDF (name, role, KYC
   // attestation, every section of the legal terms, and the typed
