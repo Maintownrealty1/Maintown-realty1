@@ -353,10 +353,8 @@
       <p id="password-hint" class="kyc-note" style="display:none; margin:8px 0 0;">Password must be at least 8 characters.</p>
     </div>
 
-    <p class="s-section-label"><i data-lucide="scale" class="w-4 h-4 text-purple-400"></i>Terms of Service</p>
     <button type="button" id="open-legal-drawer-btn" class="legal-link-row">
       <span id="legal-preview-title" class="legal-link-text">Read Terms of Service</span>
-      <span id="legal-preview-sub" class="legal-link-status">Required — tap to read, agree &amp; sign</span>
     </button>
 
     <button type="button" id="tenant-notice-toggle" class="notice-box" style="display:none; width:100%; cursor:pointer; font:inherit; text-align:left;">
@@ -663,11 +661,14 @@
       setProgress('progress-wrap-1', 'account');
 
       const occupationField = document.getElementById('reg-occupation-field');
+      const occupationInput = document.getElementById('reg-occupation');
       if (currentRole === 'tenant') {
         occupationField.style.display = 'block';
+        occupationInput.required = true;
         continueBtn.textContent = 'Continue to Create Login';
       } else {
         occupationField.style.display = 'none';
+        occupationInput.required = false;
         document.getElementById('reg-occupation').value = '';
         continueBtn.textContent = 'Continue to Partnership Benefits →';
       }
@@ -695,21 +696,18 @@
     updateLoginBtnState();
   }
 
-  // Reflects agreement/signature status on the main screen's Terms card,
+  // Reflects agreement/signature status on the main screen's Terms link,
   // since the checkbox + signature now live inside the drawer itself.
   function updateTermsPreview() {
     const linkRow = document.getElementById('open-legal-drawer-btn');
     const title = document.getElementById('legal-preview-title');
-    const sub = document.getElementById('legal-preview-sub');
     const signed = agreeCheckbox.checked && signatureInput.value.trim().length > 1;
     if (signed) {
       linkRow.classList.add('confirmed-terms');
-      title.textContent = 'Terms of Service — signed ✓';
-      sub.textContent = `Signed as ${signatureInput.value.trim()}`;
+      title.textContent = `Terms of Service — signed as ${signatureInput.value.trim()} ✓`;
     } else {
       linkRow.classList.remove('confirmed-terms');
       title.textContent = 'Read Terms of Service';
-      sub.textContent = 'Required — tap to read, agree & sign';
     }
   }
 
@@ -1016,11 +1014,14 @@
     currentRole = saved.role;
 
     const occupationField = document.getElementById('reg-occupation-field');
+    const occupationInput = document.getElementById('reg-occupation');
     if (currentRole === 'tenant') {
       occupationField.style.display = 'block';
+      occupationInput.required = true;
       continueBtn.textContent = 'Continue to Create Login';
     } else {
       occupationField.style.display = 'none';
+      occupationInput.required = false;
       continueBtn.textContent = 'Continue to Partnership Benefits →';
     }
 
