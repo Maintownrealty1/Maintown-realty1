@@ -599,6 +599,13 @@
       <p class="text-slate-400 max-w-sm text-sm">Every listing is human-vetted against verified building plans and inspected via Computer Vision before it reaches you.</p>
     </div>
 
+    <!-- Listing category switcher: Flexible Rent / Land & Property / Short Let -->
+    <div class="flex flex-wrap gap-2 mb-6" id="categorySwitcher" role="tablist" aria-label="Listing category">
+      <button type="button" class="tab-btn px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border border-white/10 bg-slate-900/70 text-slate-300 hover:border-brand-500/40 transition" data-category="rent" role="tab" aria-selected="true">Flexible Rent</button>
+      <button type="button" class="tab-btn px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border border-white/10 bg-slate-900/70 text-slate-300 hover:border-brand-500/40 transition" data-category="land" role="tab" aria-selected="false">Land &amp; Property</button>
+      <button type="button" class="tab-btn px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border border-white/10 bg-slate-900/70 text-slate-300 hover:border-brand-500/40 transition" data-category="short-let" role="tab" aria-selected="false">Short Let</button>
+    </div>
+
     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6" id="listingsGrid"></div>
 
     <!-- Multi-listing slide navigation: pages through the listings grid
@@ -1248,6 +1255,14 @@
 
   let listings = FALLBACK_LISTINGS;
   let filteredListings = null; // null = no active search, show everything
+  let activeCategory = 'rent'; // 'rent' | 'land' | 'short-let' — driven by the switcher above the grid
+
+  // Listings saved before the category switcher existed have no l.category
+  // at all — treat those as Flexible Rent so nothing you've already
+  // published silently disappears from every tab.
+  function categoryOf(l) {
+    return l.category || 'rent';
+  }
 
   const listingsGrid = document.getElementById('listingsGrid');
   const listingsPrevBtn = document.getElementById('listingsPrevBtn');
@@ -1255,6 +1270,16 @@
   const listingsPageIndicator = document.getElementById('listingsPageIndicator');
   const LISTINGS_PER_PAGE = 6;
   let listingsPage = 0;
+
+  // ---------- Category switcher: Flexible Rent / Land & Property / Short Let ----------
+  document.getElementById('categorySwitcher').addEventListener('click', (e) => {
+    const btn = e.target.closest('.tab-btn');
+    if (!btn || btn.getAttribute('aria-selected') === 'true') return;
+    document.querySelectorAll('#categorySwitcher .tab-btn').forEach(b => b.setAttribute('aria-selected', 'false'));
+    btn.setAttribute('aria-selected', 'true');
+    activeCategory = btn.dataset.category;
+    renderListingsPage(0);
+  });
 
   // Scroll-reveal observer for listing cards — declared up here (rather than
   // further down the script) so it's already available the first time
@@ -1276,12 +1301,15 @@
   }
 
   function renderListingsPage(page) {
-    const activeListings = filteredListings || listings;
+    const activeListings = (filteredListings || listings).filter(l => categoryOf(l) === activeCategory);
     const listingsPageCount = Math.max(1, Math.ceil(activeListings.length / LISTINGS_PER_PAGE));
     listingsPage = Math.max(0, Math.min(page, listingsPageCount - 1));
     listingsGrid.innerHTML = '';
     if (!activeListings.length) {
-      listingsGrid.innerHTML = `<p class="col-span-full text-center text-slate-400 text-sm py-12">No listings match your search. Try a different keyword or budget.</p>`;
+      const categoryLabel = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' }[activeCategory] || 'this category';
+      listingsGrid.innerHTML = filteredListings
+        ? `<p class="col-span-full text-center text-slate-400 text-sm py-12">No ${categoryLabel} listings match your search. Try a different keyword or budget.</p>`
+        : `<p class="col-span-full text-center text-slate-400 text-sm py-12">No ${categoryLabel} listings available right now — check back soon.</p>`;
       if (listingsPageIndicator) listingsPageIndicator.textContent = '0 / 0';
       if (listingsPrevBtn) listingsPrevBtn.disabled = true;
       if (listingsNextBtn) listingsNextBtn.disabled = true;
