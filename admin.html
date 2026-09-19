@@ -121,23 +121,27 @@
           <label>Location</label>
           <input type="text" id="f-location" placeholder="e.g. Osapa London, Lekki, Lagos">
         </div>
-        <div class="field">
+
+        <!-- Flexible Rent + Short Let both use Bedrooms -->
+        <div class="field" data-cat="rent short-let">
           <label>Bedrooms</label>
           <input type="number" id="f-beds" min="0" value="1">
         </div>
-        <div class="field">
+
+        <!-- ===== Flexible Rent only ===== -->
+        <div class="field" data-cat="rent">
           <label>Monthly Rent (₦)</label>
           <input type="number" id="f-rent" placeholder="e.g. 150000">
         </div>
-        <div class="field">
+        <div class="field" data-cat="rent">
           <label>Annual Rent (₦) — optional, fill manually</label>
           <input type="number" id="f-rent-annual" placeholder="e.g. 1800000">
         </div>
-        <div class="field">
+        <div class="field" data-cat="rent">
           <label>Caution Fee (₦)</label>
           <input type="number" id="f-caution-fee" placeholder="e.g. 50000">
         </div>
-        <div class="field">
+        <div class="field" data-cat="rent">
           <label>Service Charge (₦)</label>
           <div class="flex gap-2">
             <input type="number" id="f-service-charge" placeholder="e.g. 20000" class="flex-1">
@@ -147,10 +151,86 @@
             </select>
           </div>
         </div>
+
+        <!-- ===== Land & Property only ===== -->
+        <div class="field" data-cat="land">
+          <label>Property Type</label>
+          <select id="f-land-type">
+            <option value="Land (Plot)">Land (Plot)</option>
+            <option value="Duplex">Duplex</option>
+            <option value="Bungalow">Bungalow</option>
+            <option value="Detached House">Detached House</option>
+            <option value="Semi-Detached Duplex">Semi-Detached Duplex</option>
+            <option value="Terrace">Terrace</option>
+            <option value="Block of Flats">Block of Flats</option>
+            <option value="Mansion">Mansion</option>
+          </select>
+        </div>
+        <div class="field" data-cat="land">
+          <label>Plot Size</label>
+          <input type="text" id="f-plot-size" placeholder="e.g. 650 sqm or 2 plots">
+        </div>
+        <div class="field" data-cat="land">
+          <label>Title Document</label>
+          <select id="f-title-doc">
+            <option value="">Select title type</option>
+            <option value="C of O">Certificate of Occupancy (C of O)</option>
+            <option value="Governor's Consent">Governor's Consent</option>
+            <option value="Excision">Excision</option>
+            <option value="Gazette">Gazette</option>
+            <option value="Registered Survey">Registered Survey</option>
+            <option value="Deed of Assignment">Deed of Assignment</option>
+          </select>
+        </div>
+        <div class="field" data-cat="land">
+          <label>Land Use</label>
+          <select id="f-land-use">
+            <option value="Residential">Residential</option>
+            <option value="Commercial">Commercial</option>
+            <option value="Mixed-Use">Mixed-Use</option>
+            <option value="Agricultural">Agricultural</option>
+          </select>
+        </div>
+        <div class="field" data-cat="land">
+          <label>Sale Price (₦)</label>
+          <input type="number" id="f-sale-price" placeholder="e.g. 45000000">
+        </div>
+
+        <!-- Only shown when Property Type above isn't raw "Land (Plot)" -->
+        <div class="field" data-land-house="1">
+          <label>Bedrooms</label>
+          <input type="number" id="f-land-beds" min="0" value="1">
+        </div>
+        <div class="field" data-land-house="1">
+          <label>Bathrooms</label>
+          <input type="number" id="f-land-bathrooms" min="0" placeholder="e.g. 4">
+        </div>
+        <div class="field" data-land-house="1">
+          <label>Toilets</label>
+          <input type="number" id="f-land-toilets" min="0" placeholder="e.g. 5">
+        </div>
+        <div class="field" data-land-house="1">
+          <label>Parking Spaces</label>
+          <input type="number" id="f-land-parking" min="0" placeholder="e.g. 2">
+        </div>
+
+        <!-- ===== Short Let only ===== -->
+        <div class="field" data-cat="short-let">
+          <label>Nightly Rate (₦)</label>
+          <input type="number" id="f-nightly-rate" placeholder="e.g. 65000">
+        </div>
+        <div class="field" data-cat="short-let">
+          <label>Minimum Stay (nights)</label>
+          <input type="number" id="f-min-stay" min="1" placeholder="e.g. 2">
+        </div>
+        <div class="field" data-cat="short-let">
+          <label>Cleaning Fee (₦) — optional</label>
+          <input type="number" id="f-cleaning-fee" placeholder="e.g. 15000">
+        </div>
       </div>
 
       <!-- Live annual + suggested fee preview -->
-      <div id="feePreview" class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 mb-5 text-sm text-slate-400 hidden">
+      <div id="feePreview" class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 mb-5 text-sm text-slate-400 hidden" data-cat="rent">
         <p>Monthly: <strong class="text-white" id="fp-monthly">—</strong></p>
         <p class="mt-1">Annual: <strong class="text-white" id="fp-annual">—</strong></p>
         <p class="mt-1">Suggested Agent Fee (10%): <strong class="text-white" id="fp-agent">—</strong></p>
@@ -334,6 +414,38 @@
     }
   });
 
+  // ---------- Category-dependent fields ----------
+  // Elements tagged data-cat="rent" / "land" / "short-let" (space-
+  // separated if shared by more than one, e.g. Bedrooms) show/hide
+  // together based on the selected Category — Flexible Rent, Land &
+  // Property, or Short Let each show only the fields relevant to them.
+  const categorySelect = document.getElementById('f-category');
+  function updateCategoryFields() {
+    const cat = categorySelect.value;
+    document.querySelectorAll('[data-cat]').forEach(el => {
+      const groups = el.dataset.cat.split(' ');
+      el.style.display = groups.includes(cat) ? '' : 'none';
+    });
+    // Re-run the fee preview visibility check — it has its own hidden
+    // state on top of the category toggle (only shows once numbers
+    // are actually entered), so just re-triggering keeps them in sync.
+    if (cat === 'rent') refreshFeePreviewDisplay();
+  }
+  categorySelect.addEventListener('change', updateCategoryFields);
+  updateCategoryFields();
+
+  // ---------- Land & Property: Bedrooms/Bathrooms/Toilets/Parking only ----------
+  // show up when the selected Property Type is an actual house (Duplex,
+  // Bungalow, etc.) rather than raw, empty Land (Plot).
+  const landTypeSelect = document.getElementById('f-land-type');
+  function updateLandHouseFields() {
+    const isHouse = categorySelect.value === 'land' && landTypeSelect.value !== 'Land (Plot)';
+    document.querySelectorAll('[data-land-house]').forEach(el => { el.style.display = isHouse ? '' : 'none'; });
+  }
+  landTypeSelect.addEventListener('change', updateLandHouseFields);
+  categorySelect.addEventListener('change', updateLandHouseFields);
+  updateLandHouseFields();
+
   // ---------- Monthly / Annual rent — fully independent manual fields ----------
   // Monthly Rent and Annual Rent never auto-calculate each other or anything
   // else. The fee preview only suggests Agent/Legal fees off the Annual
@@ -407,23 +519,76 @@
   document.getElementById('submitBtn').addEventListener('click', async () => {
     const submitBtn = document.getElementById('submitBtn');
     const progressEl = document.getElementById('uploadProgress');
+    const category = document.getElementById('f-category').value;
     const title = document.getElementById('f-title').value.trim();
     const location = document.getElementById('f-location').value.trim();
-    const beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
-    const rentNum = parseInt(rentInput.value, 10);
     const color = document.getElementById('f-color').value;
-    const fees = feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean);
-    const cautionFee = parseInt(document.getElementById('f-caution-fee').value, 10);
-    const serviceCharge = parseInt(document.getElementById('f-service-charge').value, 10);
-    const serviceChargeFreq = document.getElementById('f-service-charge-freq').value; // 'yr' or 'mo'
-    if (cautionFee) fees.push(`Caution Fee: ₦${cautionFee.toLocaleString('en-US')}`);
-    if (serviceCharge) fees.push(`Service Charge: ₦${serviceCharge.toLocaleString('en-US')}/${serviceChargeFreq}`);
     const imageFiles = Array.from(document.getElementById('f-images').files);
     const videoFile = document.getElementById('f-video').files[0];
 
-    if (!title || !location || !rentNum) {
-      showToast('Please fill in Title, Location, and Rent at minimum.', true);
-      return;
+    // ---- Category-specific fields: rent string, beds, annual_rent, fees ----
+    let beds = 0;
+    let rentDisplay = '';
+    let annualRentNum = null;
+    let fees = [];
+
+    if (category === 'land') {
+      const salePrice = parseInt(document.getElementById('f-sale-price').value, 10);
+      if (!title || !location || !salePrice) {
+        showToast('Please fill in Title, Location, and Sale Price at minimum.', true);
+        return;
+      }
+      rentDisplay = `₦${salePrice.toLocaleString('en-US')}`;
+      const landType = document.getElementById('f-land-type').value;
+      const isHouse = landType !== 'Land (Plot)';
+      if (isHouse) {
+        beds = parseInt(document.getElementById('f-land-beds').value, 10) || 0;
+        const bathrooms = parseInt(document.getElementById('f-land-bathrooms').value, 10);
+        const toilets = parseInt(document.getElementById('f-land-toilets').value, 10);
+        const parking = parseInt(document.getElementById('f-land-parking').value, 10);
+        if (bathrooms) fees.push(`Bathrooms: ${bathrooms}`);
+        if (toilets) fees.push(`Toilets: ${toilets}`);
+        if (parking) fees.push(`Parking Spaces: ${parking}`);
+      }
+      fees.push(`Property Type: ${landType}`);
+      const plotSize = document.getElementById('f-plot-size').value.trim();
+      const titleDoc = document.getElementById('f-title-doc').value;
+      const landUse = document.getElementById('f-land-use').value;
+      if (plotSize) fees.push(`Plot Size: ${plotSize}`);
+      if (titleDoc) fees.push(`Title Document: ${titleDoc}`);
+      if (landUse) fees.push(`Land Use: ${landUse}`);
+      fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
+        .filter(l => !/^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Plot Size:|^Title Document:|^Land Use:/.test(l)));
+    } else if (category === 'short-let') {
+      beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
+      const nightly = parseInt(document.getElementById('f-nightly-rate').value, 10);
+      if (!title || !location || !nightly) {
+        showToast('Please fill in Title, Location, and Nightly Rate at minimum.', true);
+        return;
+      }
+      rentDisplay = `₦${nightly.toLocaleString('en-US')}/night`;
+      const minStay = parseInt(document.getElementById('f-min-stay').value, 10);
+      const cleaningFee = parseInt(document.getElementById('f-cleaning-fee').value, 10);
+      if (minStay) fees.push(`Minimum Stay: ${minStay} night${minStay > 1 ? 's' : ''}`);
+      if (cleaningFee) fees.push(`Cleaning Fee: ₦${cleaningFee.toLocaleString('en-US')}`);
+      fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
+        .filter(l => !/^Minimum Stay:|^Cleaning Fee:/.test(l)));
+    } else {
+      // Flexible Rent — unchanged behavior
+      beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
+      const rentNum = parseInt(rentInput.value, 10);
+      if (!title || !location || !rentNum) {
+        showToast('Please fill in Title, Location, and Rent at minimum.', true);
+        return;
+      }
+      rentDisplay = `₦${rentNum.toLocaleString('en-US')}/mo`;
+      annualRentNum = parseInt(annualRentInput.value, 10) || null;
+      const cautionFee = parseInt(document.getElementById('f-caution-fee').value, 10);
+      const serviceCharge = parseInt(document.getElementById('f-service-charge').value, 10);
+      const serviceChargeFreq = document.getElementById('f-service-charge-freq').value;
+      fees = feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+      if (cautionFee) fees.push(`Caution Fee: ₦${cautionFee.toLocaleString('en-US')}`);
+      if (serviceCharge) fees.push(`Service Charge: ₦${serviceCharge.toLocaleString('en-US')}/${serviceChargeFreq}`);
     }
 
     submitBtn.disabled = true;
@@ -445,11 +610,10 @@
         videoUrl = await uploadFile(videoFile);
       }
 
-      const annualRentNum = parseInt(annualRentInput.value, 10) || null;
       const payload = {
         title, location, beds,
-        category: document.getElementById('f-category').value,
-        rent: `₦${rentNum.toLocaleString('en-US')}/mo`,
+        category,
+        rent: rentDisplay,
         annual_rent: annualRentNum,
         fees, color,
         features: selectedFeatures,
@@ -485,8 +649,14 @@
   });
 
   function resetForm() {
-    ['f-title', 'f-location', 'f-rent', 'f-rent-annual', 'f-caution-fee', 'f-service-charge'].forEach(id => document.getElementById(id).value = '');
+    ['f-title', 'f-location', 'f-rent', 'f-rent-annual', 'f-caution-fee', 'f-service-charge',
+     'f-plot-size', 'f-sale-price', 'f-nightly-rate', 'f-min-stay', 'f-cleaning-fee',
+     'f-land-bathrooms', 'f-land-toilets', 'f-land-parking'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('f-category').value = 'rent';
+    document.getElementById('f-title-doc').value = '';
+    document.getElementById('f-land-use').value = 'Residential';
+    document.getElementById('f-land-type').value = 'Land (Plot)';
+    document.getElementById('f-land-beds').value = 1;
     document.getElementById('f-service-charge-freq').value = 'yr';
     document.getElementById('f-beds').value = 1;
     document.getElementById('f-status').value = 'available';
@@ -498,6 +668,8 @@
     document.getElementById('videoFileName').textContent = '';
     selectedFeatures = [];
     renderFeatureChips();
+    updateCategoryFields();
+    updateLandHouseFields();
   }
 
   // ---------- Existing listings + edit + delete ----------
@@ -594,18 +766,57 @@
     editingExistingImages = Array.isArray(listing.images) ? listing.images : [];
     editingExistingVideo = listing.video || null;
 
+    const category = listing.category || 'rent';
     document.getElementById('f-title').value = listing.title || '';
     document.getElementById('f-location').value = listing.location || '';
-    document.getElementById('f-category').value = listing.category || 'rent';
+    document.getElementById('f-category').value = category;
     document.getElementById('f-beds').value = listing.beds || 0;
     const rentDigits = parseInt(String(listing.rent || '').replace(/[^0-9]/g, ''), 10);
-    rentInput.value = rentDigits || '';
-    annualRentInput.value = listing.annual_rent || '';
-    document.getElementById('f-caution-fee').value = '';
-    document.getElementById('f-service-charge').value = '';
+    const allFees = listing.fees || [];
+
+    // Clear every category-specific field first, then populate only
+    // the ones relevant to this listing's category.
+    ['f-rent', 'f-rent-annual', 'f-caution-fee', 'f-service-charge',
+     'f-plot-size', 'f-sale-price', 'f-nightly-rate', 'f-min-stay', 'f-cleaning-fee'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-title-doc').value = '';
+    document.getElementById('f-land-use').value = 'Residential';
     document.getElementById('f-service-charge-freq').value = 'yr';
-    feesTextarea.value = (listing.fees || []).join('\n');
+
+    let remainingFees = allFees;
+    if (category === 'land') {
+      document.getElementById('f-sale-price').value = rentDigits || '';
+      const plotSize = allFees.find(f => f.startsWith('Plot Size:'));
+      const titleDoc = allFees.find(f => f.startsWith('Title Document:'));
+      const landUse = allFees.find(f => f.startsWith('Land Use:'));
+      const propType = allFees.find(f => f.startsWith('Property Type:'));
+      const bathrooms = allFees.find(f => f.startsWith('Bathrooms:'));
+      const toilets = allFees.find(f => f.startsWith('Toilets:'));
+      const parking = allFees.find(f => f.startsWith('Parking Spaces:'));
+      if (plotSize) document.getElementById('f-plot-size').value = plotSize.replace('Plot Size:', '').trim();
+      if (titleDoc) document.getElementById('f-title-doc').value = titleDoc.replace('Title Document:', '').trim();
+      if (landUse) document.getElementById('f-land-use').value = landUse.replace('Land Use:', '').trim();
+      document.getElementById('f-land-type').value = propType ? propType.replace('Property Type:', '').trim() : 'Land (Plot)';
+      document.getElementById('f-land-beds').value = listing.beds || 1;
+      if (bathrooms) document.getElementById('f-land-bathrooms').value = parseInt(bathrooms.replace(/[^0-9]/g, ''), 10) || '';
+      if (toilets) document.getElementById('f-land-toilets').value = parseInt(toilets.replace(/[^0-9]/g, ''), 10) || '';
+      if (parking) document.getElementById('f-land-parking').value = parseInt(parking.replace(/[^0-9]/g, ''), 10) || '';
+      remainingFees = allFees.filter(f => !/^Plot Size:|^Title Document:|^Land Use:|^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:/.test(f));
+    } else if (category === 'short-let') {
+      document.getElementById('f-nightly-rate').value = rentDigits || '';
+      const minStay = allFees.find(f => f.startsWith('Minimum Stay:'));
+      const cleaningFee = allFees.find(f => f.startsWith('Cleaning Fee:'));
+      if (minStay) document.getElementById('f-min-stay').value = parseInt(minStay.replace(/[^0-9]/g, ''), 10) || '';
+      if (cleaningFee) document.getElementById('f-cleaning-fee').value = parseInt(cleaningFee.replace(/[^0-9]/g, ''), 10) || '';
+      remainingFees = allFees.filter(f => !/^Minimum Stay:|^Cleaning Fee:/.test(f));
+    } else {
+      rentInput.value = rentDigits || '';
+      annualRentInput.value = listing.annual_rent || '';
+    }
+    feesTextarea.value = remainingFees.join('\n');
     refreshFeePreviewDisplay();
+    updateCategoryFields();
+    updateLandHouseFields();
+
     document.getElementById('f-color').value = listing.color || 'from-brand-500/30 to-slate-900';
     document.getElementById('f-status').value = listing.status || 'available';
     selectedFeatures = Array.isArray(listing.features) ? [...listing.features] : [];
