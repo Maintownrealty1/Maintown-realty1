@@ -103,6 +103,15 @@
       <h2 class="font-display font-semibold text-lg text-white mb-1" id="formHeading">Add a New Listing</h2>
       <p class="text-sm text-slate-500 mb-6" id="formSubtext">This publishes straight to your live site — no code, no re-upload.</p>
 
+      <div class="field">
+        <label>Category</label>
+        <select id="f-category">
+          <option value="rent">Flexible Rent</option>
+          <option value="land">Land &amp; Property</option>
+          <option value="short-let">Short Let</option>
+        </select>
+      </div>
+
       <div class="grid sm:grid-cols-2 gap-x-5">
         <div class="field">
           <label>Listing Title</label>
@@ -439,6 +448,7 @@
       const annualRentNum = parseInt(annualRentInput.value, 10) || null;
       const payload = {
         title, location, beds,
+        category: document.getElementById('f-category').value,
         rent: `₦${rentNum.toLocaleString('en-US')}/mo`,
         annual_rent: annualRentNum,
         fees, color,
@@ -476,6 +486,7 @@
 
   function resetForm() {
     ['f-title', 'f-location', 'f-rent', 'f-rent-annual', 'f-caution-fee', 'f-service-charge'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-category').value = 'rent';
     document.getElementById('f-service-charge-freq').value = 'yr';
     document.getElementById('f-beds').value = 1;
     document.getElementById('f-status').value = 'available';
@@ -509,11 +520,15 @@
       listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet — add your first one above.</p>';
       return;
     }
-    listEl.innerHTML = data.map(l => `
+    listEl.innerHTML = data.map(l => {
+      const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' };
+      const categoryLabel = categoryLabels[l.category] || categoryLabels.rent;
+      return `
       <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
         <div class="min-w-0 flex-1">
           <p class="text-sm font-semibold text-white truncate">
             ${l.title}
+            <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${categoryLabel}</span>
             ${l.status && l.status !== 'available' ? `<span class="ml-2 text-[10px] font-mono font-bold uppercase ${l.status === 'sold' ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-amber-400 bg-amber-500/10 border-amber-500/30'} border px-1.5 py-0.5 rounded">${l.status}</span>` : ''}
           </p>
           <p class="text-xs text-slate-500 truncate">${l.location} · ${l.rent}</p>
@@ -526,7 +541,8 @@
         <button class="edit-listing-btn btn-secondary shrink-0" data-id="${l.id}">Edit</button>
         <button class="delete-listing-btn btn-secondary shrink-0" data-id="${l.id}" data-title="${l.title}">Delete</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   document.getElementById('listingsToggle').addEventListener('click', () => {
@@ -580,6 +596,7 @@
 
     document.getElementById('f-title').value = listing.title || '';
     document.getElementById('f-location').value = listing.location || '';
+    document.getElementById('f-category').value = listing.category || 'rent';
     document.getElementById('f-beds').value = listing.beds || 0;
     const rentDigits = parseInt(String(listing.rent || '').replace(/[^0-9]/g, ''), 10);
     rentInput.value = rentDigits || '';
