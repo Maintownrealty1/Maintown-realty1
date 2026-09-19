@@ -426,10 +426,6 @@
       const groups = el.dataset.cat.split(' ');
       el.style.display = groups.includes(cat) ? '' : 'none';
     });
-    // Re-run the fee preview visibility check — it has its own hidden
-    // state on top of the category toggle (only shows once numbers
-    // are actually entered), so just re-triggering keeps them in sync.
-    if (cat === 'rent') refreshFeePreviewDisplay();
   }
   categorySelect.addEventListener('change', updateCategoryFields);
   updateCategoryFields();

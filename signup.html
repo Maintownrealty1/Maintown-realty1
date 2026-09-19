@@ -424,6 +424,19 @@
   const WHATSAPP_NUMBER = '2348066611017';
 
   // ==================================================================
+  // Selected listing — carried in from index.html's "Rent Now" /
+  // "Buy Now" / "Book Now" buttons (?listingId=...&category=...&title=...).
+  // Saved to the person's account once their login is created, so the
+  // future app can show it as "Your Selected Properties" without any
+  // separate cart-tracking system — the account itself carries it.
+  const urlParams = new URLSearchParams(window.location.search);
+  let selectedListing = {
+    id: urlParams.get('listingId') || '',
+    category: urlParams.get('category') || '',
+    title: urlParams.get('title') || '',
+  };
+
+  // ==================================================================
   // Supabase connection — same project as index.html / admin.html.
   // Creates the real login (Supabase Auth) and saves KYC + the signed
   // agreement PDF so it shows up in the admin panel.
@@ -560,6 +573,7 @@
         countryCode: document.getElementById('country-code').value,
         phone: phoneInput.value,
         email: emailInput.value,
+        selectedListing,
       }));
     } catch (e) { /* storage unavailable (private mode, etc.) — fail silently */ }
   }
@@ -968,6 +982,25 @@
       });
       if (insertError) throw new Error(insertError.message);
 
+      // 4. If they arrived via a "Rent Now"/"Buy Now"/"Book Now" button,
+      // save that listing against their brand-new account. This is what
+      // the future app reads to show "Your Selected Properties" and
+      // trigger the dashboard/bell notification to schedule inspection —
+      // deliberately non-fatal: a failure here should never stop the
+      // account itself from being created.
+      if (selectedListing.id) {
+        const { error: selectedListingError } = await sb.from('selected_listings').insert({
+          user_id: userId,
+          listing_id: selectedListing.id,
+          listing_title: selectedListing.title || null,
+          category: selectedListing.category || null,
+          status: 'pending_inspection',
+        });
+        if (selectedListingError) {
+          console.error('Could not save selected listing (account still created fine):', selectedListingError.message);
+        }
+      }
+
       statusEl.style.display = 'none';
       accountSaved = true;
     } catch (err) {
@@ -984,6 +1017,10 @@
 
     let message = `Hello MainTown Realty, I just signed up on the website.\n\nName: ${name}\nRole: ${roleLabel}\nEmail: ${email}\nPhone: ${phone}`;
     if (occupation) message += `\nOccupation: ${occupation}`;
+    if (selectedListing.title) {
+      const actionLabel = { rent: 'renting', land: 'buying', 'short-let': 'booking' }[selectedListing.category] || 'this property';
+      message += `\n\nI'm interested in ${actionLabel}: ${selectedListing.title}`;
+    }
     message += `\n\nI've reviewed and agreed to the Terms of Service. Signed: ${signature}`;
 
     const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
@@ -1030,6 +1067,11 @@
     if (saved.countryCode) document.getElementById('country-code').value = saved.countryCode;
     if (saved.phone) phoneInput.value = saved.phone;
     if (saved.email) emailInput.value = saved.email;
+    // Only restore from storage if this page load didn't already arrive
+    // with its own fresh ?listingId=... — a direct link always wins.
+    if (!selectedListing.id && saved.selectedListing && saved.selectedListing.id) {
+      selectedListing = saved.selectedListing;
+    }
 
     updateContinueState();
     setProgress('progress-wrap-1', 'account');
