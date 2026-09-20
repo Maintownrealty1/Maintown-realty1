@@ -1178,7 +1178,8 @@
         "./osapa-livingroom.jpg",
         "./osapa-kitchen.jpg"
       ],
-      video: "./osapa-walkthrough.mp4"
+      video: "./osapa-walkthrough.mp4",
+      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
     },
     {
       title: "Master's Studio",
@@ -1195,7 +1196,8 @@
         "./osapa-london-bathroom.jpg",
         "./osapa-london-shower.jpg"
       ],
-      video: "./osapa-london-walkthrough.mp4"
+      video: "./osapa-london-walkthrough.mp4",
+      created_at: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString()
     },
     {
       title: "Semi-Room Studio",
@@ -1212,7 +1214,8 @@
         "./osapa-london-bathroom.jpg",
         "./osapa-london-shower.jpg"
       ],
-      video: "./osapa-london-walkthrough.mp4"
+      video: "./osapa-london-walkthrough.mp4",
+      created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
       title: "Portable Room Studio",
@@ -1229,7 +1232,8 @@
         "./osapa-london-bathroom.jpg",
         "./osapa-london-shower.jpg"
       ],
-      video: "./osapa-london-walkthrough.mp4"
+      video: "./osapa-london-walkthrough.mp4",
+      created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
       title: "Master Bedroom — Shared Apartment",
@@ -1241,7 +1245,8 @@
       images: [
         "./badore-ajah-masterbedroom-1.jpg",
         "./badore-ajah-masterbedroom-2.jpg"
-      ]
+      ],
+      created_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString()
     },
   ];
 
@@ -1319,6 +1324,33 @@
     return `<p class="mt-2 md:mt-3 font-display font-bold text-xs sm:text-lg text-white">${computeAnnualLabel(l.rent, l.annual_rent)}</p><p class="text-[9px] sm:text-sm text-slate-400 mt-0.5">${l.rent.replace('/mo', ' / month')}</p>`;
   }
 
+  // Builds the small freshness/verification pill shown over each listing's
+  // photo. Prefers a verification timestamp (verified_at) when present —
+  // agents/landlords verified via the admin panel get "Verified Xago" —
+  // otherwise falls back to created_at (every Supabase row has this by
+  // default) to show plain listing freshness. Returns null when neither
+  // timestamp exists, so the badge is simply omitted rather than showing
+  // a broken/blank pill.
+  function freshnessTagFor(l) {
+    const verifiedRaw = l.verified_at || l.verifiedAt;
+    const publishedRaw = l.created_at || l.createdAt;
+    const raw = verifiedRaw || publishedRaw;
+    if (!raw) return null;
+    const then = new Date(raw).getTime();
+    if (Number.isNaN(then)) return null;
+    const diffMs = Date.now() - then;
+    const mins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(diffMs / 3600000);
+    const days = Math.floor(diffMs / 86400000);
+    let relative;
+    if (mins < 1) relative = 'Just Now';
+    else if (mins < 60) relative = `${mins}m ago`;
+    else if (hours < 24) relative = `${hours}h ago`;
+    else if (days < 30) relative = `${days}d ago`;
+    else relative = new Date(raw).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    return verifiedRaw ? { label: `Verified ${relative}`, verified: true } : { label: relative, verified: false };
+  }
+
   function renderListingsPage(page) {
     const activeListings = (filteredListings || listings).filter(l => categoryOf(l) === activeCategory);
     const listingsPageCount = Math.max(1, Math.ceil(activeListings.length / LISTINGS_PER_PAGE));
@@ -1351,10 +1383,15 @@
     }).replace(/'/g, "&#39;");
     const isUnavailable = l.status && l.status !== 'available';
     if (isUnavailable) card.classList.add('opacity-60');
+    const freshness = freshnessTagFor(l);
     card.innerHTML = `
       <div class="gallery-trigger relative h-24 sm:h-40 md:h-48 overflow-hidden bg-gradient-to-br ${l.color} cursor-pointer" data-title="${l.title}" data-images='${imagesData}' data-color="${l.color}">
         <div class="listing-img absolute inset-0 cadastral-grid opacity-40"></div>
         ${l.images && l.images.length ? `<img src="${l.images[0]}" alt="${l.title}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">` : ''}
+        ${freshness ? `<span class="absolute top-1.5 left-1.5 md:top-3 md:left-3 inline-flex items-center gap-0.5 md:gap-1 text-[7.5px] md:text-[10px] font-mono font-semibold bg-slate-950/80 ${freshness.verified ? 'text-brand-300 border-brand-400/40' : 'text-slate-300 border-white/15'} border px-1.5 md:px-2 py-0.5 md:py-1 rounded-full shadow-lg shadow-black/40 backdrop-blur-sm">
+          <svg class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">${freshness.verified ? '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>' : '<circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/>'}</svg>
+          ${freshness.label}
+        </span>` : ''}
         <span class="absolute top-1.5 right-1.5 md:top-3 md:right-3 text-[8px] md:text-[10px] font-mono font-bold bg-[#0F172A] text-[#10B981] border border-[#10B981]/40 px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-full shadow-lg shadow-black/40">${l.rent}</span>
         ${isUnavailable ? `<div class="absolute inset-0 bg-slate-950/50 flex items-center justify-center"><span class="text-[10px] md:text-lg font-display font-bold uppercase tracking-widest text-white border-2 border-white/70 px-2 md:px-4 py-1 md:py-1.5 rotate-[-8deg]">${l.status}</span></div>` : ''}
       </div>
