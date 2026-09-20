@@ -402,17 +402,26 @@
     renderFeatureChips();
   });
 
+  function commitCustomFeature() {
+    const input = document.getElementById('f-feature-custom');
+    const val = input.value.trim();
+    if (val && !selectedFeatures.includes(val)) {
+      selectedFeatures.push(val);
+      renderFeatureChips();
+    }
+    input.value = '';
+  }
+
   document.getElementById('f-feature-custom').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const val = e.target.value.trim();
-      if (val && !selectedFeatures.includes(val)) {
-        selectedFeatures.push(val);
-        renderFeatureChips();
-      }
-      e.target.value = '';
+      commitCustomFeature();
     }
   });
+  // Also commit on blur — if someone types a feature and taps "Publish
+  // Listing" (or taps elsewhere) without pressing Enter first, the text
+  // would otherwise just sit in the box and silently never get saved.
+  document.getElementById('f-feature-custom').addEventListener('blur', commitCustomFeature);
 
   // ---------- Category-dependent fields ----------
   // Elements tagged data-cat="rent" / "land" / "short-let" (space-
@@ -606,6 +615,7 @@
         videoUrl = await uploadFile(videoFile);
       }
 
+      commitCustomFeature();
       const payload = {
         title, location, beds,
         category,
