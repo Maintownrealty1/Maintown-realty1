@@ -137,11 +137,11 @@
           <label>Annual Rent (₦) — optional, fill manually</label>
           <input type="number" id="f-rent-annual" placeholder="e.g. 1800000">
         </div>
-        <div class="field" data-cat="rent">
+        <div class="field" data-cat="rent short-let">
           <label>Caution Fee (₦)</label>
           <input type="number" id="f-caution-fee" placeholder="e.g. 50000">
         </div>
-        <div class="field" data-cat="rent">
+        <div class="field" data-cat="rent short-let">
           <label>Service Charge (₦)</label>
           <div class="flex gap-2">
             <input type="number" id="f-service-charge" placeholder="e.g. 20000" class="flex-1">
@@ -238,7 +238,7 @@
       </div>
 
       <div class="field">
-        <label>Fees (one per line — auto-calculated, or edit/replace freely)</label>
+        <label id="f-fees-label">Fees (one per line — auto-calculated, or edit/replace freely)</label>
         <textarea id="f-fees" rows="3" placeholder="Agent Fee: 10% (₦180,000)&#10;Legal Fee: 5% (₦90,000)"></textarea>
       </div>
 
@@ -435,6 +435,31 @@
       const groups = el.dataset.cat.split(' ');
       el.style.display = groups.includes(cat) ? '' : 'none';
     });
+
+    // Agent Fee / Legal Fee only ever apply to Flexible Rent. If those
+    // lines were auto-generated earlier (while Rent was selected) and the
+    // category has since changed, strip them out so Short Let / Land
+    // listings don't inherit stale rent-only fee text.
+    const feesBox = document.getElementById('f-fees');
+    if (cat !== 'rent' && feesBox) {
+      feesBox.value = feesBox.value.split('\n')
+        .filter(l => !/^Agent Fee:|^Legal Fee:/.test(l.trim()))
+        .join('\n');
+    }
+
+    // Fees box label/placeholder: only Flexible Rent auto-calculates
+    // Agent/Legal Fee. Short Let and Land use it purely for freeform
+    // extra fees, since Caution Fee / Service Charge have their own inputs.
+    const feesLabel = document.getElementById('f-fees-label');
+    if (feesLabel && feesBox) {
+      if (cat === 'rent') {
+        feesLabel.textContent = 'Fees (one per line — auto-calculated, or edit/replace freely)';
+        feesBox.placeholder = 'Agent Fee: 10% (₦180,000)\nLegal Fee: 5% (₦90,000)';
+      } else {
+        feesLabel.textContent = 'Additional Fees (one per line, optional)';
+        feesBox.placeholder = 'e.g. Weekend Surcharge: ₦10,000';
+      }
+    }
   }
   categorySelect.addEventListener('change', updateCategoryFields);
   updateCategoryFields();
@@ -574,10 +599,15 @@
       rentDisplay = `₦${nightly.toLocaleString('en-US')}/night`;
       const minStay = parseInt(document.getElementById('f-min-stay').value, 10);
       const cleaningFee = parseInt(document.getElementById('f-cleaning-fee').value, 10);
+      const cautionFee = parseInt(document.getElementById('f-caution-fee').value, 10);
+      const serviceCharge = parseInt(document.getElementById('f-service-charge').value, 10);
+      const serviceChargeFreq = document.getElementById('f-service-charge-freq').value;
       if (minStay) fees.push(`Minimum Stay: ${minStay} night${minStay > 1 ? 's' : ''}`);
       if (cleaningFee) fees.push(`Cleaning Fee: ₦${cleaningFee.toLocaleString('en-US')}`);
+      if (cautionFee) fees.push(`Caution Fee: ₦${cautionFee.toLocaleString('en-US')}`);
+      if (serviceCharge) fees.push(`Service Charge: ₦${serviceCharge.toLocaleString('en-US')}/${serviceChargeFreq}`);
       fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
-        .filter(l => !/^Minimum Stay:|^Cleaning Fee:/.test(l)));
+        .filter(l => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:/.test(l)));
     } else {
       // Flexible Rent — unchanged behavior
       beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
@@ -811,9 +841,16 @@
       document.getElementById('f-nightly-rate').value = rentDigits || '';
       const minStay = allFees.find(f => f.startsWith('Minimum Stay:'));
       const cleaningFee = allFees.find(f => f.startsWith('Cleaning Fee:'));
+      const cautionFeeLine = allFees.find(f => f.startsWith('Caution Fee:'));
+      const serviceChargeLine = allFees.find(f => f.startsWith('Service Charge:'));
       if (minStay) document.getElementById('f-min-stay').value = parseInt(minStay.replace(/[^0-9]/g, ''), 10) || '';
       if (cleaningFee) document.getElementById('f-cleaning-fee').value = parseInt(cleaningFee.replace(/[^0-9]/g, ''), 10) || '';
-      remainingFees = allFees.filter(f => !/^Minimum Stay:|^Cleaning Fee:/.test(f));
+      if (cautionFeeLine) document.getElementById('f-caution-fee').value = parseInt(cautionFeeLine.replace(/[^0-9]/g, ''), 10) || '';
+      if (serviceChargeLine) {
+        document.getElementById('f-service-charge').value = parseInt(serviceChargeLine.replace(/[^0-9]/g, ''), 10) || '';
+        document.getElementById('f-service-charge-freq').value = /\/mo$/.test(serviceChargeLine.trim()) ? 'mo' : 'yr';
+      }
+      remainingFees = allFees.filter(f => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:/.test(f));
     } else {
       rentInput.value = rentDigits || '';
       annualRentInput.value = listing.annual_rent || '';
