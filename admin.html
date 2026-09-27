@@ -94,12 +94,15 @@
       </div>
       <button id="logoutBtn" class="btn-secondary">Log Out</button>
     </div>
+    <!-- Role-based tab bar — only the tabs this staff member's role is
+         allowed to see get rendered here (see ROLE_VIEWS in the script). -->
+    <nav id="roleTabs" class="max-w-4xl mx-auto px-6 flex gap-2 overflow-x-auto pb-4 hidden"></nav>
   </header>
 
   <main class="max-w-4xl mx-auto px-6 py-10">
 
     <!-- ---- Add Listing Form ---- -->
-    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-10" id="listingFormSection">
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-10" id="listingFormSection" data-view="listings">
       <h2 class="font-display font-semibold text-lg text-white mb-1" id="formHeading">Add a New Listing</h2>
       <p class="text-sm text-slate-500 mb-6" id="formSubtext">This publishes straight to your live site — no code, no re-upload.</p>
 
@@ -288,7 +291,7 @@
     </section>
 
     <!-- ---- Existing Listings ---- -->
-    <section class="mb-10">
+    <section class="mb-10" data-view="listings">
       <button type="button" id="listingsToggle" class="w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none">
         <h2 class="font-display font-semibold text-lg text-white flex items-center gap-2">
           Live Listings
@@ -300,7 +303,7 @@
     </section>
 
     <!-- ---- Sign-Ups & Onboarding (KYC + Legal Agreement + Login) ---- -->
-    <section>
+    <section data-view="signups">
       <h2 class="font-display font-semibold text-lg text-white mb-1">Sign-Ups &amp; Onboarding</h2>
       <p class="text-sm text-slate-500 mb-1">Everyone who completes sign up on the site — KYC details, the signed legal agreement (PDF), and account status.</p>
       <p class="text-xs text-slate-600 mb-5">Login is handled securely by Supabase Auth at the moment of sign up — there's nothing to "activate" here. As soon as someone finishes onboarding, their email + password already work on the live site. This panel is for reviewing who they are (KYC) and their signed agreement, not for storing or viewing passwords.</p>
@@ -314,6 +317,58 @@
       </div>
 
       <div id="signupsList" class="space-y-3"></div>
+    </section>
+
+    <!-- ---- Finance ----
+         Placeholder dashboard: today the only financial-adjacent data that
+         exists anywhere is listing pricing. Wallet balances, payouts,
+         settlement banks, and escrow (all currently only in index.html's
+         localStorage) get their own tables and their own panel here once
+         that data is wired into Supabase — see the "Finance data" banner. -->
+    <section data-view="finance">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">Finance</h2>
+      <p class="text-sm text-slate-500 mb-5">Pricing across all live listings.</p>
+
+      <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 mb-6 text-xs text-amber-300">
+        Wallet balances, landlord payouts, and settlement account data live in the app right now and aren't reported here yet — that's the next phase of this integration.
+      </div>
+
+      <div id="financeList" class="space-y-2"></div>
+    </section>
+
+    <!-- ---- Staff Access (Super Admin only) ----
+         Add/remove staff and set their role. A newly-added row has no
+         auth_user_id yet — it's "claimed" automatically the first time
+         that person logs in with a matching email (see staff_roles_migration.sql). -->
+    <section data-view="staff">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">Staff Access</h2>
+      <p class="text-sm text-slate-500 mb-5">Who can log into this admin panel, and what dashboard they see.</p>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6">
+        <div class="grid sm:grid-cols-3 gap-x-5">
+          <div class="field !mb-3 sm:!mb-0">
+            <label>Email</label>
+            <input type="email" id="staff-new-email" placeholder="name@maintownrealty.com">
+          </div>
+          <div class="field !mb-3 sm:!mb-0">
+            <label>Full Name (optional)</label>
+            <input type="text" id="staff-new-name" placeholder="e.g. Amaka Obi">
+          </div>
+          <div class="field !mb-3 sm:!mb-0">
+            <label>Role</label>
+            <select id="staff-new-role">
+              <option value="developer">Developer</option>
+              <option value="finance">Finance</option>
+              <option value="legal">Legal</option>
+              <option value="super_admin">Super Admin</option>
+            </select>
+          </div>
+        </div>
+        <button id="staff-add-btn" class="btn-primary mt-2">Add Staff Member</button>
+        <p class="text-xs text-slate-600 mt-3">This grants access — it doesn't create their Supabase Auth login. Invite that separately (Supabase Dashboard → Authentication → Users → Invite), using the same email.</p>
+      </div>
+
+      <div id="staffList" class="space-y-2"></div>
     </section>
 
   </main>
@@ -340,19 +395,88 @@
     setTimeout(() => { toastEl.classList.remove('show'); }, 3200);
   }
 
+  // ---------- Staff Roles (Super Admin / Developer / Finance / Legal) ----------
+  // Which dashboard tabs each role gets. Edit these arrays to change who
+  // sees what — the tab bar and every data load below all key off this.
+  const ROLE_VIEWS = {
+    super_admin: ['listings', 'signups', 'finance', 'staff'],
+    developer:   ['listings', 'signups', 'finance'],
+    finance:     ['finance'],
+    legal:       ['signups'],
+  };
+  const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal' };
+  const VIEW_LABELS = { listings: 'Listings', signups: 'Sign-Ups', finance: 'Finance', staff: 'Staff Access' };
+  let currentStaffRole = null;
+  let currentView = null;
+
+  // Looks up this signed-in user's staff role. Matches by auth_user_id
+  // first; falls back to matching by email (covers a row a Super Admin
+  // added before this person ever logged in), then "claims" that row by
+  // writing the auth_user_id back — same pattern as the app's own Landlord
+  // claim flow. Returns null if this account has no staff role at all.
+  async function resolveStaffRole(user) {
+    const byId = await sb.from('staff_users').select('*').eq('auth_user_id', user.id).maybeSingle();
+    if (byId.data) return byId.data;
+
+    const byEmail = await sb.from('staff_users').select('*').eq('email', user.email).maybeSingle();
+    if (byEmail.data) {
+      if (!byEmail.data.auth_user_id) {
+        await sb.from('staff_users').update({ auth_user_id: user.id }).eq('id', byEmail.data.id);
+      }
+      return byEmail.data;
+    }
+    return null;
+  }
+
+  function renderRoleTabs() {
+    const tabsEl = document.getElementById('roleTabs');
+    const views = ROLE_VIEWS[currentStaffRole] || [];
+    tabsEl.classList.toggle('hidden', views.length <= 1);
+    tabsEl.innerHTML = views.map(v =>
+      `<button type="button" class="role-tab-btn chip ${v === currentView ? 'active' : ''}" data-view="${v}">${VIEW_LABELS[v]}</button>`
+    ).join('');
+  }
+
+  function switchView(view) {
+    currentView = view;
+    document.querySelectorAll('main [data-view]').forEach(el => {
+      el.classList.toggle('hidden', el.dataset.view !== view);
+    });
+    renderRoleTabs();
+    if (view === 'listings') loadExistingListings();
+    if (view === 'signups') loadSignups();
+    if (view === 'finance') loadFinanceList();
+    if (view === 'staff') loadStaffUsers();
+  }
+
+  document.getElementById('roleTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.role-tab-btn');
+    if (btn) switchView(btn.dataset.view);
+  });
+
   // ---------- Auth ----------
   async function checkSession() {
     const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      loginScreen.classList.add('hidden');
-      adminScreen.classList.remove('hidden');
-      document.getElementById('loggedInAs').textContent = session.user.email;
-      loadExistingListings();
-      loadSignups();
-    } else {
+    if (!session) {
       loginScreen.classList.remove('hidden');
       adminScreen.classList.add('hidden');
+      return;
     }
+    const staffRow = await resolveStaffRole(session.user);
+    if (!staffRow) {
+      const errEl = document.getElementById('loginError');
+      errEl.textContent = 'This account has no staff role assigned — ask a Super Admin to add you in Staff Access.';
+      errEl.classList.remove('hidden');
+      await sb.auth.signOut();
+      loginScreen.classList.remove('hidden');
+      adminScreen.classList.add('hidden');
+      return;
+    }
+    currentStaffRole = staffRow.role;
+    loginScreen.classList.add('hidden');
+    adminScreen.classList.remove('hidden');
+    document.getElementById('loggedInAs').textContent = `${session.user.email} · ${ROLE_LABELS_STAFF[currentStaffRole] || currentStaffRole}`;
+    switchView(ROLE_VIEWS[currentStaffRole][0]);
   }
 
   document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -371,6 +495,8 @@
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await sb.auth.signOut();
+    currentStaffRole = null;
+    currentView = null;
     checkSession();
   });
 
@@ -1058,6 +1184,118 @@
     }
     showToast('Sign-up record deleted.');
     loadSignups();
+  });
+
+  // ---------- Finance (read-only pricing overview) ----------
+  // Reuses the "listings" table admin.html already manages — no new
+  // table needed for this much. Wallet/payout/escrow data from the app
+  // isn't in Supabase yet (see the banner in the Finance panel).
+  async function loadFinanceList() {
+    const listEl = document.getElementById('financeList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
+    const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false });
+    if (error) {
+      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load listings: ${error.message}</p>`;
+      return;
+    }
+    if (!data.length) {
+      listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet.</p>';
+      return;
+    }
+    const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' };
+    listEl.innerHTML = data.map(l => `
+      <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-white truncate">
+            ${l.title}
+            <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${categoryLabels[l.category] || categoryLabels.rent}</span>
+          </p>
+          <p class="text-xs text-slate-500 truncate">${l.location}</p>
+        </div>
+        <p class="text-sm font-mono text-white shrink-0">${l.rent}</p>
+      </div>
+    `).join('');
+  }
+
+  // ---------- Staff Access (Super Admin only) ----------
+  let staffCache = [];
+  async function loadStaffUsers() {
+    const listEl = document.getElementById('staffList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
+    const { data, error } = await sb.from('staff_users').select('*').order('created_at', { ascending: false });
+    if (error) {
+      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load staff: ${error.message}</p>`;
+      return;
+    }
+    staffCache = data || [];
+    renderStaffList();
+  }
+
+  function renderStaffList() {
+    const listEl = document.getElementById('staffList');
+    if (!staffCache.length) {
+      listEl.innerHTML = '<p class="text-sm text-slate-500">No staff added yet.</p>';
+      return;
+    }
+    listEl.innerHTML = staffCache.map(s => `
+      <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 flex-wrap">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-white truncate">${s.full_name || s.email}</p>
+          <p class="text-xs text-slate-500 truncate">${s.email}${s.auth_user_id ? '' : ' · not logged in yet'}</p>
+        </div>
+        <select class="staff-role-select shrink-0 !w-auto !py-1.5 !text-xs" data-id="${s.id}">
+          <option value="developer" ${s.role === 'developer' ? 'selected' : ''}>Developer</option>
+          <option value="finance" ${s.role === 'finance' ? 'selected' : ''}>Finance</option>
+          <option value="legal" ${s.role === 'legal' ? 'selected' : ''}>Legal</option>
+          <option value="super_admin" ${s.role === 'super_admin' ? 'selected' : ''}>Super Admin</option>
+        </select>
+        <button class="delete-staff-btn btn-secondary shrink-0" data-id="${s.id}" data-email="${s.email}">Remove</button>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('staff-add-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('staff-add-btn');
+    const email = document.getElementById('staff-new-email').value.trim();
+    const fullName = document.getElementById('staff-new-name').value.trim();
+    const role = document.getElementById('staff-new-role').value;
+    if (!email) { showToast('Enter an email address.', true); return; }
+    btn.disabled = true;
+    const { error } = await sb.from('staff_users').insert({ email, full_name: fullName || null, role });
+    btn.disabled = false;
+    if (error) { showToast('Could not add staff: ' + error.message, true); return; }
+    showToast(`${email} added as ${ROLE_LABELS_STAFF[role]}. They'll get this role once they log in with that email.`);
+    document.getElementById('staff-new-email').value = '';
+    document.getElementById('staff-new-name').value = '';
+    loadStaffUsers();
+  });
+
+  document.getElementById('staffList').addEventListener('change', async (e) => {
+    const select = e.target.closest('.staff-role-select');
+    if (!select) return;
+    select.disabled = true;
+    const { error } = await sb.from('staff_users').update({ role: select.value }).eq('id', select.dataset.id);
+    select.disabled = false;
+    if (error) { showToast('Could not update role: ' + error.message, true); return; }
+    showToast('Role updated.');
+    loadStaffUsers();
+  });
+
+  document.getElementById('staffList').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.delete-staff-btn');
+    if (!btn) return;
+    if (!confirm(`Remove admin access for "${btn.dataset.email}"? This can't be undone.`)) return;
+    btn.disabled = true;
+    btn.textContent = 'Removing...';
+    const { error } = await sb.from('staff_users').delete().eq('id', btn.dataset.id);
+    if (error) {
+      showToast('Could not remove: ' + error.message, true);
+      btn.disabled = false;
+      btn.textContent = 'Remove';
+      return;
+    }
+    showToast('Staff access removed.');
+    loadStaffUsers();
   });
 </script>
 
