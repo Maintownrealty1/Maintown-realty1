@@ -12,6 +12,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign Up — MainTown Realty</title>
+<meta name="description" content="Create your MainTown Realty account as a tenant, landlord or agent. Verified homes, flexible payments, smart living in Lagos.">
 <link rel="icon" type="image/png" sizes="192x192" href="./favicon-192.png">
 <link rel="apple-touch-icon" href="./favicon-192.png">
 
@@ -29,10 +30,12 @@
         colors: {
           slate: { 950: '#0B1120', 900: '#0F172A', 850: '#141E33', 800: '#1B2740', 700: '#28395C' },
           brand: { 300: '#C4B5FD', 400: '#A855F7', 500: '#8B5CF6', 600: '#7C3AED', 700: '#6D28D9' },
+          amber: { 400: '#FBBF24', 500: '#F59E0B' },
         },
         fontFamily: {
           display: ['"Space Grotesk"', 'sans-serif'],
           body: ['Inter', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
         },
       }
     }
@@ -41,92 +44,89 @@
 
 <style>
   * , ::before, ::after { box-sizing: border-box !important; }
+  html { scroll-behavior: smooth; }
   html, body { width: 100% !important; max-width: 100% !important; overflow-x: hidden !important; margin: 0 !important; padding: 0 !important; }
-  body { font-family: 'Inter', sans-serif; background: #0B0F19; color: #fff; min-height: 100vh; }
+  body { font-family: 'Inter', sans-serif; background: #0F172A; color: #E2E8F0; min-height: 100vh; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; }
 
-  .app-shell { width: 100%; max-width: 460px; min-height: 100vh; margin: 0 auto; display: flex; flex-direction: column; padding: 28px 20px 48px; position: relative; }
+  /* Same film-grain, scrollbar and focus ring as the main site */
+  .bg-grain::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: #0F172A; }
+  ::-webkit-scrollbar-thumb { background: #28395C; border-radius: 8px; }
+  :focus-visible { outline: 2px solid #A855F7; outline-offset: 2px; }
 
-  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-  .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #94a3b8; text-decoration: none; }
-  .back-link:hover { color: #fff; }
-
-  .brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-  .brand-logo { width: 40px; height: 40px; border-radius: 12px; object-fit: cover; display: block; box-shadow: 0 8px 20px rgba(147,51,234,0.35); flex-shrink: 0; }
-  .brand-name { font-weight: 600; color: #fff; font-size: 15px; line-height: 1.3; margin: 0; }
-  .brand-tag { font-size: 12px; color: #64748b; line-height: 1.3; margin: 0; }
+  /* Room for the fixed header: one row on mobile, two rows on desktop */
+  .app-shell { width: 100%; max-width: 520px; flex: 1 0 auto; margin: 0 auto; display: flex; flex-direction: column; padding: 96px 20px 48px; position: relative; }
+  @media (min-width: 768px) { .app-shell { padding-top: 156px; padding-bottom: 72px; } }
 
   .progress-wrap { margin-bottom: 28px; }
-  .progress-labels { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .progress-step { font-size: 12px; font-weight: 500; color: #94a3b8; }
-  .progress-pct { font-size: 12px; font-weight: 500; color: #c084fc; }
-  .progress-track { width: 100%; height: 6px; background: #1e293b; border-radius: 999px; overflow: hidden; }
-  .progress-fill { height: 100%; background: #9333ea; border-radius: 999px; transition: width 0.3s ease; }
+  .progress-labels { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .progress-step { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: #A855F7; }
+  .progress-pct { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; color: #C4B5FD; flex-shrink: 0; }
+  .progress-track { width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #7C3AED, #A855F7); border-radius: 999px; transition: width 0.3s ease; }
 
-  h1.title { font-size: 20px; font-weight: 600; color: #fff; margin: 0 0 4px; }
-  p.subtitle { font-size: 14px; color: #94a3b8; margin: 0 0 24px; }
+  h1.title { font-family: 'Space Grotesk', sans-serif; font-size: 28px; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; color: #fff; margin: 0 0 8px; }
+  p.subtitle { font-size: 14px; line-height: 1.6; color: #94A3B8; margin: 0 0 24px; }
+
+  /* Listing carried over from a Rent Now / Buy Now / Book Now button */
+  .selected-listing { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin: 0 0 22px; border-radius: 12px; border: 1px solid rgba(168,85,247,0.3); background: rgba(124,58,237,0.08); }
+  .selected-listing svg { width: 18px; height: 18px; color: #A855F7; flex-shrink: 0; }
+  .selected-listing-label { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #C4B5FD; }
+  .selected-listing-title { margin: 2px 0 0; font-size: 13.5px; font-weight: 600; color: #fff; line-height: 1.35; overflow-wrap: anywhere; }
 
   .role-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
-  .role-card { width: 100%; text-align: left; padding: 16px; border-radius: 16px; border: 1px solid #1e293b; background: rgba(15,23,42,0.8); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.15s ease; color: inherit; font: inherit; }
-  .role-card:hover { border-color: #334155; }
-  .role-card.selected { border-color: #a855f7; background: rgba(59,7,100,0.3); }
+  .role-card { width: 100%; text-align: left; padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); background: rgba(20,30,51,0.5); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; color: inherit; font: inherit; }
+  .role-card:hover { border-color: rgba(168,85,247,0.4); }
+  .role-card.selected { border-color: #A855F7; background: rgba(124,58,237,0.14); }
   .role-icon { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex-shrink: 0; }
   .role-text { flex: 1; }
-  .role-name { font-weight: 500; color: #fff; font-size: 14px; margin: 0 0 2px; }
-  .role-sub { font-size: 12px; color: #64748b; margin: 0; }
-  .check-mark { display: none; width: 20px; height: 20px; border-radius: 999px; background: #9333ea; align-items: center; justify-content: center; flex-shrink: 0; }
+  .role-name { font-family: 'Space Grotesk', sans-serif; font-weight: 600; color: #fff; font-size: 15px; margin: 0 0 2px; }
+  .role-sub { font-size: 12px; color: #94A3B8; margin: 0; }
+  .check-mark { display: none; width: 20px; height: 20px; border-radius: 999px; background: #7C3AED; align-items: center; justify-content: center; flex-shrink: 0; }
   .role-card.selected .check-mark { display: flex; }
   .check-mark svg { width: 12px; height: 12px; color: #fff; }
 
   .field { margin-bottom: 16px; flex-shrink: 0; }
-  .field-label { display: block; font-size: 12px; font-weight: 500; color: #94a3b8; margin-bottom: 6px; }
-  .field-input { width: 100%; background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 12px; padding: 13px 16px; font-size: 14px; color: #fff; outline: none; transition: all 0.15s ease; }
-  .field-input::placeholder { color: #475569; }
-  .field-input:focus { border-color: #a855f7; box-shadow: 0 0 0 3px rgba(168,85,247,0.25); }
+  .field-label { display: block; font-size: 13px; font-weight: 500; color: #CBD5E1; margin-bottom: 6px; }
+  .field-input { width: 100%; background: #0B1120; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 13px 14px; font-size: 14px; color: #F1F5F9; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+  .field-input::placeholder { color: rgba(203,213,225,0.4); }
+  .field-input:focus { border-color: #A855F7; box-shadow: 0 0 0 3px rgba(168,85,247,0.2); }
   .field-password-wrap { position: relative; }
   .field-password-wrap .field-input { padding-right: 44px; }
   .password-toggle-btn { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: #64748b; cursor: pointer; border-radius: 8px; transition: color 0.15s ease; }
-  .password-toggle-btn:hover { color: #cbd5e1; }
+  .password-toggle-btn:hover { color: #CBD5E1; }
   .password-toggle-btn svg { width: 18px; height: 18px; pointer-events: none; }
   .phone-row { display: flex; gap: 8px; }
-  .country-select { background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 12px; padding: 13px 8px; font-size: 14px; color: #fff; outline: none; flex-shrink: 0; }
+  .country-select { background: #0B1120; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 13px 8px; font-size: 14px; color: #F1F5F9; outline: none; flex-shrink: 0; }
+  .country-select:focus { border-color: #A855F7; }
   .phone-input { flex: 1; min-width: 0; }
 
-  .btn-primary { width: 100%; margin-top: 8px; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 14px; color: #fff; border: none; cursor: pointer; background: linear-gradient(90deg, #9333ea, #7e22ce); box-shadow: 0 8px 20px rgba(147,51,234,0.25); transition: all 0.15s ease; }
-  .btn-primary:hover:not(:disabled) { background: linear-gradient(90deg, #a855f7, #9333ea); }
+  .btn-primary { width: 100%; margin-top: 8px; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 14px; color: #fff; border: none; cursor: pointer; background: linear-gradient(135deg, #7C3AED, #A855F7); box-shadow: 0 10px 24px -10px rgba(124,58,237,0.6); transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease; }
+  .btn-primary:hover:not(:disabled) { opacity: 0.92; }
+  .btn-primary:active:not(:disabled) { transform: translateY(1px); }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-back { background: rgba(15,23,42,0.8); border: 1px solid #1e293b; box-shadow: none; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-back { background: #1B2740; border: 1px solid #28395C; color: #E2E8F0; box-shadow: none; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-back:hover { background: #28395C; }
   .role-hint { font-size: 12px; text-align: center; color: #64748b; margin-top: 10px; }
 
-  .kyc-icon-wrap { width: 56px; height: 56px; border-radius: 999px; background: rgba(59,7,100,0.5); border: 1px solid #6b21a8; display: flex; align-items: center; justify-content: center; margin: 12px auto 20px; }
-  .kyc-icon-wrap svg { width: 28px; height: 28px; color: #c084fc; }
-  .kyc-role-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(147,51,234,0.15); border: 1px solid rgba(147,51,234,0.4); color: #c084fc; font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 999px; margin: 0 auto 20px; width: fit-content; }
-  .kyc-list { display: flex; flex-direction: column; gap: 10px; margin: 0 0 24px; }
-  .kyc-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 14px; font-size: 13px; color: #cbd5e1; cursor: pointer; transition: border-color 0.2s ease, background 0.2s ease; }
-  .kyc-item:hover { border-color: #334155; }
-  .kyc-item.confirmed { border-color: #10b981; background: rgba(16,185,129,0.08); }
-  .kyc-item-icon-wrap { width: 34px; height: 34px; border-radius: 10px; background: rgba(100,116,139,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s ease; }
-  .kyc-item.confirmed .kyc-item-icon-wrap { background: rgba(16,185,129,0.18); }
-  .kyc-item-icon-wrap svg { width: 16px; height: 16px; color: #64748b; transition: color 0.2s ease; }
-  .kyc-item.confirmed .kyc-item-icon-wrap svg { color: #10b981; }
-  .kyc-item-text { flex: 1; min-width: 0; }
-  .kyc-item-title { margin: 0; font-size: 13px; color: #cbd5e1; }
-  .kyc-item-status { margin: 2px 0 0; font-size: 11px; color: #64748b; }
-  .kyc-item.confirmed .kyc-item-status { color: #10b981; font-weight: 500; }
-  .kyc-check-circle { width: 22px; height: 22px; border-radius: 999px; border: 1.5px solid #334155; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-  .kyc-item.confirmed .kyc-check-circle { background: #10b981; border-color: #10b981; }
-  .kyc-check-circle svg { width: 13px; height: 13px; color: #fff; display: none; }
-  .kyc-item.confirmed .kyc-check-circle svg { display: block; }
+  .kyc-icon-wrap { width: 56px; height: 56px; border-radius: 999px; background: rgba(124,58,237,0.18); border: 1px solid rgba(168,85,247,0.4); display: flex; align-items: center; justify-content: center; margin: 4px auto 20px; }
+  .kyc-icon-wrap svg { width: 28px; height: 28px; color: #C4B5FD; }
+  .kyc-role-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(124,58,237,0.15); border: 1px solid rgba(168,85,247,0.4); color: #C4B5FD; font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 999px; margin: 0 auto 20px; width: fit-content; }
   .kyc-note { font-size: 11.5px; color: #64748b; margin: -12px 0 20px; line-height: 1.5; }
 
-  .s-section-label { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin: 4px 0 14px; }
+  .s-section-label { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #CBD5E1; margin: 4px 0 14px; }
 
-  .legal-box { flex: 1; min-height: 120px; overflow-y: auto; padding: 16px; border-radius: 14px; background: rgba(15,23,42,0.9); border: 1px solid #1e293b; font-size: 12px; color: #cbd5e1; line-height: 1.65; }
+  .legal-box { flex: 1; min-height: 120px; overflow-y: auto; padding: 16px; border-radius: 14px; background: #0B1120; border: 1px solid rgba(255,255,255,0.1); font-size: 12px; color: #CBD5E1; line-height: 1.65; }
   .legal-box::-webkit-scrollbar { width: 6px; }
-  .legal-box::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
-  .legal-box h3 { font-size: 12.5px; font-weight: 600; color: #e2e8f0; margin: 18px 0 6px; display: flex; align-items: center; gap: 6px; }
+  .legal-box::-webkit-scrollbar-thumb { background: #28395C; border-radius: 999px; }
+  .legal-box h3 { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: #E2E8F0; margin: 18px 0 6px; display: flex; align-items: center; gap: 6px; }
   .legal-box h3 svg { flex-shrink: 0; width: 14px; height: 14px; }
   .legal-box h3:first-child { margin-top: 0; }
-  .legal-box p { margin: 0 0 4px; color: #94a3b8; }
+  .legal-box p { margin: 0 0 4px; color: #94A3B8; }
   .critical-badge { display: inline-flex; align-items: center; gap: 6px; color: #fbbf24; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 6px; }
   .critical-badge svg { width: 14px; height: 14px; flex-shrink: 0; }
   .legal-box .critical-section h3 { color: #f87171; }
@@ -134,36 +134,47 @@
   .legal-box .critical-section { background: rgba(127,29,29,0.15); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
   .scroll-hint { font-size: 11px; color: #64748b; text-align: center; margin: 8px 0 2px; flex-shrink: 0; }
 
-  .agree-row { display: flex; align-items: flex-start; gap: 10px; margin: 16px 0 14px; font-size: 12.5px; color: #cbd5e1; line-height: 1.5; cursor: pointer; flex-shrink: 0; }
-  .agree-checkbox { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; accent-color: #9333ea; cursor: pointer; }
+  .agree-row { display: flex; align-items: flex-start; gap: 10px; margin: 16px 0 14px; font-size: 12.5px; color: #CBD5E1; line-height: 1.5; cursor: pointer; flex-shrink: 0; }
+  .agree-checkbox { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; accent-color: #7C3AED; cursor: pointer; }
   .signature-input { font-family: 'Brush Script MT', cursive, -apple-system, sans-serif; font-size: 18px; }
 
-  .s-section-label-alt { font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin: 4px 0 12px; }
+  .s-section-label-alt { display: flex; align-items: center; gap: 6px; font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; font-weight: 600; color: #E2E8F0; margin: 4px 0 12px; }
   .perk-list { display: flex; flex-direction: column; gap: 10px; margin: 0 0 26px; }
-  .perk-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.25); border-radius: 14px; }
-  .perk-item-icon-wrap { width: 34px; height: 34px; border-radius: 10px; background: rgba(16,185,129,0.16); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .perk-item-icon-wrap svg { width: 16px; height: 16px; color: #10b981; }
-  .perk-item-text { margin: 0; font-size: 13px; color: #e2e8f0; font-weight: 500; line-height: 1.4; }
+  .perk-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: rgba(20,30,51,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; transition: border-color 0.15s ease; }
+  .perk-item:hover { border-color: rgba(168,85,247,0.4); }
+  .perk-item-icon-wrap { width: 34px; height: 34px; border-radius: 10px; background: rgba(124,58,237,0.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .perk-item-icon-wrap svg { width: 16px; height: 16px; color: #A855F7; }
+  .perk-item-text { margin: 0; font-size: 13px; color: #E2E8F0; font-weight: 500; line-height: 1.4; }
 
-  .commission-box { padding: 16px; border-radius: 14px; background: rgba(15,23,42,0.9); border: 1px solid #1e293b; font-size: 12.5px; color: #cbd5e1; line-height: 1.7; margin-bottom: 8px; }
-  .commission-box h3 { font-size: 12.5px; font-weight: 600; color: #e2e8f0; margin: 0 0 12px; display: flex; align-items: center; gap: 6px; }
+  .commission-box { padding: 16px; border-radius: 16px; background: rgba(20,30,51,0.5); border: 1px solid rgba(255,255,255,0.1); font-size: 12.5px; color: #CBD5E1; line-height: 1.7; margin-bottom: 8px; }
+  .commission-box h3 { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: #E2E8F0; margin: 0 0 12px; display: flex; align-items: center; gap: 6px; }
   .commission-box h3 svg { flex-shrink: 0; width: 14px; height: 14px; }
   .commission-box ul { margin: 0; padding-left: 18px; }
   .commission-box li { margin-bottom: 10px; }
   .commission-box li:last-child { margin-bottom: 0; }
   .commission-box li b { color: #fff; font-weight: 600; }
 
-  .notice-box { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(59,130,246,0.08); border: 1px solid rgba(96,165,250,0.3); margin: 4px 0 18px; }
-  .notice-box svg { width: 18px; height: 18px; color: #60a5fa; flex-shrink: 0; margin-top: 1px; }
-  .notice-box p { margin: 0; font-size: 12px; color: #cbd5e1; line-height: 1.55; }
-  .notice-box p b { color: #93c5fd; font-weight: 600; }
+  .notice-box { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(124,58,237,0.08); border: 1px solid rgba(168,85,247,0.3); margin: 4px 0 18px; }
+  .notice-box svg { width: 18px; height: 18px; color: #A855F7; flex-shrink: 0; margin-top: 1px; }
+  .notice-box p { margin: 0; font-size: 12px; color: #CBD5E1; line-height: 1.55; }
+  .notice-box p b { color: #C4B5FD; font-weight: 600; }
 
+  /* Screens sit in a card on larger displays, same surface as the site's modals */
   .screen { animation: fadeIn 0.35s ease; }
+  @media (min-width: 640px) {
+    .app-shell { max-width: 560px; }
+    .screen { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px 28px; box-shadow: 0 24px 60px -24px rgba(0,0,0,0.6); }
+  }
   .screen.hidden-screen { display: none; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .screen { animation: none; }
+    .progress-fill, .legal-drawer, .legal-drawer-overlay, .toast { transition: none; }
+  }
 
   /* Success screen */
-  .success-icon-wrap { width: 72px; height: 72px; border-radius: 999px; background: rgba(16,185,129,0.15); border: 1px solid #10b981; display: flex; align-items: center; justify-content: center; margin: 24px auto 24px; }
+  .success-icon-wrap { width: 72px; height: 72px; border-radius: 999px; background: rgba(16,185,129,0.15); border: 1px solid #10b981; display: flex; align-items: center; justify-content: center; margin: 12px auto 24px; }
   .success-icon-wrap svg { width: 36px; height: 36px; color: #10b981; }
 
   .toast {
@@ -175,39 +186,73 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   .legal-link-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 2px; cursor: pointer; background: none; border: none; width: 100%; text-align: left; color: inherit; font: inherit; margin-bottom: 4px; }
-  .legal-link-text { font-size: 13.5px; font-weight: 600; color: #c084fc; text-decoration: underline; text-underline-offset: 2px; }
+  .legal-link-text { font-size: 13.5px; font-weight: 600; color: #A855F7; text-decoration: underline; text-underline-offset: 2px; }
   .legal-link-row.confirmed-terms .legal-link-text { color: #10b981; }
   .legal-link-status { font-size: 11.5px; color: #64748b; }
   .legal-link-row.confirmed-terms .legal-link-status { color: #10b981; }
 
-  .legal-drawer-overlay { position: fixed; inset: 0; background: rgba(2,6,15,0.72); backdrop-filter: blur(2px); z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+  /* Terms modal: same overlay + surface treatment as the site's modals */
+  .legal-drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
   .legal-drawer-overlay.show { opacity: 1; pointer-events: auto; }
-  .legal-drawer { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); opacity: 0; pointer-events: none; width: calc(100% - 32px); max-width: 420px; max-height: 85vh; background: #0F172A; border: 1px solid #1e293b; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.55); z-index: 301; padding: 22px 20px 22px; display: flex; flex-direction: column; overflow: hidden; transition: transform 0.22s ease, opacity 0.22s ease; }
+  .legal-drawer { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); opacity: 0; pointer-events: none; width: calc(100% - 32px); max-width: 440px; max-height: 85vh; background: #0F172A; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 25px 60px rgba(0,0,0,0.6); z-index: 301; padding: 22px 20px 22px; display: flex; flex-direction: column; overflow: hidden; transition: transform 0.22s ease, opacity 0.22s ease; }
   .legal-drawer.show { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
   .legal-drawer-handle { display: none; }
   .legal-drawer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-shrink: 0; }
-  .legal-drawer-close { width: 30px; height: 30px; border-radius: 999px; background: rgba(15,23,42,0.9); border: 1px solid #1e293b; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; flex-shrink: 0; }
-  .legal-drawer-title { font-size: 17px; font-weight: 600; color: #fff; margin: 4px 0 16px; flex-shrink: 0; }
+  .legal-drawer-close { width: 36px; height: 36px; border-radius: 999px; background: #0B1120; border: 1px solid rgba(255,255,255,0.1); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; flex-shrink: 0; transition: background 0.15s ease, border-color 0.15s ease; }
+  .legal-drawer-close:hover { background: #1B2740; border-color: rgba(139,92,246,0.5); }
+  .legal-drawer-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: #fff; margin: 4px 0 16px; flex-shrink: 0; }
 </style>
 </head>
-<body>
+<body class="bg-grain font-body text-slate-200 antialiased selection:bg-brand-600 selection:text-white">
+
+<!-- ================= NAV (same header as the main site) ================= -->
+<header class="fixed top-0 inset-x-0 z-50 border-b border-white/5 bg-slate-900/80 backdrop-blur-md">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center space-x-2 shrink-0">
+      <a href="./index.html" class="flex items-center gap-2 font-display font-bold text-lg">
+        <img src="./logo.webp" alt="MainTown Realty" class="h-7 w-7 max-h-7 object-contain rounded-md shrink-0">
+        <span class="text-xl font-extrabold text-white tracking-tight">MainTown <span class="text-brand-400">Realty</span></span>
+      </a>
+    </div>
+
+    <div class="flex items-center gap-2 ml-auto">
+      <a href="./index.html" aria-label="Back to site" class="inline-flex items-center justify-center gap-1.5 w-10 h-10 md:w-auto md:px-4 md:py-2.5 rounded-lg border border-white/10 text-white text-sm font-semibold hover:bg-white/5 transition">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i><span class="hidden md:inline">Back to site</span>
+      </a>
+      <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
+        <span id="mobileMenuIcon">☰</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Desktop nav row -->
+  <div class="hidden md:block border-t border-white/5">
+    <nav class="max-w-7xl mx-auto px-6 py-2.5 flex items-center gap-x-5 text-[13px] lg:text-sm font-medium text-slate-200 overflow-x-auto whitespace-nowrap">
+      <a href="./index.html#listings" class="hover:text-white transition">Listings</a>
+      <a href="./quick-fix.html" class="hover:text-white transition">Quick Fix</a>
+      <a href="./partner-as-an-agent.html" class="hover:text-white transition">Partner as Agent/Landlord</a>
+      <a href="./policies.html" class="hover:text-white transition">Policies</a>
+      <a href="./tips-for-renters.html" class="hover:text-white transition">Tips for Renters</a>
+    </nav>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
+    <nav class="flex flex-col px-6 py-4 gap-1 text-sm">
+      <a href="./index.html#listings" class="px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Listings</a>
+      <a href="./quick-fix.html" class="px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Quick Fix</a>
+      <a href="./partner-as-an-agent.html" class="px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Partner as Agent/Landlord</a>
+      <a href="./policies.html" class="px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Policies</a>
+      <a href="./tips-for-renters.html" class="px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Tips for Renters</a>
+      <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" class="px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Instagram</a>
+    </nav>
+  </div>
+</header>
 
 <div class="app-shell">
 
-  <div class="top-bar">
-    <a href="./index.html" class="back-link"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to site</a>
-  </div>
-
   <!-- ===================== SCREEN 1: Role Selection & Basic Info ===================== -->
   <div id="screen-1" class="screen">
-
-    <div class="brand-row">
-      <img class="brand-logo" src="./logo.webp" alt="MainTown Realty">
-      <div>
-        <p class="brand-name">MainTown Realty</p>
-        <p class="brand-tag">Own or rent, on your terms.</p>
-      </div>
-    </div>
 
     <div class="progress-wrap" id="progress-wrap-1">
       <div class="progress-labels">
@@ -220,9 +265,11 @@
     <h1 class="title">Create your account</h1>
     <p class="subtitle">Tell us who you are so we can tailor your experience.</p>
 
+    <div class="selected-listing-slot"></div>
+
     <div class="role-group" id="role-group">
       <button type="button" class="role-card" data-role="tenant">
-        <span class="role-icon"><i data-lucide="building-2" class="w-6 h-6 text-purple-400"></i></span>
+        <span class="role-icon"><i data-lucide="building-2" class="w-6 h-6 text-brand-400"></i></span>
         <div class="role-text">
           <p class="role-name">Tenant / Rent/Own</p>
           <p class="role-sub">Local &amp; Diaspora</p>
@@ -230,7 +277,7 @@
         <span class="check-mark"><svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></span>
       </button>
       <button type="button" class="role-card" data-role="landlord">
-        <span class="role-icon"><i data-lucide="key-round" class="w-6 h-6 text-purple-400"></i></span>
+        <span class="role-icon"><i data-lucide="key-round" class="w-6 h-6 text-brand-400"></i></span>
         <div class="role-text">
           <p class="role-name">Landlord / Property Owner</p>
           <p class="role-sub">List &amp; manage properties</p>
@@ -238,7 +285,7 @@
         <span class="check-mark"><svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></span>
       </button>
       <button type="button" class="role-card" data-role="agent">
-        <span class="role-icon"><i data-lucide="briefcase" class="w-6 h-6 text-purple-400"></i></span>
+        <span class="role-icon"><i data-lucide="briefcase" class="w-6 h-6 text-brand-400"></i></span>
         <div class="role-text">
           <p class="role-name">Real Estate Agent / Broker</p>
           <p class="role-sub">Represent listings &amp; clients</p>
@@ -277,14 +324,6 @@
   <!-- ===================== SCREEN 1b: Partnership Value & Agreement (Agent/Landlord only) ===================== -->
   <div id="screen-partnership" class="screen hidden-screen">
 
-    <div class="brand-row">
-      <img class="brand-logo" src="./logo.webp" alt="MainTown Realty">
-      <div>
-        <p class="brand-name">MainTown Realty</p>
-        <p class="brand-tag">Own or rent, on your terms.</p>
-      </div>
-    </div>
-
     <div class="progress-wrap" id="progress-wrap-partnership">
       <div class="progress-labels">
         <span class="progress-step">Step 2 of 3: Partnership Benefits &amp; Terms</span>
@@ -298,10 +337,10 @@
     <h1 class="title">Partnering with MainTown Realty</h1>
     <p class="subtitle">Review your partnership perks and earn industry-leading terms on every listing.</p>
 
-    <p class="s-section-label-alt"><i data-lucide="sparkles" class="w-4 h-4 text-purple-400" style="display:inline; vertical-align:-3px;"></i> Your Partnership Perks</p>
+    <p class="s-section-label-alt"><i data-lucide="sparkles" class="w-4 h-4 text-brand-400" style="display:inline; vertical-align:-3px;"></i> Your Partnership Perks</p>
     <div id="partnership-perks" class="perk-list"></div>
 
-    <p class="s-section-label-alt"><i data-lucide="receipt" class="w-4 h-4 text-purple-400" style="display:inline; vertical-align:-3px;"></i> Commission &amp; Fee Structure</p>
+    <p class="s-section-label-alt"><i data-lucide="receipt" class="w-4 h-4 text-brand-400" style="display:inline; vertical-align:-3px;"></i> Commission &amp; Fee Structure</p>
     <div id="partnership-terms" class="commission-box"></div>
 
     <label class="agree-row">
@@ -322,14 +361,6 @@
   <!-- ===================== SCREEN 4: Create Your Login ===================== -->
   <div id="screen-4" class="screen hidden-screen">
 
-    <div class="brand-row">
-      <img class="brand-logo" src="./logo.webp" alt="MainTown Realty">
-      <div>
-        <p class="brand-name">MainTown Realty</p>
-        <p class="brand-tag">Own or rent, on your terms.</p>
-      </div>
-    </div>
-
     <div class="progress-wrap" id="progress-wrap-4">
       <div class="progress-labels">
         <span class="progress-step">Step 2 of 2: Create Your Login</span>
@@ -344,6 +375,8 @@
 
     <h1 class="title" style="text-align:center;">Create your login</h1>
     <p class="subtitle" style="text-align:center;">Set your email and password, then review and accept our Terms of Service to finish creating your account.</p>
+
+    <div class="selected-listing-slot"></div>
 
     <div class="field">
       <label class="field-label">Email Address</label>
@@ -428,6 +461,17 @@
 
 </div>
 
+<footer class="relative border-t border-white/5 bg-slate-950/60">
+  <div class="max-w-7xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+    <p>© 2026 <span class="font-semibold text-brand-400">MainTown Realty</span>. Lagos, Nigeria. All rights reserved.</p>
+    <nav class="flex items-center gap-5">
+      <a href="./policies.html" class="hover:text-white transition">Policies</a>
+      <a href="./tips-for-renters.html" class="hover:text-white transition">Tips for Renters</a>
+      <a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27d%20like%20to%20get%20in%20touch." target="_blank" rel="noopener noreferrer" class="hover:text-white transition">Contact Us</a>
+    </nav>
+  </div>
+</footer>
+
 <script>
   const WHATSAPP_NUMBER = '2348066611017';
 
@@ -504,23 +548,31 @@
       label: 'Landlord / Owner',
       roleIcon: 'key-round',
       sections: [
-        { title: 'Section 1: Title & Ownership Warranties', body: 'Legal declaration that property title, CofO, or land consent documents provided are authentic and free of third-party encumbrances.' },
-        { title: 'Section 2: Escrow Disbursement Schedule', body: 'Strict agreement to 24-48 hour payout release following tenant digital handover sign-off.' },
-        { title: 'Section 3: Habitability Standards', body: 'Obligation to provide functional plumbing, electrical, and structural systems.' },
-        { title: 'Section 4: Fraud & Dual-Leasing Zero Tolerance', body: 'Account termination, escrow forfeit, and legal referral for listing fake properties or executing double-leases.', critical: true },
-        { title: 'Section 5: Inspection Access', body: 'Agreement to permit scheduled virtual or physical walkthroughs.' },
-        { title: 'Section 6: Non-Circumvention', body: 'Agreement not to bypass platform escrow for direct cash payments.' }
+        { title: 'Section 1: Title, Ownership & Documentation Warranties', body: "Declaration that property titles (C of O, Gazette, Governor's Consent, Excision) or rental authorization rights are authentic, unencumbered, and free of legal dispute. For Land &amp; Property listings, you warrant that all uploaded survey plans, Certificates of Occupancy, or Gazettes are authentic and unencumbered, and you consent to automated digital verification via MainTown's AI inspection engine prior to listing approval." },
+        { title: 'Section 2: Automated Non-Custodial Payment Disbursement', body: 'Monthly Rentals &amp; Shortlets — each payment is split automatically at the point of charge, with the Landlord\'s share paid directly to their own account. Land &amp; Property Sales — each instalment (or outright payment) is split automatically at the point of charge, with the Seller/Developer\'s share paid directly to their own account. MainTown never holds your funds; each charge is routed directly to your verified payout account, minus platform commissions and legal/deed processing fees. Physical allocation and Deed of Assignment execution follow the payment schedule set out in the listing.' },
+        { title: 'Section 3: Contract Countersignature Timing (Land & Property)', body: "Upon a buyer's checkout on a Land &amp; Property sale, you agree to digitally countersign the generated Contract of Sale within 24 hours. Automated platform reminders will trigger every 5 hours until executed.", critical: true },
+        { title: 'Section 4: Habitability Standards & Repair SLAs', body: 'Obligation to maintain functional power, water, structural integrity, and estate amenities. Landlords must address critical repairs within 48 hours. MainTown reserves the right to withhold monthly payout releases until critical repairs are resolved.', critical: true },
+        { title: 'Section 5: Default, Restructuring, Deed Execution & Physical Delivery', body: "Agreement to MainTown's 30-day grace period and 60-day default policy for installment buyers and monthly renters. Authorizes MainTown to restructure or re-list defaulted inventory. Upon 100% completion of buyer payments for a Land &amp; Property sale, you agree to upload the executed Deed of Assignment and surrender original physical title instruments exclusively to the MainTown Realty Logistics Team for secure buyer delivery. Off-platform physical document transfers are strictly prohibited.", critical: true },
+        { title: 'Section 6: Shortlet Calendar Accuracy & Caution Deposit Rules', body: 'Requirement to maintain accurate shortlet availability. Double-booking results in owner-funded guest relocation fees. Damage claims against caution deposits must be submitted within 24 hours of checkout with photo/video proof.' },
+        { title: 'Section 7: Fraud, Dual-Leasing & Zero Tolerance', body: 'Immediate account termination, forfeiture of pending payouts, listing removal, and referral to law enforcement for fake listings, fraudulent titles, or executing side-deals/double-leases.', critical: true },
+        { title: 'Section 8: Verification Walkthroughs & Inspection Access', body: "Agreement to allow scheduled virtual or physical walkthrough inspections by authorized MainTown verification agents prior to and during listing activation. This includes facilitating buyer inspections at checkout — for Land &amp; Property sales, buyer checkout remains locked until the buyer logs an in-app Satisfied status." },
+        { title: 'Section 9: Non-Circumvention & Direct Payment Ban', body: 'Strict prohibition against bypassing the platform\'s payment system to request cash, direct bank transfers, or off-platform renewals from MainTown users. Violations incur platform ban and legal recovery of lost fees.', critical: true },
+        { title: 'Section 10: Fee Transparency & Collection', body: 'MainTown collects the Legal Fee for drafting tenancy agreements directly, for transparency — it is never yours to set or collect. Any Caution Deposit and Service Charge you configure for a rental or shortlet listing (or leave as self-service, with no service charge) are paid directly to you alongside the tenant\'s rent/shortlet payments. For Land &amp; Property Sales, the Deed of Assignment legal/processing fee (5% or 10%, as you select at listing) is paid directly to you together with the buyer\'s first installment payment — MainTown does not collect it. A Land &amp; Property sale separately carries a 10% Agency Commission, made up of a Buyer-paid 5% (always to MainTown) and a Seller-paid 5% (to the Agent, if one listed the property on your behalf, or also to MainTown if you listed directly with no agent). Shortlet listings carry a MainTown Platform Fee (5% of the nightly rate) instead of a Legal Fee.' }
       ]
     },
     agent: {
       label: 'Real Estate Agent',
       roleIcon: 'briefcase',
       sections: [
-        { title: 'Section 1: Inspection Integrity', body: 'Mandatory requirement to perform verified physical or live video walkthroughs prior to listing approval.' },
-        { title: 'Section 2: Commission Transparency', body: 'Agreement to adhere strictly to standardized platform commission fee caps.' },
-        { title: 'Section 3: Off-Platform Payment Ban', body: 'Permanent ban and legal action for soliciting direct off-platform cash transactions from tenants.', critical: true },
-        { title: 'Section 4: Landlord Contact Mapping', body: 'Agents must provide valid Landlord contact information (Phone/Email) for every property uploaded to the platform.' },
-        { title: 'Section 5: Business Verification', body: 'Requirement to maintain active CAC registration or recognized realtor membership credentials.' }
+        { title: 'Section 1: Inspection & Title Integrity', body: "Mandatory requirement to perform verified physical or live video walkthroughs prior to listing submission. Agents warrant that all property details, title documentation (C of O, Gazette, Governor's Consent), and availability status uploaded are authentic and accurate." },
+        { title: 'Section 2: Direct Owner Mandate & Mapped Contact Information', body: 'Agents must hold direct authorization from the property owner/developer and provide valid Landlord contact details (Phone/Email) for every property uploaded. Listing unauthorized properties or acting through unverified sub-agent chains is strictly prohibited.' },
+        { title: 'Section 3: Automated Landlord Onboarding & Payout Activation', body: 'Submitting a listing triggers an automated invitation to the mapped Landlord to verify ownership. Agent commissions and listing payouts will not be processed until the mapped Landlord joins the platform and validates property ownership.', critical: true },
+        { title: 'Section 4: Commission Transparency & Automated Payouts', body: 'Agreement to adhere strictly to standardized platform commission caps. Agent commissions are disbursed automatically: Rentals &amp; Shortlets — you receive 60% of the 10% commission fee (MainTown keeps 40%), paid automatically at the point of charge alongside the Landlord\'s share. Land &amp; Property Sales — the 10% commission is a Buyer-paid 5% and a Seller-paid 5%; the Buyer\'s 5% always goes to MainTown, while the Seller\'s 5% comes to you when you list the property, released automatically alongside the Seller/Developer\'s share.' },
+        { title: 'Section 5: Shortlet Operational Standards & Calendar Accuracy', body: "Agents managing shortlet units must maintain accurate calendar availability. Failure to provide keyless/physical check-in access or double-booking stays will result in relocation penalties charged against the agent's account." },
+        { title: 'Section 6: Off-Platform Transaction Ban (Zero Tolerance)', body: 'Permanent account ban, commission forfeiture, and legal recovery action for soliciting direct off-platform cash transactions, cash deposits, or off-market renewals from MainTown users.', critical: true },
+        { title: 'Section 7: Professional Credentials & Business Verification', body: 'Requirement to maintain active CAC registration, recognized realtor association membership (e.g., REDAN, NIESV, ERCAAN), or valid government-issued identification.' },
+        { title: 'Section 8: Fraud, Double-Leasing & Liability', body: 'Immediate account termination, blacklisting, forfeiture of pending payouts, and law enforcement referral for listing fraudulent inventory, executing double-leases, or collecting illegal offline fees.', critical: true },
+        { title: 'Section 9: Fee Transparency', body: 'The Legal Fee on a tenancy agreement is collected by MainTown directly, for transparency — agents never collect or retain it. Any Caution Deposit and Service Charge entered on a rental or shortlet listing belong entirely to the Landlord/Owner and are paid to them alongside the tenant\'s payments. On Land &amp; Property Sales, the Landlord/Owner-selected Deed of Assignment fee (5% or 10%) is paid to them with the first installment, not to MainTown — this is separate from the 10% Agency Commission (see Section 4), which is split 5% Buyer-paid (to MainTown) and 5% Seller-paid (to you, the listing Agent). Shortlet listings carry a MainTown Platform Fee (5%) instead of a Legal Fee.' }
       ]
     }
   };
@@ -530,30 +582,32 @@
   const partnershipContent = {
     agent: {
       perks: [
-        { icon: 'wallet', text: 'Zero-upfront listing fees' },
-        { icon: 'shield-check', text: 'Guaranteed escrow payouts' },
-        { icon: 'badge-check', text: 'Cadastral title verification badge' },
-        { icon: 'users', text: 'Direct pipeline to pre-qualified local & diaspora renters' },
+        { icon: 'trending-up', text: "60% of the 10% commission fee on every rental or shortlet you list — MainTown keeps 40%." },
+        { icon: 'handshake', text: "On Land & Property sales, you keep the Seller's full 5% share of the Agency Commission — the Buyer's 5% always goes to MainTown." },
+        { icon: 'zap', text: "Commissions are split and paid to your account automatically at the point of charge — no manual payout requests, no waiting on MainTown to release funds." },
+        { icon: 'shield-check', text: "MainTown never touches the Legal Fee, Caution Deposit, Service Charge, or Deed of Assignment fee — those stay entirely between the Landlord/Owner and the tenant/buyer." }
       ],
       terms: [
-        { label: 'Rental Commission Split', body: '60% to Agent / 40% to MainTown Realty on closed rentals.' },
-        { label: 'Legal Fee', body: 'MainTown Realty collects a 5% legal fee on all transaction processing.' },
-        { label: 'Property Purchase Sales', body: '5% commission paid to MainTown Realty by the Buyer/Tenant + 5% commission paid to the Agent by the Property Owner. MainTown takes a 2.5% legal fee, paid by both the Buyer/Tenant and the Property Owner.' },
-      ],
+        { label: 'Rentals & Shortlets', body: 'A flat 10% commission fee applies to the deal. You receive 60% of it; MainTown keeps 40%.' },
+        { label: 'Land & Property Sales', body: "A 10% Agency Commission applies, charged as two 5% halves. The Buyer's 5% always goes to MainTown. The Seller's 5% comes to you whenever you list the property." },
+        { label: 'Payout timing', body: 'Your share is split and paid to your account automatically the moment the tenant/buyer pays — never held or delayed by MainTown.' },
+        { label: "Fees you never collect", body: "The tenancy Legal Fee always goes to MainTown. Caution Deposit, Service Charge, and the Deed of Assignment fee always go to the Landlord/Owner, not to you." }
+      ]
     },
     landlord: {
       perks: [
-        { icon: 'landmark', text: 'Automated rent collections via bank-grade escrow' },
-        { icon: 'scan-search', text: 'AI tenant underwriting & screening' },
-        { icon: 'zap', text: 'Zero vacancy downtime match engine' },
-        { icon: 'scale', text: 'Legal & dispute protection' },
+        { icon: 'landmark', text: 'You set your own Caution Deposit and Service Charge on rentals and shortlets — paid straight to you alongside rent, with no MainTown cut.' },
+        { icon: 'file-text', text: 'You choose the Deed of Assignment fee (5% or 10%) on Land & Property sales — paid to you with the buyer\'s first installment, not to MainTown.' },
+        { icon: 'zap', text: 'Every payment is split and routed to your verified payout account automatically at the point of charge — MainTown never holds your funds.' },
+        { icon: 'users', text: 'List directly yourself, or let a MainTown Agent list on your behalf — either way, your share is protected and paid out the same way.' }
       ],
       terms: [
-        { label: 'Upfront & Payout Terms', body: 'Receive your first payment upfront upon escrow confirmation. Monthly rent and installment payments are credited to your account for bank withdrawal via our operations desk.' },
-        { label: 'Rental Transactions', body: 'Landlords receive 100% of their net listed rent. Standard agency fees and 5% legal documentation are collected directly via tenant onboarding.' },
-        { label: 'Property Purchase Sales', body: 'Property Owner pays MainTown Realty 5% sales commission + 2.5% legal fee upon closed sales.' },
-      ],
-    },
+        { label: 'Rentals & Shortlets', body: 'Caution Deposit and Service Charge are entirely yours to set (or skip). The Legal Fee for the tenancy agreement is collected by MainTown, not you.' },
+        { label: 'Land & Property Sales', body: "The Deed of Assignment fee (5% or 10%, your choice) is paid to you with the buyer's first installment. Separately, a 10% Agency Commission applies: the Buyer's 5% always goes to MainTown; the Seller's 5% goes to your listing Agent if one is involved, or also to MainTown if you list directly." },
+        { label: 'Payout timing', body: 'Your share is paid directly to your verified payout account the moment a payment is made — never held or delayed.' },
+        { label: 'What MainTown always collects', body: 'Only the tenancy Legal Fee and its share of the Agency Commission — never your Caution Deposit, Service Charge, or Deed of Assignment fee.' }
+      ]
+    }
   };
 
   let currentRole = null;
@@ -767,7 +821,7 @@
     document.getElementById('legal-drawer-role-badge').innerHTML = `<i data-lucide="${data.roleIcon}" class="w-4 h-4"></i><span>${data.label}</span>`;
     const box = document.getElementById('legal-box');
     box.innerHTML = data.sections.map(s => {
-      const heading = `<h3><i data-lucide="scale" class="text-purple-400"></i>${s.title}</h3>`;
+      const heading = `<h3><i data-lucide="scale" class="text-brand-400"></i>${s.title}</h3>`;
       if (s.critical) {
         return `<div class="critical-section"><div class="critical-badge"><i data-lucide="alert-triangle" class="text-amber-400"></i>Compliance Warning</div>${heading}<p>${s.body}</p></div>`;
       }
@@ -839,7 +893,7 @@
     // ever rendered here — Agent terms never reach a Landlord and vice versa.
     const termsEl = document.getElementById('partnership-terms');
     termsEl.innerHTML = `
-      <h3><i data-lucide="receipt" class="text-purple-400"></i>Commission &amp; Fee Structure — ${roleData.label}</h3>
+      <h3><i data-lucide="receipt" class="text-brand-400"></i>Commission &amp; Fee Structure — ${roleData.label}</h3>
       <ul>${content.terms.map(t => `<li><b>${t.label}:</b> ${t.body}</li>`).join('')}</ul>
     `;
 
@@ -1095,7 +1149,43 @@
     // blank — those stay a fresh, required step even after a reload.
   }
 
+  // ---- Header mobile menu (same behaviour as the main site) ----
+  (function () {
+    const toggle = document.getElementById('mobileMenuToggle');
+    const menu = document.getElementById('mobileMenu');
+    const icon = document.getElementById('mobileMenuIcon');
+    if (!toggle || !menu) return;
+    toggle.addEventListener('click', () => {
+      const open = menu.classList.toggle('hidden') === false;
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      icon.textContent = open ? '✕' : '☰';
+    });
+  })();
+
+  // ---- Show the listing the person picked on the main site ----
+  function renderSelectedListing() {
+    document.querySelectorAll('.selected-listing-slot').forEach(slot => {
+      slot.innerHTML = '';
+      if (!selectedListing.title) return;
+      const chip = document.createElement('div');
+      chip.className = 'selected-listing';
+      chip.innerHTML = '<i data-lucide="home"></i><div><p class="selected-listing-label">Selected property</p><p class="selected-listing-title"></p></div>';
+      chip.querySelector('.selected-listing-title').textContent = selectedListing.title;
+      slot.appendChild(chip);
+    });
+  }
+
   restoreState();
+
+  // The main site's "Sign Up" cards can deep-link with ?role=tenant|landlord|agent.
+  const roleParam = (urlParams.get('role') || '').toLowerCase();
+  if (currentScreenKey === 'screen-1' && currentRole !== roleParam && ['tenant', 'landlord', 'agent'].includes(roleParam)) {
+    const preselect = document.querySelector(`.role-card[data-role="${roleParam}"]`);
+    if (preselect) preselect.click();
+  }
+
+  renderSelectedListing();
   if (window.lucide) lucide.createIcons();
 </script>
 
