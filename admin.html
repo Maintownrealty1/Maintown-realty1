@@ -213,8 +213,35 @@
           <div class="price-box">
             <h3>Pricing &amp; payment options</h3>
             <div class="field">
-              <label>Outright Price (₦) — fixed price for full payment</label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="f-parts-on" style="width:auto;"> Sold in parts (full plot / half plot) — e.g. a 3-acre land
+              </label>
+            </div>
+            <div id="f-parts-wrap" style="display:none;">
+              <div class="grid sm:grid-cols-2 gap-x-5">
+                <div class="field">
+                  <label>Size of one full plot</label>
+                  <input type="text" id="f-part-size" placeholder="e.g. 600 sqm">
+                </div>
+                <div class="field">
+                  <label>Full plots available — optional</label>
+                  <input type="number" id="f-plots-count" min="1" placeholder="e.g. 12">
+                </div>
+              </div>
+              <div class="field">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                  <input type="checkbox" id="f-half-on" style="width:auto;" checked> Also sell half plots
+                </label>
+              </div>
+              <p class="hint" style="margin:-6px 0 12px;">The prices below are for ONE FULL PLOT. Put the whole land size (e.g. 3 acres) in "Plot Size" above.</p>
+            </div>
+            <div class="field">
+              <label id="f-sale-price-label">Outright Price (₦) — fixed price for full payment</label>
               <input type="number" id="f-sale-price" placeholder="e.g. 45000000">
+            </div>
+            <div id="f-half-out-wrap" class="field" style="display:none;">
+              <label>Half Plot — Outright Price (₦)</label>
+              <input type="number" id="f-half-out" placeholder="auto: half of the full plot price">
             </div>
             <div class="field">
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
@@ -238,6 +265,10 @@
                 <div class="field">
                   <label>Initial Deposit (₦) — optional</label>
                   <input type="number" id="f-inst-deposit" placeholder="e.g. 10000000">
+                </div>
+                <div class="field" id="f-half-inst-wrap" style="display:none;">
+                  <label>Half Plot — Installment Price (₦)</label>
+                  <input type="number" id="f-half-inst" placeholder="auto: half of the full plot installment">
                 </div>
               </div>
               <p class="hint" id="f-inst-hint"></p>
@@ -683,7 +714,23 @@
     document.getElementById('f-legal-10').classList.toggle('on', p === 10);
     updateLandPriceHints();
   }
+  // "Sold in parts": prices entered are per full plot; half-plot prices default to exactly half.
+  let halfOutTouched = false, halfInstTouched = false;
+  function partsOn() { return document.getElementById('f-parts-on').checked; }
+  function halfOn() { return partsOn() && document.getElementById('f-half-on').checked; }
+  function refreshParts() {
+    const on = partsOn();
+    document.getElementById('f-parts-wrap').style.display = on ? '' : 'none';
+    document.getElementById('f-half-out-wrap').style.display = halfOn() ? '' : 'none';
+    document.getElementById('f-half-inst-wrap').style.display = (halfOn() && document.getElementById('f-inst-on').checked) ? '' : 'none';
+    document.getElementById('f-sale-price-label').textContent = on ? 'Full Plot — Outright Price (₦)' : 'Outright Price (₦) — fixed price for full payment';
+    const full = parseInt(document.getElementById('f-sale-price').value, 10) || 0;
+    const inst = parseInt(document.getElementById('f-inst-price').value, 10) || 0;
+    if (!halfOutTouched) document.getElementById('f-half-out').value = full ? Math.round(full / 2) : '';
+    if (!halfInstTouched) document.getElementById('f-half-inst').value = inst ? Math.round(inst / 2) : '';
+  }
   function updateLandPriceHints() {
+    refreshParts();
     const out = parseInt(document.getElementById('f-sale-price').value, 10) || 0;
     const lp = document.getElementById('f-legal-preview');
     lp.textContent = out ? `${landLegalPct}% of the outright price = ₦${Math.round(out * landLegalPct / 100).toLocaleString('en-US')}` : 'Enter the outright price to see the amount.';
@@ -701,7 +748,9 @@
     updateLandPriceHints();
   }
   function resetLandExtras() {
-    ['f-inst-price', 'f-inst-deposit', 'f-survey-cost', 'f-redcopy-cost'].forEach(id => document.getElementById(id).value = '');
+    ['f-inst-price', 'f-inst-deposit', 'f-survey-cost', 'f-redcopy-cost', 'f-part-size', 'f-plots-count', 'f-half-out', 'f-half-inst'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-parts-on').checked = false; document.getElementById('f-half-on').checked = true;
+    halfOutTouched = false; halfInstTouched = false;
     document.getElementById('f-inst-months').value = '12';
     setInstOn(false); setLegalPct(5); setLandKind('land');
   }
@@ -710,6 +759,10 @@
   document.getElementById('f-legal-5').addEventListener('click', () => setLegalPct(5));
   document.getElementById('f-legal-10').addEventListener('click', () => setLegalPct(10));
   document.getElementById('f-inst-on').addEventListener('change', (e) => setInstOn(e.target.checked));
+  document.getElementById('f-parts-on').addEventListener('change', updateLandPriceHints);
+  document.getElementById('f-half-on').addEventListener('change', updateLandPriceHints);
+  document.getElementById('f-half-out').addEventListener('input', () => { halfOutTouched = true; });
+  document.getElementById('f-half-inst').addEventListener('input', () => { halfInstTouched = true; });
   ['f-sale-price', 'f-inst-price', 'f-inst-deposit', 'f-inst-months'].forEach(id => document.getElementById(id).addEventListener('input', updateLandPriceHints));
   landTypeSelect.addEventListener('change', updateLandHouseFields);
   categorySelect.addEventListener('change', updateLandHouseFields);
@@ -817,6 +870,11 @@
       const instDeposit = parseInt(document.getElementById('f-inst-deposit').value, 10) || 0;
       if (instOn && !instPrice) { showToast('Enter the installment price, or untick the installment plan.', true); return; }
       if (instOn && instPrice < salePrice) { showToast('The installment price cannot be lower than the outright price.', true); return; }
+      const parts = partsOn(), half = halfOn();
+      const halfOut = parseInt(document.getElementById('f-half-out').value, 10) || 0;
+      const halfInst = parseInt(document.getElementById('f-half-inst').value, 10) || 0;
+      if (half && (!halfOut || halfOut >= salePrice)) { showToast('The half plot outright price must be above zero and lower than the full plot price.', true); return; }
+      if (half && instOn && (!halfInst || halfInst >= instPrice || halfInst < halfOut)) { showToast('Check the half plot installment price: it must be lower than the full plot installment and not below the half plot outright price.', true); return; }
       if (instOn && instDeposit >= instPrice) { showToast('The initial deposit must be less than the installment price.', true); return; }
       if (isHouse) {
         beds = parseInt(document.getElementById('f-land-beds').value, 10) || 0;
@@ -834,6 +892,17 @@
         fees.push(`Installment Duration: ${instMonths} months`);
         if (instDeposit) fees.push(`Initial Deposit: ₦${instDeposit.toLocaleString('en-US')}`);
       }
+      if (parts) {
+        const ps = document.getElementById('f-part-size').value.trim();
+        const pc = parseInt(document.getElementById('f-plots-count').value, 10) || 0;
+        fees.push(`Sold In Parts: ${half ? 'Full plot, Half plot' : 'Full plot'}`);
+        fees.push(`Price Basis: Per full plot${ps ? ' (' + ps + ')' : ''}`);
+        if (pc) fees.push(`Plots Available: ${pc}`);
+        if (half) {
+          fees.push(`Half Plot Price: ₦${halfOut.toLocaleString('en-US')}`);
+          if (instOn) fees.push(`Half Plot Installment: ₦${halfInst.toLocaleString('en-US')}`);
+        }
+      }
       fees.push(`Legal Fee: ${landLegalPct}% (₦${Math.round(salePrice * landLegalPct / 100).toLocaleString('en-US')})`);
       const surveyCost = parseInt(document.getElementById('f-survey-cost').value, 10) || 0;
       const redCopyCost = parseInt(document.getElementById('f-redcopy-cost').value, 10) || 0;
@@ -846,7 +915,7 @@
       if (titleDoc) fees.push(`Title Document: ${titleDoc}`);
       if (landUse) fees.push(`Land Use: ${landUse}`);
       fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
-        .filter(l => !/^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Plot Size:|^Title Document:|^Land Use:|^Outright Price:|^Installment Price:|^Installment Duration:|^Initial Deposit:|^Legal Fee:|^Survey Plan:|^Red Copy:/.test(l)));
+        .filter(l => !/^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Plot Size:|^Title Document:|^Land Use:|^Outright Price:|^Installment Price:|^Installment Duration:|^Initial Deposit:|^Legal Fee:|^Survey Plan:|^Red Copy:|^Sold In Parts:|^Price Basis:|^Plots Available:|^Half Plot Price:|^Half Plot Installment:/.test(l)));
     } else if (category === 'short-let') {
       beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
       const nightly = parseInt(document.getElementById('f-nightly-rate').value, 10);
@@ -1108,12 +1177,22 @@
       setLegalPct(legalLine && /10\s*%/.test(legalLine) ? 10 : 5);
       document.getElementById('f-survey-cost').value = num('Survey Plan:') || '';
       document.getElementById('f-redcopy-cost').value = num('Red Copy:') || '';
+      const partsLine = allFees.find(f => f.startsWith('Sold In Parts:'));
+      if (partsLine) {
+        document.getElementById('f-parts-on').checked = true;
+        document.getElementById('f-half-on').checked = /half/i.test(partsLine);
+        const pb = allFees.find(f => f.startsWith('Price Basis:'));
+        const pm = pb && pb.match(/\(([^)]*)\)/); if (pm) document.getElementById('f-part-size').value = pm[1];
+        document.getElementById('f-plots-count').value = num('Plots Available:') || '';
+        if (num('Half Plot Price:')) { document.getElementById('f-half-out').value = num('Half Plot Price:'); halfOutTouched = true; }
+        if (num('Half Plot Installment:')) { document.getElementById('f-half-inst').value = num('Half Plot Installment:'); halfInstTouched = true; }
+      }
       updateLandPriceHints();
       document.getElementById('f-land-beds').value = listing.beds || 1;
       if (bathrooms) document.getElementById('f-land-bathrooms').value = parseInt(bathrooms.replace(/[^0-9]/g, ''), 10) || '';
       if (toilets) document.getElementById('f-land-toilets').value = parseInt(toilets.replace(/[^0-9]/g, ''), 10) || '';
       if (parking) document.getElementById('f-land-parking').value = parseInt(parking.replace(/[^0-9]/g, ''), 10) || '';
-      remainingFees = allFees.filter(f => !/^Plot Size:|^Title Document:|^Land Use:|^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Outright Price:|^Installment Price:|^Installment Duration:|^Initial Deposit:|^Legal Fee:|^Survey Plan:|^Red Copy:/.test(f));
+      remainingFees = allFees.filter(f => !/^Plot Size:|^Title Document:|^Land Use:|^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Outright Price:|^Installment Price:|^Installment Duration:|^Initial Deposit:|^Legal Fee:|^Survey Plan:|^Red Copy:|^Sold In Parts:|^Price Basis:|^Plots Available:|^Half Plot Price:|^Half Plot Installment:/.test(f));
     } else if (category === 'short-let') {
       document.getElementById('f-nightly-rate').value = rentDigits || '';
       const minStay = allFees.find(f => f.startsWith('Minimum Stay:'));
