@@ -38,6 +38,12 @@
   input:focus, select:focus, textarea:focus { border-color: #8B5CF6; }
   label { font-size: 12.5px; font-weight: 600; color: #94A3B8; display: block; margin-bottom: 6px; }
   .field { margin-bottom: 16px; }
+  .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill { padding: 9px 16px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #cbd5e1; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .pill.on { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+  .price-box { border: 1px solid #1e293b; background: rgba(2,6,23,.55); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+  .price-box h3 { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+  .hint { font-size: 12px; color: #94a3b8; margin-top: 6px; }
   .btn-primary {
     background: linear-gradient(90deg, #8B5CF6, #7C3AED); color: #fff; font-weight: 600;
     padding: 12px 20px; border-radius: 10px; transition: opacity 0.15s ease; font-size: 14px;
@@ -156,8 +162,15 @@
         </div>
 
         <!-- ===== Land & Property only ===== -->
-        <div class="field" data-cat="land">
-          <label>Property Type</label>
+        <div class="field sm:col-span-2" data-cat="land">
+          <label>What are you listing?</label>
+          <div class="pill-row">
+            <button type="button" class="pill on" id="f-kind-land">Land only</button>
+            <button type="button" class="pill" id="f-kind-house">House / Building</button>
+          </div>
+        </div>
+        <div class="field" data-cat="land" data-land-house="1">
+          <label>House Type</label>
           <select id="f-land-type">
             <option value="Land (Plot)">Land (Plot)</option>
             <option value="Duplex">Duplex</option>
@@ -170,7 +183,7 @@
           </select>
         </div>
         <div class="field" data-cat="land">
-          <label>Plot Size</label>
+          <label id="f-plot-size-label">Plot Size</label>
           <input type="text" id="f-plot-size" placeholder="e.g. 650 sqm or 2 plots">
         </div>
         <div class="field" data-cat="land">
@@ -194,9 +207,63 @@
             <option value="Agricultural">Agricultural</option>
           </select>
         </div>
-        <div class="field" data-cat="land">
-          <label>Sale Price (₦)</label>
-          <input type="number" id="f-sale-price" placeholder="e.g. 45000000">
+
+        <!-- Pricing & payment options (Land & Property) -->
+        <div class="sm:col-span-2" data-cat="land">
+          <div class="price-box">
+            <h3>Pricing &amp; payment options</h3>
+            <div class="field">
+              <label>Outright Price (₦) — fixed price for full payment</label>
+              <input type="number" id="f-sale-price" placeholder="e.g. 45000000">
+            </div>
+            <div class="field">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="f-inst-on" style="width:auto;"> Also offer an installment plan
+              </label>
+            </div>
+            <div id="f-inst-wrap" style="display:none;">
+              <div class="grid sm:grid-cols-2 gap-x-5">
+                <div class="field">
+                  <label>Installment Price (₦) — fixed total</label>
+                  <input type="number" id="f-inst-price" placeholder="e.g. 50000000">
+                </div>
+                <div class="field">
+                  <label>Plan Duration</label>
+                  <select id="f-inst-months">
+                    <option value="3">3 months</option><option value="6">6 months</option>
+                    <option value="9">9 months</option><option value="12" selected>12 months</option>
+                    <option value="18">18 months</option><option value="24">24 months</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Initial Deposit (₦) — optional</label>
+                  <input type="number" id="f-inst-deposit" placeholder="e.g. 10000000">
+                </div>
+              </div>
+              <p class="hint" id="f-inst-hint"></p>
+            </div>
+          </div>
+          <div class="price-box">
+            <h3>Legal &amp; document costs</h3>
+            <div class="field">
+              <label>Deed of Assignment Legal Fee</label>
+              <div class="pill-row">
+                <button type="button" class="pill on" id="f-legal-5">5%</button>
+                <button type="button" class="pill" id="f-legal-10">10%</button>
+              </div>
+              <p class="hint" id="f-legal-preview"></p>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-x-5">
+              <div class="field">
+                <label>Survey Plan Cost (₦) — optional</label>
+                <input type="number" id="f-survey-cost" placeholder="e.g. 250000">
+              </div>
+              <div class="field">
+                <label>Red Copy Cost (₦) — optional</label>
+                <input type="number" id="f-redcopy-cost" placeholder="e.g. 150000">
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Only shown when Property Type above isn't raw "Land (Plot)" -->
@@ -598,9 +665,56 @@
     const isHouse = categorySelect.value === 'land' && landTypeSelect.value !== 'Land (Plot)';
     document.querySelectorAll('[data-land-house]').forEach(el => { el.style.display = isHouse ? '' : 'none'; });
   }
+  // House / Land switch, Deed of Assignment legal fee %, installment plan
+  let landKind = 'land', landLegalPct = 5;
+  function setLandKind(kind) {
+    landKind = kind;
+    document.getElementById('f-kind-land').classList.toggle('on', kind === 'land');
+    document.getElementById('f-kind-house').classList.toggle('on', kind === 'house');
+    [...landTypeSelect.options].forEach(o => { o.hidden = (kind === 'house' && o.value === 'Land (Plot)'); });
+    if (kind === 'land') landTypeSelect.value = 'Land (Plot)';
+    else if (landTypeSelect.value === 'Land (Plot)') landTypeSelect.value = 'Duplex';
+    document.getElementById('f-plot-size-label').textContent = kind === 'house' ? 'Land Size (sqm or plots)' : 'Plot Size';
+    updateLandHouseFields();
+  }
+  function setLegalPct(p) {
+    landLegalPct = p;
+    document.getElementById('f-legal-5').classList.toggle('on', p === 5);
+    document.getElementById('f-legal-10').classList.toggle('on', p === 10);
+    updateLandPriceHints();
+  }
+  function updateLandPriceHints() {
+    const out = parseInt(document.getElementById('f-sale-price').value, 10) || 0;
+    const lp = document.getElementById('f-legal-preview');
+    lp.textContent = out ? `${landLegalPct}% of the outright price = ₦${Math.round(out * landLegalPct / 100).toLocaleString('en-US')}` : 'Enter the outright price to see the amount.';
+    const inst = parseInt(document.getElementById('f-inst-price').value, 10) || 0;
+    const months = parseInt(document.getElementById('f-inst-months').value, 10) || 12;
+    const dep = parseInt(document.getElementById('f-inst-deposit').value, 10) || 0;
+    const h = document.getElementById('f-inst-hint');
+    if (!inst) { h.textContent = ''; return; }
+    const left = Math.max(0, inst - dep);
+    h.textContent = `₦${Math.round(left / months).toLocaleString('en-US')} per month for ${months} months after the deposit.` + (out && inst < out ? ' Installment price cannot be lower than the outright price.' : '');
+  }
+  function setInstOn(on) {
+    document.getElementById('f-inst-on').checked = !!on;
+    document.getElementById('f-inst-wrap').style.display = on ? '' : 'none';
+    updateLandPriceHints();
+  }
+  function resetLandExtras() {
+    ['f-inst-price', 'f-inst-deposit', 'f-survey-cost', 'f-redcopy-cost'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-inst-months').value = '12';
+    setInstOn(false); setLegalPct(5); setLandKind('land');
+  }
+  document.getElementById('f-kind-land').addEventListener('click', () => setLandKind('land'));
+  document.getElementById('f-kind-house').addEventListener('click', () => setLandKind('house'));
+  document.getElementById('f-legal-5').addEventListener('click', () => setLegalPct(5));
+  document.getElementById('f-legal-10').addEventListener('click', () => setLegalPct(10));
+  document.getElementById('f-inst-on').addEventListener('change', (e) => setInstOn(e.target.checked));
+  ['f-sale-price', 'f-inst-price', 'f-inst-deposit', 'f-inst-months'].forEach(id => document.getElementById(id).addEventListener('input', updateLandPriceHints));
   landTypeSelect.addEventListener('change', updateLandHouseFields);
   categorySelect.addEventListener('change', updateLandHouseFields);
   updateLandHouseFields();
+  setLandKind('land'); updateLandPriceHints();
 
   // ---------- Monthly / Annual rent — fully independent manual fields ----------
   // Monthly Rent and Annual Rent never auto-calculate each other or anything
@@ -696,7 +810,14 @@
       }
       rentDisplay = `₦${salePrice.toLocaleString('en-US')}`;
       const landType = document.getElementById('f-land-type').value;
-      const isHouse = landType !== 'Land (Plot)';
+      const isHouse = landKind === 'house' && landType !== 'Land (Plot)';
+      const instOn = document.getElementById('f-inst-on').checked;
+      const instPrice = parseInt(document.getElementById('f-inst-price').value, 10) || 0;
+      const instMonths = parseInt(document.getElementById('f-inst-months').value, 10) || 12;
+      const instDeposit = parseInt(document.getElementById('f-inst-deposit').value, 10) || 0;
+      if (instOn && !instPrice) { showToast('Enter the installment price, or untick the installment plan.', true); return; }
+      if (instOn && instPrice < salePrice) { showToast('The installment price cannot be lower than the outright price.', true); return; }
+      if (instOn && instDeposit >= instPrice) { showToast('The initial deposit must be less than the installment price.', true); return; }
       if (isHouse) {
         beds = parseInt(document.getElementById('f-land-beds').value, 10) || 0;
         const bathrooms = parseInt(document.getElementById('f-land-bathrooms').value, 10);
@@ -706,7 +827,18 @@
         if (toilets) fees.push(`Toilets: ${toilets}`);
         if (parking) fees.push(`Parking Spaces: ${parking}`);
       }
-      fees.push(`Property Type: ${landType}`);
+      fees.push(`Property Type: ${isHouse ? landType : 'Land (Plot)'}`);
+      fees.push(`Outright Price: ₦${salePrice.toLocaleString('en-US')}`);
+      if (instOn) {
+        fees.push(`Installment Price: ₦${instPrice.toLocaleString('en-US')}`);
+        fees.push(`Installment Duration: ${instMonths} months`);
+        if (instDeposit) fees.push(`Initial Deposit: ₦${instDeposit.toLocaleString('en-US')}`);
+      }
+      fees.push(`Legal Fee: ${landLegalPct}% (₦${Math.round(salePrice * landLegalPct / 100).toLocaleString('en-US')})`);
+      const surveyCost = parseInt(document.getElementById('f-survey-cost').value, 10) || 0;
+      const redCopyCost = parseInt(document.getElementById('f-redcopy-cost').value, 10) || 0;
+      if (surveyCost) fees.push(`Survey Plan: ₦${surveyCost.toLocaleString('en-US')}`);
+      if (redCopyCost) fees.push(`Red Copy: ₦${redCopyCost.toLocaleString('en-US')}`);
       const plotSize = document.getElementById('f-plot-size').value.trim();
       const titleDoc = document.getElementById('f-title-doc').value;
       const landUse = document.getElementById('f-land-use').value;
@@ -714,7 +846,7 @@
       if (titleDoc) fees.push(`Title Document: ${titleDoc}`);
       if (landUse) fees.push(`Land Use: ${landUse}`);
       fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
-        .filter(l => !/^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Plot Size:|^Title Document:|^Land Use:/.test(l)));
+        .filter(l => !/^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Plot Size:|^Title Document:|^Land Use:|^Outright Price:|^Installment Price:|^Installment Duration:|^Initial Deposit:|^Legal Fee:|^Survey Plan:|^Red Copy:/.test(l)));
     } else if (category === 'short-let') {
       beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
       const nightly = parseInt(document.getElementById('f-nightly-rate').value, 10);
@@ -818,6 +950,7 @@
     document.getElementById('f-title-doc').value = '';
     document.getElementById('f-land-use').value = 'Residential';
     document.getElementById('f-land-type').value = 'Land (Plot)';
+    resetLandExtras();
     document.getElementById('f-land-beds').value = 1;
     document.getElementById('f-service-charge-freq').value = 'yr';
     document.getElementById('f-beds').value = 1;
@@ -943,6 +1076,7 @@
     document.getElementById('f-title-doc').value = '';
     document.getElementById('f-land-use').value = 'Residential';
     document.getElementById('f-service-charge-freq').value = 'yr';
+    resetLandExtras();
 
     let remainingFees = allFees;
     if (category === 'land') {
@@ -957,12 +1091,29 @@
       if (plotSize) document.getElementById('f-plot-size').value = plotSize.replace('Plot Size:', '').trim();
       if (titleDoc) document.getElementById('f-title-doc').value = titleDoc.replace('Title Document:', '').trim();
       if (landUse) document.getElementById('f-land-use').value = landUse.replace('Land Use:', '').trim();
-      document.getElementById('f-land-type').value = propType ? propType.replace('Property Type:', '').trim() : 'Land (Plot)';
+      const loadedType = propType ? propType.replace('Property Type:', '').trim() : 'Land (Plot)';
+      document.getElementById('f-land-type').value = loadedType;
+      setLandKind(loadedType === 'Land (Plot)' ? 'land' : 'house');
+      document.getElementById('f-land-type').value = loadedType;
+      const num = (pfx) => { const l = allFees.find(f => f.startsWith(pfx)); return l ? (parseInt(l.replace(/[^0-9]/g, ''), 10) || 0) : 0; };
+      const instLine = allFees.find(f => f.startsWith('Installment Price:'));
+      if (instLine) {
+        setInstOn(true);
+        document.getElementById('f-inst-price').value = num('Installment Price:') || '';
+        const dm = allFees.find(f => f.startsWith('Installment Duration:'));
+        if (dm) document.getElementById('f-inst-months').value = String(parseInt(dm.replace(/[^0-9]/g, ''), 10) || 12);
+        document.getElementById('f-inst-deposit').value = num('Initial Deposit:') || '';
+      }
+      const legalLine = allFees.find(f => f.startsWith('Legal Fee:'));
+      setLegalPct(legalLine && /10\s*%/.test(legalLine) ? 10 : 5);
+      document.getElementById('f-survey-cost').value = num('Survey Plan:') || '';
+      document.getElementById('f-redcopy-cost').value = num('Red Copy:') || '';
+      updateLandPriceHints();
       document.getElementById('f-land-beds').value = listing.beds || 1;
       if (bathrooms) document.getElementById('f-land-bathrooms').value = parseInt(bathrooms.replace(/[^0-9]/g, ''), 10) || '';
       if (toilets) document.getElementById('f-land-toilets').value = parseInt(toilets.replace(/[^0-9]/g, ''), 10) || '';
       if (parking) document.getElementById('f-land-parking').value = parseInt(parking.replace(/[^0-9]/g, ''), 10) || '';
-      remainingFees = allFees.filter(f => !/^Plot Size:|^Title Document:|^Land Use:|^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:/.test(f));
+      remainingFees = allFees.filter(f => !/^Plot Size:|^Title Document:|^Land Use:|^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Outright Price:|^Installment Price:|^Installment Duration:|^Initial Deposit:|^Legal Fee:|^Survey Plan:|^Red Copy:/.test(f));
     } else if (category === 'short-let') {
       document.getElementById('f-nightly-rate').value = rentDigits || '';
       const minStay = allFees.find(f => f.startsWith('Minimum Stay:'));
