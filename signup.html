@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+[<!DOCTYPE html>
 <html lang="en">
 <head>
 <!-- Google tag (gtag.js) -->
@@ -1102,14 +1102,17 @@
       const { data: authData, error: authError } = await sb.auth.signUp({ email, password });
       if (authError) throw new Error(authError.message);
       const userId = authData.user ? authData.user.id : null;
+      if (!userId) {
+  throw new Error('Could not create the user account. Please try again.');
+}
 
       // 2. Build the signed agreement as a PDF and upload it to storage.
       createLoginBtn.textContent = 'Saving your signed agreement…';
       const pdfBlob = buildAgreementPdf({ name, roleLabel, email, phone, occupation, guarantor: null, incomeRange: null, kycItems: [], signature, signedAt });
-      const pdfPath = `${userId || 'unlinked'}/agreement-${Date.now()}.pdf`;
+      const pdfPath = `${userId}/agreement-${Date.now()}.pdf`;
       const { error: uploadError } = await sb.storage.from(ONBOARDING_BUCKET).upload(pdfPath, pdfBlob, { contentType: 'application/pdf', upsert: false });
       if (uploadError) throw new Error(uploadError.message);
-      const { data: pdfUrlData } = sb.storage.from(ONBOARDING_BUCKET).getPublicUrl(pdfPath);
+      
 
       // 3. Save the login + agreement record so it shows up on the admin panel.
       // Identity/KYC documents and guarantor details are now collected
@@ -1127,7 +1130,7 @@
         income_range: null,
         kyc_items: [],
         kyc_documents: [],
-        agreement_pdf_url: pdfUrlData.publicUrl,
+        agreement_pdf_url: pdfPath,
         signature,
         signed_at: signedAt,
         status: 'pending',

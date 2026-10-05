@@ -1045,14 +1045,33 @@
     renderSignups();
   }
 
-  function renderSignups() {
+  async function renderSignups() {
     const listEl = document.getElementById('signupsList');
     const filtered = signupRoleFilter === 'all' ? signupsCache : signupsCache.filter(s => s.role === signupRoleFilter);
     if (!filtered.length) {
       listEl.innerHTML = '<p class="text-sm text-slate-500">No sign-ups yet.</p>';
       return;
     }
-    listEl.innerHTML = filtered.map(s => {
+    const signupsWithAgreementUrls = await Promise.all(
+  filtered.map(async (s) => {
+    if (!s.agreement_pdf_url) {
+      return { ...s, agreementSignedUrl: null };
+    }
+
+    const { data, error } = await sb.storage
+      .from('onboarding-media')
+      .createSignedUrl(s.agreement_pdf_url, 300);
+
+    if (error) {
+      console.error('Could not create agreement signed URL:', error);
+      return { ...s, agreementSignedUrl: null };
+    }
+
+    return { ...s, agreementSignedUrl: data.signedUrl };
+  })
+);
+
+listEl.innerHTML = signupsWithAgreementUrls.map(s => {
       const kycItems = Array.isArray(s.kyc_items) ? s.kyc_items : [];
       const kycHtml = kycItems.length
         ? kycItems.map(k => `<li>${k}</li>`).join('')
@@ -1115,9 +1134,9 @@
             <p class="text-xs font-semibold text-slate-400 mb-1">Uploaded KYC documents / selfie</p>
             <div class="flex flex-wrap gap-2">${kycDocsHtml}</div>
           </div>
-
+${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel="noopener noreferrer" class="btn-secondary !py-1.5 !text-xs">View Signed Agreement (PDF)</a>` : '<span class="text-xs text-slate-600">No signed agreement on file.</span>'}
           <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-800">
-            ${s.agreement_pdf_url ? `<a href="${s.agreement_pdf_url}" target="_blank" rel="noopener noreferrer" class="btn-secondary !py-1.5 !text-xs">View Signed Agreement (PDF)</a>` : '<span class="text-xs text-slate-600">No signed agreement on file.</span>'}
+            }
             <button class="delete-signup-btn btn-secondary !py-1.5 !text-xs" data-id="${s.id}" data-name="${s.full_name || 'this sign-up'}">Delete</button>
           </div>
         </div>
