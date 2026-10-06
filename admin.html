@@ -829,10 +829,26 @@
   });
 
   // ---------- Upload helper ----------
+  // Phone photos are often 3-8 MB. Shrink them to web size before upload so the live site loads fast.
+  async function compressImage(file, maxEdge = 1600, quality = 0.82) {
+    try {
+      if (!file.type || !file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') return file;
+      const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      const sc = Math.min(1, maxEdge / Math.max(bmp.width, bmp.height));
+      const w = Math.max(1, Math.round(bmp.width * sc)), h = Math.max(1, Math.round(bmp.height * sc));
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h); cx.drawImage(bmp, 0, 0, w, h);
+      const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', quality));
+      if (!blob || blob.size >= file.size) return file;
+      return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+    } catch (e) { return file; }
+  }
+
   async function uploadFile(file) {
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '-');
     const path = `${Date.now()}-${safeName}`;
-    const { error } = await sb.storage.from(MEDIA_BUCKET).upload(path, file, { cacheControl: '3600', upsert: false });
+    // File names are unique (timestamped), so browsers can safely cache them for a year.
+    const { error } = await sb.storage.from(MEDIA_BUCKET).upload(path, file, { cacheControl: '31536000', upsert: false });
     if (error) throw error;
     const { data } = sb.storage.from(MEDIA_BUCKET).getPublicUrl(path);
     return data.publicUrl;
@@ -962,7 +978,7 @@
         progressEl.textContent = 'Uploading photos...';
         for (let i = 0; i < imageFiles.length; i++) {
           progressEl.textContent = `Uploading photo ${i + 1} of ${imageFiles.length}...`;
-          imageUrls.push(await uploadFile(imageFiles[i]));
+          imageUrls.push(await uploadFile(await compressImage(imageFiles[i])));
         }
       }
 

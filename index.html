@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="preconnect" href="https://obtggomfwvravjcnypid.supabase.co" crossorigin>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-B19N3LX04H"></script>
 <script>
@@ -1320,16 +1321,33 @@
   // one-time sale price, or a nightly rate) so this branches instead
   // of reusing computeAnnualLabel() for all three — that function
   // multiplies by 12, which only makes sense for Flexible Rent.
+  // Reads a value out of the fees list, e.g. feeValue(fees, 'Installment Price') -> '₦2,400,000'.
+  function feeValue(fees, label) {
+    const hit = (fees || []).find(f => String(f).toLowerCase().indexOf(label.toLowerCase() + ':') === 0);
+    return hit ? String(hit).slice(hit.indexOf(':') + 1).trim() : '';
+  }
   function priceBlockFor(l) {
     if (!l.rent) return '';
     const category = categoryOf(l);
     if (category === 'land') {
-      return `<p class="mt-2 md:mt-3 font-display font-bold text-xs sm:text-lg text-white">${l.rent}</p><p class="text-[9px] sm:text-sm text-slate-400 mt-0.5">Sale Price</p>`;
+      const outright = feeValue(l.fees, 'Outright Price') || l.rent;
+      const instal = feeValue(l.fees, 'Installment Price');
+      const months = feeValue(l.fees, 'Installment Duration');
+      const deposit = feeValue(l.fees, 'Initial Deposit');
+      const half = feeValue(l.fees, 'Half Plot Price');
+      const row = (label, val, cls, sub) => `<div class="flex items-baseline justify-between gap-1.5 mt-1 md:mt-1.5"><span class="text-[8px] sm:text-xs text-slate-400 leading-tight">${label}</span><span class="text-right ${cls}">${val}${sub ? `<span class="block text-[7px] sm:text-[10px] font-normal text-slate-500">${sub}</span>` : ''}</span></div>`;
+      return `<div class="mt-2 md:mt-3 border-t border-white/5 pt-1 md:pt-2">`
+        + row('Outright', outright, 'font-display font-semibold text-[10px] sm:text-base text-slate-200')
+        + (instal ? row('Installment', instal, 'font-display font-extrabold text-[11px] sm:text-xl text-white', months) : '')
+        + (deposit ? row('Initial deposit', deposit, 'font-display font-medium text-[9px] sm:text-sm text-slate-300') : '')
+        + (half ? `<p class="mt-1 text-[8px] sm:text-xs text-brand-300">Half plot available from ${half}</p>` : '')
+        + `</div>`;
     }
     if (category === 'short-let') {
       return `<p class="mt-2 md:mt-3 font-display font-bold text-xs sm:text-lg text-white">${l.rent}</p><p class="text-[9px] sm:text-sm text-slate-400 mt-0.5">Short Let</p>`;
     }
-    return `<p class="mt-2 md:mt-3 font-display font-bold text-xs sm:text-lg text-white">${computeAnnualLabel(l.rent, l.annual_rent)}</p><p class="text-[9px] sm:text-sm text-slate-400 mt-0.5">${l.rent.replace('/mo', ' / month')}</p>`;
+    // Flexible rent: the monthly figure is the headline, the yearly total is secondary.
+    return `<p class="mt-2 md:mt-3 font-display font-extrabold text-sm sm:text-xl text-white">${l.rent.replace('/mo', ' / month')}</p><p class="text-[9px] sm:text-sm font-normal text-slate-400 mt-0.5">${computeAnnualLabel(l.rent, l.annual_rent)}</p>`;
   }
 
   // Builds the small freshness/verification pill shown over each listing's
@@ -1359,6 +1377,13 @@
     return verifiedRaw ? { label: `Verified ${relative}`, verified: true } : { label: relative, verified: false };
   }
 
+  // Optional: if your Supabase project is on a plan with Image Transformations, set this to true
+  // and cards will load small thumbnails. If a thumbnail fails it falls back to the original.
+  const USE_SUPABASE_THUMBS = false;
+  function thumbUrl(url, w) {
+    if (!USE_SUPABASE_THUMBS || !url || url.indexOf('/storage/v1/object/public/') === -1) return url;
+    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + w + '&quality=70';
+  }
   function renderListingsPage(page) {
     const activeListings = (filteredListings || listings).filter(l => categoryOf(l) === activeCategory);
     const listingsPageCount = Math.max(1, Math.ceil(activeListings.length / LISTINGS_PER_PAGE));
@@ -1375,7 +1400,7 @@
       return;
     }
     const start = listingsPage * LISTINGS_PER_PAGE;
-    activeListings.slice(start, start + LISTINGS_PER_PAGE).forEach((l) => {
+    activeListings.slice(start, start + LISTINGS_PER_PAGE).forEach((l, cardIdx) => {
     const card = document.createElement('div');
     card.className = "listing-card group rounded-2xl border border-white/10 bg-slate-850/50 overflow-hidden hover:border-brand-500/40 transition reveal";
     const imagesData = JSON.stringify(l.images || []).replace(/'/g, "&#39;");
@@ -1395,12 +1420,11 @@
     card.innerHTML = `
       <div class="gallery-trigger relative h-24 sm:h-40 md:h-48 overflow-hidden bg-gradient-to-br ${l.color} cursor-pointer" data-title="${l.title}" data-images='${imagesData}' data-color="${l.color}">
         <div class="listing-img absolute inset-0 cadastral-grid opacity-40"></div>
-        ${l.images && l.images.length ? `<img src="${l.images[0]}" alt="${l.title}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">` : ''}
+        ${l.images && l.images.length ? `<img src="${thumbUrl(l.images[0], 640)}" alt="${l.title}" width="640" height="480" ${cardIdx < 2 ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async" class="absolute inset-0 w-full h-full object-cover" style="opacity:0;transition:opacity .35s ease" onload="this.style.opacity=1" onerror="if(!this.dataset.fb&&this.src!==this.dataset.orig){this.dataset.fb=1;this.src=this.dataset.orig;}else{this.style.display='none'}" data-orig="${l.images[0]}">` : ''}
         ${freshness ? `<span class="absolute top-1.5 left-1.5 md:top-3 md:left-3 inline-flex items-center gap-0.5 md:gap-1 text-[7.5px] md:text-[10px] font-mono font-semibold bg-slate-950/80 ${freshness.verified ? 'text-brand-300 border-brand-400/40' : 'text-slate-300 border-white/15'} border px-1.5 md:px-2 py-0.5 md:py-1 rounded-full shadow-lg shadow-black/40 backdrop-blur-sm">
           <svg class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">${freshness.verified ? '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>' : '<circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/>'}</svg>
           ${freshness.label}
         </span>` : ''}
-        <span class="absolute top-1.5 right-1.5 md:top-3 md:right-3 text-[8px] md:text-[10px] font-mono font-bold bg-[#0F172A] text-[#10B981] border border-[#10B981]/40 px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-full shadow-lg shadow-black/40">${l.rent}</span>
         ${isUnavailable ? `<div class="absolute inset-0 bg-slate-950/50 flex items-center justify-center"><span class="text-[10px] md:text-lg font-display font-bold uppercase tracking-widest text-white border-2 border-white/70 px-2 md:px-4 py-1 md:py-1.5 rotate-[-8deg]">${l.status}</span></div>` : ''}
       </div>
       <div class="p-2.5 sm:p-4 md:p-5">
@@ -1595,7 +1619,9 @@
       slide.className = `photo-slide absolute inset-0 transition-opacity duration-500 ${i === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`;
       if (src) {
         slide.className += ` bg-gradient-to-br ${fallbackColor || 'from-brand-600/30 to-slate-900'}`;
-        slide.innerHTML = `<img src="${src}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'">`;
+        slide.innerHTML = i < 2
+          ? `<img src="${src}" alt="" decoding="async" class="w-full h-full object-cover" onerror="this.style.display='none'">`
+          : `<img data-src="${src}" alt="" decoding="async" class="w-full h-full object-cover" onerror="this.style.display='none'">`;
       } else {
         slide.className += ` bg-gradient-to-br ${placeholderSwatches[i % placeholderSwatches.length]} cadastral-grid`;
       }
@@ -1609,6 +1635,11 @@
   function updateSlideUI() {
     photoCounter.textContent = `${galleryIndex + 1} / ${gallerySlideCount}`;
     const slides = photoStage.querySelectorAll('.photo-slide');
+    // Load the current photo and the one after it on demand.
+    [galleryIndex, (galleryIndex + 1) % Math.max(1, slides.length)].forEach(k => {
+      const im = slides[k] && slides[k].querySelector('img[data-src]');
+      if (im) { im.src = im.dataset.src; im.removeAttribute('data-src'); }
+    });
     slides.forEach((s, i) => {
       s.classList.toggle('opacity-100', i === galleryIndex);
       s.classList.toggle('pointer-events-none', i !== galleryIndex);
