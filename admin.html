@@ -138,6 +138,36 @@
         </div>
 
         <!-- ===== Flexible Rent only ===== -->
+        <div class="sm:col-span-2" data-cat="rent">
+          <div class="field">
+            <label>Residential or Commercial</label>
+            <select id="f-usage">
+              <option value="residential">Residential (flat, house)</option>
+              <option value="commercial">Commercial (shop, office, warehouse, hall)</option>
+            </select>
+          </div>
+          <div id="f-commercial-fields" style="display:none;">
+            <div class="grid sm:grid-cols-2 gap-x-5">
+              <div class="field">
+                <label>Commercial Type</label>
+                <select id="f-com-type"><option>Shop</option><option>Office</option><option>Warehouse</option><option>Event Hall</option></select>
+              </div>
+              <div class="field">
+                <label>Size (sqm)</label>
+                <input type="number" id="f-com-sqm" min="0" placeholder="e.g. 45">
+              </div>
+              <div class="field">
+                <label>Parking Spaces</label>
+                <input type="number" id="f-com-parking" min="0" step="1" placeholder="e.g. 5">
+              </div>
+              <div class="field">
+                <label>Power Supply</label>
+                <select id="f-com-power"><option>Public grid</option><option>Grid + generator</option><option>Grid + inverter/solar</option><option>Generator only</option></select>
+              </div>
+            </div>
+            <p class="hint" style="margin:-6px 0 14px;">Commercial space is paid annually, in full upfront. There is no monthly flex-rent, so only the annual rent is needed.</p>
+          </div>
+        </div>
         <div class="field" data-cat="rent">
           <label>Monthly Rent (₦)</label>
           <input type="number" id="f-rent" placeholder="e.g. 150000">
@@ -327,6 +357,29 @@
         <div class="field" data-cat="short-let">
           <label>Cleaning Fee (₦) — optional</label>
           <input type="number" id="f-cleaning-fee" placeholder="e.g. 15000">
+        </div>
+        <div class="sm:col-span-2" data-cat="short-let">
+          <div class="price-box">
+            <h3>Booking availability</h3>
+            <p class="hint" style="margin:-6px 0 12px;">Guests can only book nights inside this window. Leave both empty to keep the listing always open.</p>
+            <div class="grid sm:grid-cols-2 gap-x-5">
+              <div class="field"><label>Open for booking from</label><input type="date" id="f-sl-from"></div>
+              <div class="field"><label>Open until (last check-out)</label><input type="date" id="f-sl-to"></div>
+            </div>
+            <div class="field">
+              <label>Blocked dates — optional</label>
+              <div class="flex gap-2">
+                <input type="date" id="f-sl-block-input" class="flex-1">
+                <button type="button" class="pill" id="f-sl-block-add">Block</button>
+              </div>
+              <div id="f-sl-block-chips" class="pill-row" style="margin-top:8px;"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>About this space</label>
+            <textarea id="f-sl-about" rows="3" placeholder="Tell guests what makes this place special: the area, the view, who it suits."></textarea>
+          </div>
+          <p class="hint" style="margin:-6px 0 14px;">Tick "What this place offers" in the Features list below. Smoke alarm, carbon monoxide alarm and first aid kit are shown to guests as safety items.</p>
         </div>
       </div>
 
@@ -601,14 +654,18 @@
   checkSession();
 
   // ---------- Feature chips ----------
+  const SL_PRESET_FEATURES = ['Kitchen', 'Wifi', 'Dedicated workspace', 'TV', 'Air conditioning', 'Fan', 'Backup power / generator', 'Hot water', 'Fridge', 'Washing machine', 'Free parking', 'Swimming pool', 'Gym', 'Breakfast included', 'Gated / 24-hour security', 'Exterior security cameras on property', 'Smoke alarm', 'Carbon monoxide alarm', 'First aid kit'];
+  const SL_SAFETY = ['Smoke alarm', 'Carbon monoxide alarm', 'First aid kit'];
   const PRESET_FEATURES = ["Fully Furnished", "Personal Kitchen", "Smart TV", "DSTV", "Air Conditioner", "WiFi", "Standing Fan", "Water Heater", "Clean Water", "Standby Generator", "Housekeeping", "Serviced Court"];
   let selectedFeatures = [];
   const featureChipsEl = document.getElementById('featureChips');
 
+  function currentPresets() { return document.getElementById('f-category').value === 'short-let' ? SL_PRESET_FEATURES : PRESET_FEATURES; }
   function renderFeatureChips() {
-    featureChipsEl.innerHTML = PRESET_FEATURES.map(f =>
+    const PRESETS = currentPresets();
+    featureChipsEl.innerHTML = PRESETS.map(f =>
       `<span class="chip ${selectedFeatures.includes(f) ? 'active' : ''}" data-feature="${f}">${f}</span>`
-    ).join('') + selectedFeatures.filter(f => !PRESET_FEATURES.includes(f)).map(f =>
+    ).join('') + selectedFeatures.filter(f => !PRESETS.includes(f)).map(f =>
       `<span class="chip active" data-feature="${f}">${f} ✕</span>`
     ).join('');
   }
@@ -764,6 +821,39 @@
   document.getElementById('f-half-out').addEventListener('input', () => { halfOutTouched = true; });
   document.getElementById('f-half-inst').addEventListener('input', () => { halfInstTouched = true; });
   ['f-sale-price', 'f-inst-price', 'f-inst-deposit', 'f-inst-months'].forEach(id => document.getElementById(id).addEventListener('input', updateLandPriceHints));
+  // ---- Commercial rent + shortlet booking window ----
+  let slBlocked = [];
+  function usageIsCommercial() { return categorySelect.value === 'rent' && document.getElementById('f-usage').value === 'commercial'; }
+  function updateUsageFields() {
+    const com = usageIsCommercial();
+    document.getElementById('f-commercial-fields').style.display = com ? '' : 'none';
+    document.getElementById('f-beds').closest('.field').style.display = (com || categorySelect.value === 'land') ? 'none' : '';
+    document.getElementById('f-rent').closest('.field').style.display = (categorySelect.value === 'rent' && !com) ? '' : 'none';
+    const annualField = document.getElementById('f-rent-annual').closest('.field');
+    annualField.querySelector('label').textContent = com ? 'Annual Rent (₦) — paid in full upfront' : 'Annual Rent (₦) — optional, fill manually';
+    const fp = document.getElementById('feePreview'); if (fp && com) fp.style.display = 'none';
+    if (categorySelect.value === 'short-let' || categorySelect.value === 'rent') renderFeatureChips();
+  }
+  function renderSlBlocked() {
+    document.getElementById('f-sl-block-chips').innerHTML = slBlocked.map(d => `<span class="pill on" data-unblock="${d}" style="cursor:pointer;">${d} ✕</span>`).join('');
+  }
+  document.getElementById('f-usage').addEventListener('change', updateUsageFields);
+  categorySelect.addEventListener('change', updateUsageFields);
+  document.getElementById('f-sl-block-add').addEventListener('click', () => {
+    const v = document.getElementById('f-sl-block-input').value;
+    if (v && !slBlocked.includes(v)) { slBlocked.push(v); slBlocked.sort(); renderSlBlocked(); }
+    document.getElementById('f-sl-block-input').value = '';
+  });
+  document.getElementById('f-sl-block-chips').addEventListener('click', (e) => {
+    const c = e.target.closest('[data-unblock]'); if (!c) return;
+    slBlocked = slBlocked.filter(d => d !== c.dataset.unblock); renderSlBlocked();
+  });
+  function resetCommercialAndShortlet() {
+    document.getElementById('f-usage').value = 'residential';
+    ['f-com-sqm', 'f-com-parking', 'f-sl-from', 'f-sl-to', 'f-sl-block-input', 'f-sl-about'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-com-type').selectedIndex = 0; document.getElementById('f-com-power').selectedIndex = 0;
+    slBlocked = []; renderSlBlocked(); updateUsageFields();
+  }
   landTypeSelect.addEventListener('change', updateLandHouseFields);
   categorySelect.addEventListener('change', updateLandHouseFields);
   updateLandHouseFields();
@@ -949,22 +1039,41 @@
       if (cleaningFee) fees.push(`Cleaning Fee: ₦${cleaningFee.toLocaleString('en-US')}`);
       if (cautionFee) fees.push(`Caution Fee: ₦${cautionFee.toLocaleString('en-US')}`);
       if (serviceCharge) fees.push(`Service Charge: ₦${serviceCharge.toLocaleString('en-US')}/${serviceChargeFreq}`);
+      const slFrom = document.getElementById('f-sl-from').value, slTo = document.getElementById('f-sl-to').value;
+      if ((slFrom && !slTo) || (!slFrom && slTo)) { showToast('Set both the open-from and open-until dates, or leave both empty.', true); return; }
+      if (slFrom && slTo && slTo <= slFrom) { showToast('The last check-out date must be after the open-from date.', true); return; }
+      if (slFrom && slTo) fees.push(`Open For Booking: ${slFrom} to ${slTo}`);
+      if (slBlocked.length) fees.push(`Blocked Dates: ${slBlocked.join(', ')}`);
+      const slAbout = document.getElementById('f-sl-about').value.replace(/\s+/g, ' ').trim();
+      if (slAbout) fees.push(`About This Space: ${slAbout}`);
       fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
-        .filter(l => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:/.test(l)));
+        .filter(l => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:|^Open For Booking:|^Blocked Dates:|^About This Space:/.test(l)));
     } else {
-      // Flexible Rent — unchanged behavior
-      beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
-      const rentNum = parseInt(rentInput.value, 10);
+      // Flexible Rent (residential unchanged) / Commercial rent (annual, upfront)
+      const com = usageIsCommercial();
+      beds = com ? 0 : (parseInt(document.getElementById('f-beds').value, 10) || 0);
+      const rentNum = com ? (parseInt(annualRentInput.value, 10) || 0) : parseInt(rentInput.value, 10);
       if (!title || !location || !rentNum) {
-        showToast('Please fill in Title, Location, and Rent at minimum.', true);
+        showToast(com ? 'Please fill in Title, Location, and Annual Rent at minimum.' : 'Please fill in Title, Location, and Rent at minimum.', true);
         return;
       }
-      rentDisplay = `₦${rentNum.toLocaleString('en-US')}/mo`;
-      annualRentNum = parseInt(annualRentInput.value, 10) || null;
+      rentDisplay = com ? `₦${rentNum.toLocaleString('en-US')}/yr` : `₦${rentNum.toLocaleString('en-US')}/mo`;
+      annualRentNum = com ? rentNum : (parseInt(annualRentInput.value, 10) || null);
       const cautionFee = parseInt(document.getElementById('f-caution-fee').value, 10);
       const serviceCharge = parseInt(document.getElementById('f-service-charge').value, 10);
       const serviceChargeFreq = document.getElementById('f-service-charge-freq').value;
-      fees = feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+      fees = feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
+        .filter(l => !/^Usage:|^Commercial Type:|^Commercial Size:|^Commercial Parking:|^Power Supply:|^Payment Terms:/.test(l));
+      if (com) {
+        fees.unshift('Payment Terms: Annual, paid in full upfront');
+        fees.unshift(`Power Supply: ${document.getElementById('f-com-power').value}`);
+        const cp = parseInt(document.getElementById('f-com-parking').value, 10);
+        if (!isNaN(cp)) fees.unshift(`Commercial Parking: ${cp}`);
+        const cs = parseFloat(document.getElementById('f-com-sqm').value);
+        if (cs > 0) fees.unshift(`Commercial Size: ${cs} sqm`);
+        fees.unshift(`Commercial Type: ${document.getElementById('f-com-type').value}`);
+        fees.unshift('Usage: Commercial');
+      }
       if (cautionFee) fees.push(`Caution Fee: ₦${cautionFee.toLocaleString('en-US')}`);
       if (serviceCharge) fees.push(`Service Charge: ₦${serviceCharge.toLocaleString('en-US')}/${serviceChargeFreq}`);
     }
@@ -1036,6 +1145,7 @@
     document.getElementById('f-land-use').value = 'Residential';
     document.getElementById('f-land-type').value = 'Land (Plot)';
     resetLandExtras();
+    resetCommercialAndShortlet();
     document.getElementById('f-land-beds').value = 1;
     document.getElementById('f-service-charge-freq').value = 'yr';
     document.getElementById('f-beds').value = 1;
@@ -1162,6 +1272,7 @@
     document.getElementById('f-land-use').value = 'Residential';
     document.getElementById('f-service-charge-freq').value = 'yr';
     resetLandExtras();
+    resetCommercialAndShortlet();
 
     let remainingFees = allFees;
     if (category === 'land') {
@@ -1222,15 +1333,35 @@
         document.getElementById('f-service-charge').value = parseInt(serviceChargeLine.replace(/[^0-9]/g, ''), 10) || '';
         document.getElementById('f-service-charge-freq').value = /\/mo$/.test(serviceChargeLine.trim()) ? 'mo' : 'yr';
       }
-      remainingFees = allFees.filter(f => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:/.test(f));
+      const openLine = allFees.find(f => f.startsWith('Open For Booking:'));
+      const om = openLine && openLine.match(/(\d{4}-\d{2}-\d{2})\s+to\s+(\d{4}-\d{2}-\d{2})/);
+      if (om) { document.getElementById('f-sl-from').value = om[1]; document.getElementById('f-sl-to').value = om[2]; }
+      const blkLine = allFees.find(f => f.startsWith('Blocked Dates:'));
+      slBlocked = blkLine ? (blkLine.match(/\d{4}-\d{2}-\d{2}/g) || []) : [];
+      renderSlBlocked();
+      const aboutLine = allFees.find(f => f.startsWith('About This Space:'));
+      if (aboutLine) document.getElementById('f-sl-about').value = aboutLine.replace('About This Space:', '').trim();
+      remainingFees = allFees.filter(f => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:|^Open For Booking:|^Blocked Dates:|^About This Space:/.test(f));
     } else {
       rentInput.value = rentDigits || '';
       annualRentInput.value = listing.annual_rent || '';
+      if (allFees.some(f => f.trim() === 'Usage: Commercial')) {
+        const gv = (pfx) => { const l = allFees.find(f => f.startsWith(pfx)); return l ? l.slice(l.indexOf(':') + 1).trim() : ''; };
+        document.getElementById('f-usage').value = 'commercial';
+        if (gv('Commercial Type:')) document.getElementById('f-com-type').value = gv('Commercial Type:');
+        document.getElementById('f-com-sqm').value = parseFloat(gv('Commercial Size:')) || '';
+        document.getElementById('f-com-parking').value = gv('Commercial Parking:');
+        if (gv('Power Supply:')) document.getElementById('f-com-power').value = gv('Power Supply:');
+        rentInput.value = '';
+        annualRentInput.value = listing.annual_rent || rentDigits || '';
+      }
+      remainingFees = allFees.filter(f => !/^Usage:|^Commercial Type:|^Commercial Size:|^Commercial Parking:|^Power Supply:|^Payment Terms:/.test(f));
     }
     feesTextarea.value = remainingFees.join('\n');
     refreshFeePreviewDisplay();
     updateCategoryFields();
     updateLandHouseFields();
+    updateUsageFields();
 
     document.getElementById('f-color').value = listing.color || 'from-brand-500/30 to-slate-900';
     document.getElementById('f-status').value = listing.status || 'available';

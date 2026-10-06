@@ -738,6 +738,33 @@
   </div>
 </div>
 
+<!-- ================= SHORTLET BOOKING DATES (push to WhatsApp or sign-up) ================= -->
+<div id="bookModal" class="fixed inset-0 z-[95] hidden items-end sm:items-center justify-center bg-[#0F172A]/90 backdrop-blur-md p-0 sm:p-4">
+  <div class="relative w-full max-w-md">
+    <div class="rounded-t-2xl sm:rounded-2xl border border-brand-500/30 bg-slate-900 shadow-2xl shadow-black/50 max-h-[92vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-start justify-between gap-3 mb-1">
+          <h3 id="bookTitle" class="font-display font-semibold text-lg text-white">Choose your dates</h3>
+          <button id="closeBookModal" type="button" aria-label="Close" class="shrink-0 w-8 h-8 rounded-full bg-slate-950 border border-white/10 text-white flex items-center justify-center">&times;</button>
+        </div>
+        <p id="bookSub" class="text-xs text-slate-400 mb-4"></p>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <label class="block text-[11px] font-mono uppercase tracking-wider text-slate-400">Check-in
+            <input type="date" id="bookIn" class="mt-1 w-full rounded-lg bg-slate-950 border border-white/10 text-white text-sm px-3 py-2.5">
+          </label>
+          <label class="block text-[11px] font-mono uppercase tracking-wider text-slate-400">Check-out
+            <input type="date" id="bookOut" class="mt-1 w-full rounded-lg bg-slate-950 border border-white/10 text-white text-sm px-3 py-2.5">
+          </label>
+        </div>
+        <p id="bookMsg" class="text-xs text-amber-300 min-h-[1.1rem] mb-2"></p>
+        <div id="bookSummary" class="hidden rounded-xl border border-white/10 bg-slate-950/60 p-3 text-sm text-slate-300 mb-4"></div>
+        <a id="bookSignup" class="flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold text-sm py-3 opacity-40 pointer-events-none">Continue</a>
+        <p class="text-[11px] text-slate-500 mt-3 text-center">Your dates are carried into sign-up, so you won't need to enter them again.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ================= WAITLIST MODAL (Zoho CRM Form — Relocating Diaspora / Canada only) ================= -->
 <div id="waitlistModal" class="fixed inset-0 z-[90] hidden items-center justify-center bg-[#0F172A]/90 backdrop-blur-md p-4">
   <div class="relative w-full max-w-md">
@@ -1351,6 +1378,11 @@
     if (category === 'short-let') {
       return `<p class="mt-2 md:mt-3 font-display font-bold text-xs sm:text-lg text-white">${l.rent}</p><p class="text-[9px] sm:text-sm text-slate-400 mt-0.5">Short Let</p>`;
     }
+    // Commercial space is paid annually in full, so show the yearly price only.
+    if (feeValue(l.fees, 'Usage') === 'Commercial') {
+      const ctype = feeValue(l.fees, 'Commercial Type') || 'Commercial';
+      return `<p class="mt-2 md:mt-3 font-display font-extrabold text-sm sm:text-xl text-white">${l.rent.replace('/yr', ' / year')}</p><p class="text-[9px] sm:text-sm font-normal text-slate-400 mt-0.5">${ctype} · paid annually</p>`;
+    }
     // Flexible rent: the monthly figure is the headline, the yearly total is secondary.
     return `<p class="mt-2 md:mt-3 font-display font-extrabold text-sm sm:text-xl text-white">${l.rent.replace('/mo', ' / month')}</p><p class="text-[9px] sm:text-sm font-normal text-slate-400 mt-0.5">${computeAnnualLabel(l.rent, l.annual_rent)}</p>`;
   }
@@ -1454,7 +1486,7 @@
               <span class="text-[7.5px] sm:text-[10.5px] font-semibold tracking-wide">Video</span>
             </button>` : ''}
           </div>
-          <a href="./signup.html?listingId=${encodeURIComponent(l.id || '')}&category=${encodeURIComponent(categoryOf(l))}&title=${encodeURIComponent(l.title || '')}" class="rent-now-btn flex items-center justify-center gap-1 md:gap-1.5 w-full rounded-lg md:rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 text-white font-semibold text-[10px] sm:text-sm py-1.5 md:py-3 shadow-lg shadow-brand-600/25 transition">
+          <a ${categoryOf(l) === 'short-let' ? `data-book-id="${l.id}"` : ''} href="./signup.html?listingId=${encodeURIComponent(l.id || '')}&category=${encodeURIComponent(categoryOf(l))}&title=${encodeURIComponent(l.title || '')}" class="rent-now-btn flex items-center justify-center gap-1 md:gap-1.5 w-full rounded-lg md:rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 text-white font-semibold text-[10px] sm:text-sm py-1.5 md:py-3 shadow-lg shadow-brand-600/25 transition">
             ${{ rent: 'Rent Now', land: 'Buy Now', 'short-let': 'Book Now' }[categoryOf(l)] || 'Rent Now'}
             <svg class="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6"/></svg>
           </a>
@@ -1834,6 +1866,62 @@
   const waitlistReturnURL = document.getElementById('waitlistReturnURL');
   const waitlistDescription = document.getElementById('Description');
 
+  // ---------- Shortlet booking dates: validate against the host's window, then push to WhatsApp or sign-up ----------
+  const bookModal = document.getElementById('bookModal');
+  const bookIn = document.getElementById('bookIn'), bookOut = document.getElementById('bookOut');
+  let bookListing = null;
+  const isoOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const dayOf = (iso) => new Date(iso + 'T00:00:00');
+  const addDays = (iso, n) => { const d = dayOf(iso); d.setDate(d.getDate() + n); return isoOf(d); };
+  const prettyDay = (iso) => dayOf(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const naira = (n) => '₦' + Math.round(n).toLocaleString('en-US');
+  function bookRules(l) {
+    const money = (label) => { const v = feeValue(l.fees, label); const n = parseInt(String(v).replace(/[^0-9]/g, ''), 10); return isNaN(n) ? 0 : n; };
+    const win = feeValue(l.fees, 'Open For Booking').match(/(\d{4}-\d{2}-\d{2})\s+to\s+(\d{4}-\d{2}-\d{2})/);
+    const blocked = (feeValue(l.fees, 'Blocked Dates').match(/\d{4}-\d{2}-\d{2}/g) || []);
+    return { nightly: parseInt(String(l.rent).replace(/[^0-9]/g, ''), 10) || 0, minStay: Math.max(1, money('Minimum Stay') || 1), cleaning: money('Cleaning Fee'), from: win ? win[1] : '', to: win ? win[2] : '', blocked };
+  }
+  function openBookModal(l) {
+    bookListing = l; const r = bookRules(l); const today = isoOf(new Date());
+    bookIn.min = r.from && r.from > today ? r.from : today; bookIn.max = r.to ? addDays(r.to, -1) : '';
+    bookIn.value = ''; bookOut.value = ''; bookOut.min = bookIn.min; bookOut.max = r.to || '';
+    document.getElementById('bookTitle').textContent = l.title || 'Choose your dates';
+    document.getElementById('bookSub').textContent = `${naira(r.nightly)} / night` + (r.minStay > 1 ? ` · minimum ${r.minStay} nights` : '') + (r.from && r.to ? ` · open ${prettyDay(r.from)} to ${prettyDay(r.to)}` : '');
+    updateBook();
+    bookModal.classList.remove('hidden'); bookModal.classList.add('flex'); document.body.style.overflow = 'hidden';
+  }
+  function closeBookModal() { bookModal.classList.add('hidden'); bookModal.classList.remove('flex'); document.body.style.overflow = ''; }
+  function setBookLinks(on, _unused, su) {
+    const a = document.getElementById('bookSignup');
+    a.classList.toggle('opacity-40', !on); a.classList.toggle('pointer-events-none', !on);
+    a.href = on ? su : '#';
+  }
+  function updateBook() {
+    const l = bookListing; if (!l) return; const r = bookRules(l);
+    const msg = document.getElementById('bookMsg'), sum = document.getElementById('bookSummary');
+    sum.classList.add('hidden'); msg.textContent = ''; setBookLinks(false);
+    if (bookIn.value) { const minOut = addDays(bookIn.value, r.minStay); bookOut.min = minOut; if (bookOut.value && bookOut.value < minOut) bookOut.value = ''; }
+    if (!bookIn.value || !bookOut.value) { msg.textContent = bookIn.value ? 'Now choose your check-out date.' : ''; return; }
+    const nights = Math.round((dayOf(bookOut.value) - dayOf(bookIn.value)) / 864e5);
+    if (nights < r.minStay) { msg.textContent = `The minimum stay is ${r.minStay} night${r.minStay > 1 ? 's' : ''}.`; return; }
+    if (r.to && bookOut.value > r.to) { msg.textContent = `The last check-out is ${prettyDay(r.to)}.`; return; }
+    if (r.from && bookIn.value < r.from) { msg.textContent = `Booking opens on ${prettyDay(r.from)}.`; return; }
+    const clash = []; for (let i = 0; i < nights; i++) { const d = addDays(bookIn.value, i); if (r.blocked.includes(d)) clash.push(prettyDay(d)); }
+    if (clash.length) { msg.textContent = `Not available on: ${clash.join(', ')}. Please pick other dates.`; return; }
+    const stay = nights * r.nightly, total = stay + r.cleaning;
+    sum.innerHTML = `<div class="flex justify-between"><span>${naira(r.nightly)} × ${nights} night${nights > 1 ? 's' : ''}</span><span>${naira(stay)}</span></div>` + (r.cleaning ? `<div class="flex justify-between"><span>Cleaning fee</span><span>${naira(r.cleaning)}</span></div>` : '') + `<div class="flex justify-between font-semibold text-white mt-1 pt-1 border-t border-white/10"><span>Estimated total</span><span>${naira(total)}</span></div><p class="text-[11px] text-slate-500 mt-1">Caution fee and service charge, if any, are shown at booking.</p>`;
+    sum.classList.remove('hidden');
+    const su = `./signup.html?listingId=${encodeURIComponent(l.id || '')}&category=short-let&title=${encodeURIComponent(l.title || '')}&checkin=${bookIn.value}&checkout=${bookOut.value}&nights=${nights}`;
+    setBookLinks(true, '', su);
+  }
+  bookIn.addEventListener('change', updateBook); bookOut.addEventListener('change', updateBook);
+  document.getElementById('closeBookModal').addEventListener('click', closeBookModal);
+  bookModal.addEventListener('click', (e) => { if (e.target === bookModal) closeBookModal(); });
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('[data-book-id]'); if (!a) return;
+    const l = listings.find(x => String(x.id) === String(a.dataset.bookId)); if (!l) return;
+    e.preventDefault(); openBookModal(l);
+  });
   function openWaitlistModal(card) {
     waitlistModalTag.textContent = card.statusTag || 'Join the waitlist';
     waitlistModalTitle.textContent = card.title;

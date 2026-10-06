@@ -576,7 +576,14 @@
     id: urlParams.get('listingId') || '',
     category: urlParams.get('category') || '',
     title: urlParams.get('title') || '',
+    // Shortlet booking dates picked on the website (validated here so junk in the link is ignored).
+    checkin: /^\d{4}-\d{2}-\d{2}$/.test(urlParams.get('checkin') || '') ? urlParams.get('checkin') : '',
+    checkout: /^\d{4}-\d{2}-\d{2}$/.test(urlParams.get('checkout') || '') ? urlParams.get('checkout') : '',
+    nights: parseInt(urlParams.get('nights'), 10) || 0,
   };
+  if (!selectedListing.checkin || !selectedListing.checkout || selectedListing.checkout <= selectedListing.checkin) {
+    selectedListing.checkin = ''; selectedListing.checkout = ''; selectedListing.nights = 0;
+  }
 
   // ==================================================================
   // Supabase connection — same project as index.html / admin.html.
@@ -1144,13 +1151,22 @@
       // deliberately non-fatal: a failure here should never stop the
       // account itself from being created.
       if (selectedListing.id) {
-        const { error: selectedListingError } = await sb.from('selected_listings').insert({
+        const hasDates = !!(selectedListing.checkin && selectedListing.checkout);
+        const baseRow = {
           user_id: userId,
           listing_id: selectedListing.id,
           listing_title: selectedListing.title || null,
           category: selectedListing.category || null,
           status: 'pending_inspection',
-        });
+        };
+        let { error: selectedListingError } = await sb.from('selected_listings').insert(
+          hasDates ? { ...baseRow, check_in: selectedListing.checkin, check_out: selectedListing.checkout, nights: selectedListing.nights || null } : baseRow
+        );
+        // If the table has no date columns yet, keep the dates anyway by tucking them into the title.
+        if (selectedListingError && hasDates) {
+          const tag = ` [${selectedListing.checkin} to ${selectedListing.checkout}, ${selectedListing.nights} night${selectedListing.nights === 1 ? '' : 's'}]`;
+          ({ error: selectedListingError } = await sb.from('selected_listings').insert({ ...baseRow, listing_title: (selectedListing.title || '') + tag }));
+        }
         if (selectedListingError) {
           console.error('Could not save selected listing (account still created fine):', selectedListingError.message);
         }
@@ -1175,6 +1191,9 @@
     if (selectedListing.title) {
       const actionLabel = { rent: 'renting', land: 'buying', 'short-let': 'booking' }[selectedListing.category] || 'this property';
       message += `\n\nI'm interested in ${actionLabel}: ${selectedListing.title}`;
+      if (selectedListing.checkin && selectedListing.checkout) {
+        message += `\nCheck-in: ${selectedListing.checkin}\nCheck-out: ${selectedListing.checkout}\nNights: ${selectedListing.nights}`;
+      }
     }
     message += `\n\nI've reviewed and agreed to the Terms of Service. Signed: ${signature}`;
 
@@ -1264,7 +1283,7 @@
       const chip = document.createElement('div');
       chip.className = 'selected-listing';
       chip.innerHTML = '<i data-lucide="home"></i><div><p class="selected-listing-label">Selected property</p><p class="selected-listing-title"></p></div>';
-      chip.querySelector('.selected-listing-title').textContent = selectedListing.title;
+      chip.querySelector('.selected-listing-title').textContent = selectedListing.title + (selectedListing.checkin && selectedListing.checkout ? ` · ${selectedListing.checkin} to ${selectedListing.checkout}` : '');
       slot.appendChild(chip);
     });
   }
