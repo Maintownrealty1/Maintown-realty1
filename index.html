@@ -248,7 +248,7 @@
 
 <!-- ================= HERO ================= -->
 <!-- MainTown Realty Hero Section -->
-<section id="hero" class="relative overflow-hidden bg-[#0F172A] text-white pt-24 pb-8 sm:pt-24 sm:pb-10 md:pt-36 md:pb-16 px-6 md:px-12 text-center md:text-left flex flex-col items-center justify-center border-b border-slate-800">
+<section id="hero" class="relative overflow-hidden bg-[#0F172A] text-white pt-24 pb-8 sm:pt-24 sm:pb-10 md:pt-36 md:pb-16 px-6 md:px-12 text-left flex flex-col items-start justify-center border-b border-slate-800">
 
   <!-- Hero Background Slideshow (Lagos cityscape, 5s rotation) -->
   <div class="hero-slideshow" aria-hidden="true">
@@ -257,7 +257,7 @@
     <div class="hero-overlay"></div>
   </div>
 
-  <div class="relative z-10 max-w-4xl mx-auto space-y-3.5 sm:space-y-5 md:space-y-6">
+  <div class="relative z-10 w-full max-w-4xl self-start space-y-3.5 sm:space-y-5 md:space-y-6">
 
     <!-- Main Headline -->
     <h1 class="text-[26px] leading-[1.15] sm:text-4xl md:text-6xl font-extrabold tracking-tight text-white sm:leading-tight" style="text-shadow: 0 2px 20px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.6);">
@@ -269,37 +269,51 @@
       Find and secure trusted homes in Lagos — no upfront yearly stress.
     </p>
 
-    <!-- Call to Action Buttons -->
-    <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-2.5 sm:gap-4 pt-1 sm:pt-4">
-      <a href="#listings" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-semibold px-8 py-2.5 sm:py-3.5 rounded-xl transition-all duration-200 text-center shadow-lg shadow-brand-600/30 text-sm sm:text-base">
-        Explore Verified Listings
+    <!-- Call to action: one compact button + a quiet browse link -->
+    <div class="flex items-center gap-4 pt-1 sm:pt-3">
+      <a href="./signup.html" class="inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-all duration-200 shadow-lg shadow-brand-600/30 text-sm">
+        Sign up now
       </a>
-      <a href="https://wa.me/2348066611017?text=Hello%20MainTown%20Realty,%20I%20want%20to%20inquire%20about%20renting" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-8 py-2.5 sm:py-3.5 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-2 text-sm sm:text-base">
-        <span>Get Started on WhatsApp</span>
+      <a href="#listings" class="text-sm font-medium text-slate-200 hover:text-white underline underline-offset-4 decoration-white/30 hover:decoration-white transition">
+        Browse listings
       </a>
     </div>
 
-    <!-- Key Metrics / Trust Features -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 pt-4 sm:pt-6 md:pt-8 border-t border-slate-800/80 text-[10.5px] sm:text-xs md:text-sm text-slate-400">
-      <div class="flex items-center gap-1.5 sm:gap-2 justify-center md:justify-start">
+    <!-- Invite landlords and agents -->
+    <div class="max-w-md rounded-xl border border-white/10 bg-slate-950/55 backdrop-blur-sm divide-y divide-white/10">
+      <a href="./signup.html?role=landlord" class="flex items-center justify-between gap-3 px-3.5 py-2.5 text-[12.5px] sm:text-sm text-slate-200 hover:text-white transition">
+        <span><strong class="text-white font-semibold">Landlords:</strong> list your property and earn rent</span>
+        <span class="text-brand-400" aria-hidden="true">&rarr;</span>
+      </a>
+      <a href="./signup.html?role=agent" class="flex items-center justify-between gap-3 px-3.5 py-2.5 text-[12.5px] sm:text-sm text-slate-200 hover:text-white transition">
+        <span><strong class="text-white font-semibold">Agents:</strong> earn commission on every deal</span>
+        <span class="text-brand-400" aria-hidden="true">&rarr;</span>
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<!-- Trust strip (moved out of the hero) -->
+<section class="bg-slate-950 border-b border-slate-800 px-6 md:px-12 py-4 sm:py-5" aria-label="Why MainTown">
+    <div class="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-2.5 sm:gap-4 text-[11px] sm:text-xs md:text-sm text-slate-300">
+      <div class="flex items-center gap-1.5 sm:gap-2 justify-start md:justify-center">
         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-brand-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
         Preliminary Title Checks
       </div>
-      <div class="flex items-center gap-1.5 sm:gap-2 justify-center md:justify-start">
+      <div class="flex items-center gap-1.5 sm:gap-2 justify-start md:justify-center">
         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-brand-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
         Bank-Grade Auto-Pay
       </div>
-      <div class="flex items-center gap-1.5 sm:gap-2 justify-center md:justify-start">
+      <div class="flex items-center gap-1.5 sm:gap-2 justify-start md:justify-center">
         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-brand-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
         Preliminary Verification
       </div>
-      <div class="flex items-center gap-1.5 sm:gap-2 justify-center md:justify-start">
+      <div class="flex items-center gap-1.5 sm:gap-2 justify-start md:justify-center">
         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-brand-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
         Lagos &amp; Diaspora Support
       </div>
     </div>
-
-  </div>
 </section>
 
 <!-- ================= VISION / MISSION / PILLARS (Drawer) ================= -->
