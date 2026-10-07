@@ -192,12 +192,6 @@
 
     <div class="flex items-center gap-2 ml-auto">
       <button type="button" id="currencyToggle" aria-label="Switch currency" title="Switch between naira and US dollars" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-base font-semibold hover:bg-white/5 transition">₦</button>
-      <button type="button" id="searchToggle" aria-label="Search listings" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white hover:bg-white/5 transition">
-        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m21 21-4.3-4.3"/></svg>
-      </button>
-      <a href="./signup.html" class="hidden md:inline-flex items-center text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-lg transition">
-        Sign Up
-      </a>
       <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
         <span id="mobileMenuIcon">☰</span>
       </button>
@@ -277,18 +271,16 @@
       </button>
     </form>
 
-    <!-- One quiet line: sign up, and invite landlords and agents -->
-    <p class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12.5px] sm:text-sm text-slate-200">
-      <a href="./signup.html" class="inline-flex items-center bg-brand-600 hover:bg-brand-700 text-white font-semibold px-3.5 py-1.5 rounded-lg transition text-[12.5px] sm:text-sm">Sign up now</a>
-      <a href="./signup.html?role=landlord" class="underline underline-offset-4 decoration-white/30 hover:decoration-white hover:text-white transition">Landlords: list &amp; earn rent</a>
-      <a href="./signup.html?role=agent" class="underline underline-offset-4 decoration-white/30 hover:decoration-white hover:text-white transition">Agents: earn commission</a>
-    </p>
-
   </div>
 </section>
 
 <!-- Trust strip (moved out of the hero) -->
 <section class="bg-slate-950 border-b border-slate-800 px-6 md:px-12 py-4 sm:py-5" aria-label="Why MainTown">
+  <div class="max-w-6xl mx-auto flex flex-wrap items-center gap-x-4 gap-y-2 pb-3 mb-3 sm:pb-4 sm:mb-4 border-b border-slate-800/80 text-[12.5px] sm:text-sm text-slate-300">
+    <a href="./signup.html" class="inline-flex items-center bg-brand-600 hover:bg-brand-700 text-white font-semibold px-3.5 py-1.5 rounded-lg transition text-[12.5px] sm:text-sm">Sign up now</a>
+    <a href="./signup.html?role=landlord" class="underline underline-offset-4 decoration-white/30 hover:decoration-white hover:text-white transition">Landlords: list &amp; earn rent</a>
+    <a href="./signup.html?role=agent" class="underline underline-offset-4 decoration-white/30 hover:decoration-white hover:text-white transition">Agents: earn commission</a>
+  </div>
     <div class="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-2.5 sm:gap-4 text-[11px] sm:text-xs md:text-sm text-slate-300">
       <div class="flex items-center gap-1.5 sm:gap-2 justify-start md:justify-center">
         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-brand-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
@@ -624,6 +616,7 @@
       <button type="button" class="tab-btn px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border border-white/10 bg-slate-900/70 text-slate-300 hover:border-brand-500/40 transition" data-category="short-let" role="tab" aria-selected="false">Short Let</button>
     </div>
 
+    <button type="button" id="clearSearchChip" class="hidden mb-3 mr-2 text-xs font-medium text-white bg-brand-600/20 border border-brand-500/40 rounded-full px-3 py-1.5 hover:bg-brand-600/30 transition">Clear search &times;</button>
     <p id="currencyNote" class="hidden text-[11px] text-slate-400 mb-3">Prices shown in US dollars are indicative (₦1,600 = $1). Payments are settled in naira and the final amount is confirmed by our team.</p>
     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6" id="listingsGrid"></div>
 
@@ -1555,7 +1548,7 @@
   const searchGoBtn = document.getElementById('searchGoBtn');
   const searchClearBtn = document.getElementById('searchClearBtn');
 
-  searchToggle.addEventListener('click', () => {
+  if (searchToggle) searchToggle.addEventListener('click', () => {
     searchBar.classList.toggle('hidden');
     if (!searchBar.classList.contains('hidden')) searchInput.focus();
   });
@@ -1581,6 +1574,7 @@
     });
 
     searchClearBtn.classList.remove('hidden');
+    const chip = document.getElementById('clearSearchChip'); if (chip) chip.classList.remove('hidden');
     renderListingsPage(0);
     listingsGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -1589,6 +1583,8 @@
     filteredListings = null;
     searchInput.value = '';
     searchClearBtn.classList.add('hidden');
+    const chip = document.getElementById('clearSearchChip'); if (chip) chip.classList.add('hidden');
+    const hs = document.getElementById('heroSearchInput'); if (hs) hs.value = '';
     renderListingsPage(0);
   }
 
@@ -1602,6 +1598,7 @@
   });
   searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
   searchClearBtn.addEventListener('click', clearSearch);
+  document.getElementById('clearSearchChip').addEventListener('click', clearSearch);
 
   if (listingsPrevBtn) listingsPrevBtn.addEventListener('click', () => {
     renderListingsPage(listingsPage - 1);
