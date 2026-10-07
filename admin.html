@@ -465,6 +465,7 @@
         <span class="chip" data-role="landlord">Landlord</span>
         <span class="chip" data-role="agent">Agent</span>
         <span class="chip" data-role="diaspora">Diaspora / Canada</span>
+        <span class="chip" data-role="bookings">Picked a property / booking</span>
       </div>
 
       <div id="signupsList" class="space-y-3"></div>
@@ -1419,12 +1420,30 @@
       return;
     }
     signupsCache = data || [];
+    // Properties each person picked (Rent Now / Buy Now / Book Now) incl. shortlet dates.
+    selectedByUser = {};
+    const sel = await sb.from('selected_listings').select('*').order('created_at', { ascending: true });
+    if (sel.error) console.warn('Could not read selected_listings:', sel.error.message);
+    (sel.data || []).forEach(r => { (selectedByUser[r.user_id] = selectedByUser[r.user_id] || []).push(r); });
     renderSignups();
+  }
+  let selectedByUser = {};
+  function selectedHtml(userId) {
+    const rows = selectedByUser[userId] || [];
+    if (!rows.length) return '';
+    const kind = { rent: 'Rent', land: 'Buy', 'short-let': 'Book' };
+    return rows.map(r => {
+      let title = r.listing_title || 'A listing', ci = r.check_in, co = r.check_out, n = r.nights;
+      const m = title.match(/\s*\[(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2}), (\d+) nights?\]\s*$/);
+      if (m) { ci = ci || m[1]; co = co || m[2]; n = n || m[3]; title = title.replace(m[0], ''); }
+      const dates = ci && co ? ` · ${ci} → ${co} (${n} night${Number(n) === 1 ? '' : 's'})` : '';
+      return `<p class="text-xs text-brand-300 mt-1">${kind[r.category] || 'Picked'}: ${title}${dates} <span class="text-slate-500">· ${r.status || 'pending'}</span></p>`;
+    }).join('');
   }
 
   async function renderSignups() {
     const listEl = document.getElementById('signupsList');
-    const filtered = signupRoleFilter === 'all' ? signupsCache : signupsCache.filter(s => s.role === signupRoleFilter);
+    const filtered = signupRoleFilter === 'all' ? signupsCache : signupRoleFilter === 'bookings' ? signupsCache.filter(s => (selectedByUser[s.user_id] || []).length) : signupsCache.filter(s => s.role === signupRoleFilter);
     if (!filtered.length) {
       listEl.innerHTML = '<p class="text-sm text-slate-500">No sign-ups yet.</p>';
       return;
@@ -1477,6 +1496,7 @@ listEl.innerHTML = signupsWithAgreementUrls.map(s => {
                 <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${ROLE_LABELS[s.role] || s.role}</span>
               </p>
               <p class="text-xs text-slate-500 mt-0.5">${s.phone || ''}${s.occupation ? ' · ' + s.occupation : ''}</p>
+              ${selectedHtml(s.user_id)}
               ${guarantorHtml}
             ${incomeHtml}
             </div>
