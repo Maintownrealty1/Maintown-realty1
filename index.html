@@ -663,7 +663,6 @@
     </div>
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6" id="onboardingGrid"></div>
-    <p class="mt-6 text-center text-[10px] sm:text-xs text-slate-500">Stories are illustrative examples of how people use MainTown.</p>
   </div>
 </section>
 
@@ -721,11 +720,19 @@
   </div>
 </div>
 
+<style>
+@media (min-width:1024px){
+  /* Info card: full screen on desktop — photos left, details right */
+  #infoModalBody{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);height:100%}
+  #infoModalBody>:first-child{aspect-ratio:auto!important;height:100%!important}
+  #infoModalBody>:last-child{height:100%;overflow-y:auto;padding:4rem 3.5rem 3rem!important}
+}
+</style>
 <!-- Property Info Modal (full listing details, opened via "View Info") -->
-<div id="infoModal" class="fixed inset-0 z-[70] hidden items-end sm:items-center justify-center bg-[#0F172A]/90 backdrop-blur-md p-0 sm:p-4">
-  <div class="relative w-full max-w-xl">
-    <div class="rounded-t-2xl sm:rounded-2xl overflow-hidden border border-brand-500/30 bg-slate-900 shadow-2xl shadow-black/50 max-h-[94vh] sm:max-h-[90vh] overflow-y-auto">
-      <button id="closeInfoModal" aria-label="Close property info" class="sticky top-3 float-right mr-3 mt-3 z-30 w-9 h-9 rounded-full bg-slate-950/90 border border-white/20 text-white flex items-center justify-center text-xl leading-none">&times;</button>
+<div id="infoModal" class="fixed inset-0 z-[70] hidden items-end sm:items-center justify-center bg-[#0F172A]/90 backdrop-blur-md p-0 sm:p-4 lg:p-0">
+  <div class="relative w-full max-w-xl lg:max-w-none lg:h-full">
+    <div class="relative rounded-t-2xl sm:rounded-2xl lg:rounded-none overflow-hidden border border-brand-500/30 lg:border-0 bg-slate-900 shadow-2xl shadow-black/50 max-h-[94vh] sm:max-h-[90vh] lg:max-h-none lg:h-full overflow-y-auto lg:overflow-hidden">
+      <button id="closeInfoModal" aria-label="Close property info" class="sticky top-3 float-right mr-3 mt-3 lg:absolute lg:top-5 lg:right-6 lg:m-0 z-30 w-9 h-9 lg:w-11 lg:h-11 rounded-full bg-slate-950/90 border border-white/20 text-white flex items-center justify-center text-xl leading-none">&times;</button>
       <div id="infoModalBody"></div>
     </div>
   </div>
@@ -1949,6 +1956,7 @@
     if (vb) vb.addEventListener('click', () => { videoTourTitle.textContent = infoTitle + ' — Video Tour'; videoTourPlayer.src = infoVideo; videoTourModal.classList.remove('hidden'); videoTourModal.classList.add('flex'); videoTourPlayer.play().catch(() => {}); });
     document.getElementById('infoModalBody').querySelectorAll('[data-book-id]').forEach(a => a.addEventListener('click', () => closeInfoModalFn()));
     const sc_ = infoModal.querySelector('.overflow-y-auto'); if (sc_) sc_.scrollTop = 0;
+    const sc2_ = document.getElementById('infoModalBody').lastElementChild; if (sc2_) sc2_.scrollTop = 0;
     infoModal.classList.remove('hidden');
     infoModal.classList.add('flex');
     document.body.style.overflow = 'hidden';
