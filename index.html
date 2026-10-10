@@ -1127,7 +1127,8 @@
 </script>
 
 <!-- ================= FOOTER ================= -->
-<footer class="bg-white border-t-4 border-brand-600 pt-8 sm:pt-12 pb-6 sm:pb-8">
+<div aria-hidden="true" class="h-16 sm:h-4"></div>
+<footer style="padding-bottom:calc(5rem + env(safe-area-inset-bottom,0px))" class="bg-white border-t-4 border-brand-600 pt-8 sm:pt-12 pb-6 sm:pb-8">
   <div class="max-w-7xl mx-auto px-4 sm:px-6">
 
     <!-- Top: 3 columns (stays side-by-side on mobile, like desktop) -->
@@ -2280,18 +2281,66 @@
 </script>
 
 <!-- ================= FLOATING WHATSAPP (direct link until the WhatsApp API is connected) ================= -->
-<a
-  href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27d%20like%20to%20get%20in%20touch."
-  target="_blank"
-  rel="noopener noreferrer"
-  aria-label="Chat with MainTown Realty on WhatsApp"
-  class="group fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#25D366] shadow-lg shadow-black/40 flex items-center justify-center transition-transform duration-200 hover:scale-105"
->
-  <span class="absolute inset-0 rounded-full bg-[#25D366] opacity-0 group-hover:opacity-60 group-hover:animate-ping"></span>
-  <svg class="relative w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.3zM12 21.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.8-9.8 9.8z"/>
-  </svg>
-</a>
+<style>
+  #waFloat{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:50;display:flex;align-items:center;gap:8px;
+    transition:transform .3s ease,opacity .3s ease;will-change:transform,opacity}
+  #waFloat.wa-away{transform:translateY(calc(100% + 32px));opacity:0;pointer-events:none}
+  #waFloat.wa-covered{opacity:0;pointer-events:none;visibility:hidden}
+  #waTag{background:#fff;color:#0F172A;font-size:12px;font-weight:600;line-height:1;padding:8px 12px;border-radius:999px;
+    box-shadow:0 4px 14px rgba(0,0,0,.35);white-space:nowrap;transition:opacity .6s ease,transform .6s ease}
+  #waTag.wa-tag-off{opacity:0;transform:translateX(8px);pointer-events:none}
+  @media (prefers-reduced-motion:reduce){#waFloat,#waTag{transition:none}}
+</style>
+<div id="waFloat">
+  <span id="waTag" aria-hidden="true">Chat with us</span>
+  <a
+    id="waBtn"
+    href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27d%20like%20to%20get%20in%20touch."
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Chat with MainTown Realty on WhatsApp"
+    class="group relative w-12 h-12 rounded-full bg-[#25D366] shadow-lg shadow-black/40 flex items-center justify-center transition-transform duration-200 hover:scale-105"
+  >
+    <span class="absolute inset-0 rounded-full bg-[#25D366] opacity-0 group-hover:opacity-60 group-hover:animate-ping"></span>
+    <svg class="relative w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.3zM12 21.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.8-9.8 9.8z"/>
+    </svg>
+  </a>
+</div>
+<script>
+(function () {
+  const wrap = document.getElementById('waFloat');
+  const tag = document.getElementById('waTag');
+  if (!wrap) return;
+
+  // 1) "Chat with us" label: shows on load, fades after a few seconds
+  setTimeout(() => { tag.classList.add('wa-tag-off'); setTimeout(() => { tag.style.display = 'none'; }, 700); }, 5000);
+
+  // 2) Hide while scrolling down; return on scroll up or when scrolling stops
+  let lastY = window.scrollY, idleTimer = null;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY, dy = y - lastY;
+    if (Math.abs(dy) > 6) {
+      if (dy > 0 && y > 80) wrap.classList.add('wa-away'); else if (dy < 0) wrap.classList.remove('wa-away');
+      lastY = y;
+    }
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => wrap.classList.remove('wa-away'), 700);
+  }, { passive: true });
+
+  // 3) Hide whenever any sheet/modal/overlay is open (listing info sheet, photos, booking, etc.)
+  const ids = ['infoModal','bookModal','waitlistModal','photoModal','videoModal','videoTourModal',
+               'visionOverlay','aboutOverlay','underwritingOverlay','techOverlay'];
+  const els = ids.map(id => document.getElementById(id)).filter(Boolean);
+  const sync = () => {
+    const open = els.some(el => !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none');
+    wrap.classList.toggle('wa-covered', open);
+  };
+  const mo = new MutationObserver(sync);
+  els.forEach(el => mo.observe(el, { attributes: true, attributeFilter: ['class', 'style'] }));
+  sync();
+})();
+</script>
 
 </body>
 </html>
