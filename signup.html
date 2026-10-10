@@ -310,7 +310,7 @@
     <h1 class="title">Create your account</h1>
     <p class="subtitle">Tell us who you are so we can tailor your experience.</p>
 
-    <div class="selected-listing-slot"></div>
+    
 
     <div class="role-group" id="role-group">
       <button type="button" class="role-card" data-role="tenant">
@@ -793,6 +793,7 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
     currentScreenKey = toEl.id;
     saveState();
+    renderSelectedListing();
     if (window.lucide) lucide.createIcons();
   }
 
@@ -1194,7 +1195,7 @@
       // trigger the dashboard/bell notification to schedule inspection —
       // deliberately non-fatal: a failure here should never stop the
       // account itself from being created.
-      if (selectedListing.id) {
+      if (selectedListing.id && currentRole === 'tenant') {
         const hasDates = !!(selectedListing.checkin && selectedListing.checkout);
         const baseRow = {
           user_id: userId,
@@ -1232,7 +1233,7 @@
 
     let message = `Hello MainTown Realty, I just signed up on the website.\n\nName: ${name}\nRole: ${roleLabel}\nEmail: ${email}\nPhone: ${phone}`;
     if (occupation) message += `\nOccupation: ${occupation}`;
-    if (selectedListing.title) {
+    if (selectedListing.title && currentRole === 'tenant') {
       const actionLabel = { rent: 'renting', land: 'buying', 'short-let': 'booking' }[selectedListing.category] || 'this property';
       message += `\n\nI'm interested in ${actionLabel}: ${selectedListing.title}`;
       if (selectedListing.checkin && selectedListing.checkout) {
@@ -1323,7 +1324,7 @@
   function renderSelectedListing() {
     document.querySelectorAll('.selected-listing-slot').forEach(slot => {
       slot.innerHTML = '';
-      if (!selectedListing.title) return;
+      if (!selectedListing.title || currentRole !== 'tenant') return;
       const chip = document.createElement('div');
       chip.className = 'selected-listing';
       chip.innerHTML = '<i data-lucide="home"></i><div><p class="selected-listing-label">Selected property</p><p class="selected-listing-title"></p></div>';
