@@ -1185,7 +1185,9 @@
     }
     listEl.innerHTML = data.map(l => {
       const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' };
-      const categoryLabel = categoryLabels[l.category] || categoryLabels.rent;
+      let categoryLabel = categoryLabels[l.category] || categoryLabels.rent;
+      // Commercial space is stored as a rent listing flagged "Usage: Commercial" — show it as Commercial.
+      if ((!l.category || l.category === 'rent') && (l.fees || []).some(f => String(f).trim() === 'Usage: Commercial')) categoryLabel = 'Commercial';
       return `
       <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
         <div class="min-w-0 flex-1">

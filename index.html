@@ -121,7 +121,6 @@
   .tab-btn[aria-selected="true"] {
     background: linear-gradient(135deg, #7C3AED, #A855F7);
     color: #FFFFFF;
-    box-shadow: 0 8px 24px -8px rgba(124,58,237,.55);
   }
 
   .listing-card:hover .listing-img { transform: scale(1.06); }
@@ -176,8 +175,8 @@
   .maintown-waitlist-container button.formsubmit:disabled { opacity: 0.7; cursor: progress; }
 
   /* Storytelling sign-up cards */
-  .story-card { position: relative; overflow: hidden; isolation: isolate; border-radius: 1rem; min-height: 320px; border: 1px solid rgba(255,255,255,.08); background: #0f172a; transition: transform .4s ease, border-color .3s ease, box-shadow .4s ease; }
-  .story-card:hover { transform: translateY(-4px); border-color: rgba(168,85,247,.55); box-shadow: 0 18px 40px -18px rgba(124,58,237,.55); }
+  .story-card { position: relative; overflow: hidden; isolation: isolate; border-radius: 1rem; min-height: 320px; border: 1px solid rgba(255,255,255,.08); background: #0f172a; transition: transform .4s ease, border-color .3s ease; }
+  .story-card:hover { transform: translateY(-4px); border-color: rgba(168,85,247,.55); }
   .story-bg { position: absolute; inset: 0; z-index: -2; background: linear-gradient(135deg,#1e1b4b,#0f172a); }
   .story-img { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.4s ease-in-out; transform: scale(1.02); }
   .story-img.active { opacity: 1; animation: storyZoom 9s ease-out forwards; }
@@ -297,7 +296,7 @@
         <h2 class="font-display font-bold text-xl sm:text-2xl text-white mt-2 leading-snug">Own property or sell for others? <span class="text-brand-400">Start earning.</span></h2>
         <p class="text-[13px] sm:text-sm text-slate-300 mt-2 leading-relaxed">List your property or earn commission on every deal you bring.</p>
         <div class="mt-5 flex flex-wrap items-center gap-2.5">
-          <a href="./signup.html" class="inline-flex items-center bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-2.5 rounded-lg transition text-sm shadow-lg shadow-brand-600/30">Sign up now</a>
+          <a href="./signup.html" class="inline-flex items-center bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-2.5 rounded-lg transition text-sm shadow-lg">Sign up now</a>
           <a href="./signup.html?role=landlord" class="inline-flex items-center rounded-lg border border-brand-500/40 text-brand-300 hover:bg-brand-500/10 px-3.5 py-2.5 text-[13px] font-semibold transition">I'm a landlord</a>
           <a href="./signup.html?role=agent" class="inline-flex items-center rounded-lg border border-brand-500/40 text-brand-300 hover:bg-brand-500/10 px-3.5 py-2.5 text-[13px] font-semibold transition">I'm an agent</a>
         </div>
@@ -614,8 +613,7 @@
   <div class="max-w-7xl mx-auto px-6">
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
       <div>
-        <span class="text-xs font-mono uppercase tracking-widest text-brand-400">Preliminary Verification</span>
-        <h2 class="mt-3 font-display font-bold text-3xl sm:text-4xl text-white">Explore now</h2>
+        <h2 class="font-display font-bold text-3xl sm:text-4xl text-white">Explore now</h2>
       </div>
       <p class="text-slate-400 max-w-sm text-sm">The documents supplied for every listing go through automated, preliminary verification checks before it reaches you.</p>
     </div>
@@ -625,6 +623,7 @@
       <button type="button" class="tab-btn px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border border-white/10 bg-slate-900/70 text-slate-300 hover:border-brand-500/40 transition" data-category="rent" role="tab" aria-selected="true">Flexible Rent</button>
       <button type="button" class="tab-btn px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border border-white/10 bg-slate-900/70 text-slate-300 hover:border-brand-500/40 transition" data-category="land" role="tab" aria-selected="false">Land &amp; Property</button>
       <button type="button" class="tab-btn px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border border-white/10 bg-slate-900/70 text-slate-300 hover:border-brand-500/40 transition" data-category="short-let" role="tab" aria-selected="false">Short Let</button>
+      <button type="button" class="tab-btn px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border border-white/10 bg-slate-900/70 text-slate-300 hover:border-brand-500/40 transition" data-category="commercial" role="tab" aria-selected="false">Commercial</button>
     </div>
 
     <button type="button" id="clearSearchChip" class="hidden mb-3 mr-2 text-xs font-medium text-white bg-brand-600/20 border border-brand-500/40 rounded-full px-3 py-1.5 hover:bg-brand-600/30 transition">Clear search &times;</button>
@@ -721,18 +720,21 @@
 </div>
 
 <style>
-@media (min-width:1024px){
-  /* Info card: full screen on desktop — photos left, details right */
+@media (min-width:768px){
+  /* Info card: full screen on tablet / desktop (and phone "desktop mode") — photos left, details right, larger text */
   #infoModalBody{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);height:100%}
   #infoModalBody>:first-child{aspect-ratio:auto!important;height:100%!important}
-  #infoModalBody>:last-child{height:100%;overflow-y:auto;padding:4rem 3.5rem 3rem!important}
+  #infoModalBody>:last-child{height:100%;overflow-y:auto;padding:4rem 3.5rem 3rem!important;zoom:1.12}
+}
+@media (min-width:1280px){
+  #infoModalBody>:last-child{zoom:1.25;padding:4.5rem 4.5rem 3.5rem!important}
 }
 </style>
 <!-- Property Info Modal (full listing details, opened via "View Info") -->
-<div id="infoModal" class="fixed inset-0 z-[70] hidden items-end sm:items-center justify-center bg-[#0F172A]/90 backdrop-blur-md p-0 sm:p-4 lg:p-0">
-  <div class="relative w-full max-w-xl lg:max-w-none lg:h-full">
-    <div class="relative rounded-t-2xl sm:rounded-2xl lg:rounded-none overflow-hidden border border-brand-500/30 lg:border-0 bg-slate-900 shadow-2xl shadow-black/50 max-h-[94vh] sm:max-h-[90vh] lg:max-h-none lg:h-full overflow-y-auto lg:overflow-hidden">
-      <button id="closeInfoModal" aria-label="Close property info" class="sticky top-3 float-right mr-3 mt-3 lg:absolute lg:top-5 lg:right-6 lg:m-0 z-30 w-9 h-9 lg:w-11 lg:h-11 rounded-full bg-slate-950/90 border border-white/20 text-white flex items-center justify-center text-xl leading-none">&times;</button>
+<div id="infoModal" class="fixed inset-0 z-[70] hidden items-end sm:items-center justify-center bg-[#0F172A]/90 backdrop-blur-md p-0 sm:p-4 md:p-0">
+  <div class="relative w-full max-w-xl md:max-w-none md:h-full">
+    <div class="relative rounded-t-2xl sm:rounded-2xl md:rounded-none overflow-hidden border border-brand-500/30 md:border-0 bg-slate-900 shadow-2xl shadow-black/50 max-h-[94vh] sm:max-h-[90vh] md:max-h-none md:h-full overflow-y-auto md:overflow-hidden">
+      <button id="closeInfoModal" aria-label="Close property info" class="sticky top-3 float-right mr-3 mt-3 md:absolute md:top-5 md:right-6 md:m-0 z-30 w-9 h-9 md:w-11 md:h-11 rounded-full bg-slate-950/90 border border-white/20 text-white flex items-center justify-center text-xl leading-none">&times;</button>
       <div id="infoModalBody"></div>
     </div>
   </div>
@@ -1302,8 +1304,14 @@
   // at all — treat those as Flexible Rent so nothing you've already
   // published silently disappears from every tab.
   function categoryOf(l) {
-    return l.category || 'rent';
+    const c = l.category || 'rent';
+    // Commercial space is saved as a rent listing flagged "Usage: Commercial",
+    // so it gets its own tab here without changing how it is stored.
+    if (c === 'rent' && (l.fees || []).some(f => String(f).trim() === 'Usage: Commercial')) return 'commercial';
+    return c;
   }
+  // The category stored in the database / understood by sign-up (commercial is stored as rent).
+  function storedCategoryOf(l) { return l.category || 'rent'; }
 
   const listingsGrid = document.getElementById('listingsGrid');
   const listingsPrevBtn = document.getElementById('listingsPrevBtn');
@@ -1435,7 +1443,7 @@
     listingsPage = Math.max(0, Math.min(page, listingsPageCount - 1));
     listingsGrid.innerHTML = '';
     if (!activeListings.length) {
-      const categoryLabel = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' }[activeCategory] || 'this category';
+      const categoryLabel = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let', commercial: 'Commercial' }[activeCategory] || 'this category';
       listingsGrid.innerHTML = filteredListings
         ? `<p class="col-span-full text-center text-slate-400 text-sm py-12">No ${categoryLabel} listings match your search. Try a different keyword or budget.</p>`
         : `<p class="col-span-full text-center text-slate-400 text-sm py-12">No ${categoryLabel} listings available right now — check back soon.</p>`;
@@ -1491,8 +1499,8 @@
               <span class="text-[7.5px] sm:text-[10.5px] font-semibold tracking-wide">Video</span>
             </button>` : ''}
           </div>
-          <a ${categoryOf(l) === 'short-let' ? `data-book-id="${l.id}"` : ''} href="./signup.html?listingId=${encodeURIComponent(l.id || '')}&category=${encodeURIComponent(categoryOf(l))}&title=${encodeURIComponent(l.title || '')}" class="rent-now-btn flex items-center justify-center gap-1 md:gap-1.5 w-full rounded-lg md:rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 text-white font-semibold text-[10px] sm:text-sm py-1.5 md:py-3 shadow-lg shadow-brand-600/25 transition">
-            ${{ rent: 'Rent Now', land: 'Buy Now', 'short-let': 'Book Now' }[categoryOf(l)] || 'Rent Now'}
+          <a ${categoryOf(l) === 'short-let' ? `data-book-id="${l.id}"` : ''} href="./signup.html?listingId=${encodeURIComponent(l.id || '')}&category=${encodeURIComponent(storedCategoryOf(l))}&title=${encodeURIComponent(l.title || '')}" class="rent-now-btn flex items-center justify-center gap-1 md:gap-1.5 w-full rounded-lg md:rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 text-white font-semibold text-[10px] sm:text-sm py-1.5 md:py-3 shadow-lg transition">
+            ${{ rent: 'Rent Now', land: 'Buy Now', 'short-let': 'Book Now', commercial: 'Rent Now' }[categoryOf(l)] || 'Rent Now'}
             <svg class="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6"/></svg>
           </a>
         </div>
@@ -1555,8 +1563,8 @@
 
     filteredListings = (listings).filter(l => {
       if (budget) {
-        const monthly = parseInt((l.rent || '').replace(/[^0-9]/g, ''), 10);
-        return monthly && monthly <= budget;
+        const amount = parseInt((l.rent || '').replace(/[^0-9]/g, ''), 10);
+        return amount && amount <= budget;
       }
       const haystack = `${l.title} ${l.location} ${(l.features || []).join(' ')}`.toLowerCase();
       return haystack.includes(q);
@@ -1920,8 +1928,8 @@
     if (typeVal) detailRows.push(['Property type', typeVal]);
     rows.forEach(([k, v]) => detailRows.push([k, v || '']));
     const safetyMissing = cat === 'short-let' ? SL_SAFETY_ITEMS.filter(x => !feats.includes(x)) : [];
-    const ctaLabel = { rent: 'Rent Now', land: 'Buy Now', 'short-let': 'Book Now' }[cat] || 'Rent Now';
-    const ctaHref = `./signup.html?listingId=${encodeURIComponent(info.id || '')}&category=${encodeURIComponent(cat)}&title=${encodeURIComponent(title || '')}`;
+    const ctaLabel = { rent: 'Rent Now', land: 'Buy Now', 'short-let': 'Book Now', commercial: 'Rent Now' }[cat] || 'Rent Now';
+    const ctaHref = `./signup.html?listingId=${encodeURIComponent(info.id || '')}&category=${encodeURIComponent(cat === 'commercial' ? 'rent' : cat)}&title=${encodeURIComponent(title || '')}`;
     infoImgs = (info.images || []).filter(Boolean); infoIdx = 0; infoVideo = info.video || ''; infoTitle = title;
 
     const hero = infoImgs.length
@@ -1945,7 +1953,7 @@
         ${infoSection('The details', `<dl>${detailRows.map(r => infoRow(escHtml(r[0]), escHtml(r[1]))).join('')}</dl>`)}
         ${charges.length ? infoSection('Fees &amp; charges', `<ul class="space-y-1.5 text-sm text-slate-100 font-medium list-disc list-inside">${charges.map(f => `<li>${cur(escHtml(f))}</li>`).join('')}</ul>`) : ''}
         ${feats.length ? infoSection(cat === 'short-let' ? 'What this place offers' : 'What comes with it', `<div class="flex flex-wrap gap-2">${feats.map(f => `<span class="text-xs text-slate-100 font-medium bg-slate-800 border border-white/10 px-2.5 py-1.5 rounded-lg">${escHtml(f)}</span>`).join('')}</div>${safetyMissing.length ? `<p class="text-[11px] text-slate-400 mt-2">Not listed: ${safetyMissing.map(escHtml).join(', ')}</p>` : ''}`) : ''}
-        <a ${cat === 'short-let' ? `data-book-id="${escHtml(info.id)}"` : ''} href="${ctaHref}" class="mt-7 flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold text-sm sm:text-base py-3.5 shadow-lg shadow-brand-600/25">${ctaLabel}</a>
+        <a ${cat === 'short-let' ? `data-book-id="${escHtml(info.id)}"` : ''} href="${ctaHref}" class="mt-7 flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold text-sm sm:text-base py-3.5 shadow-lg">${ctaLabel}</a>
         <p class="text-[11px] text-slate-400 mt-3 leading-relaxed">Preliminary verification is an automated check of the documents supplied. It is not a legal opinion or a guarantee of title. Inspect in person and instruct your own lawyer before you pay.</p>
       </div>`;
     const prev = document.getElementById('infoPrev'), next = document.getElementById('infoNext'), hero_ = document.getElementById('infoHero');
