@@ -37,7 +37,7 @@
 <body class="font-body text-white min-h-screen flex flex-col">
 
   <header class="fixed top-0 inset-x-0 z-50 border-b border-white/5 bg-slate-900/80 backdrop-blur-md">
-    <div class="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
       <a href="./index.html" class="flex items-center gap-2 font-display font-bold text-lg">
         <img src="./favicon-192.png" alt="MainTown Realty" class="h-8 w-8 rounded-lg">
         <span class="text-white">MainTown <span class="text-purple-400">Realty</span></span>
@@ -50,7 +50,7 @@
       </div>
     </div>
     <div id="mobileMenu" class="hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
-      <nav class="flex flex-col px-6 py-4 gap-1 text-sm max-w-3xl mx-auto">
+      <nav class="flex flex-col px-6 py-4 gap-1 text-sm max-w-6xl mx-auto">
         <a href="./index.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Home</a>
         <a href="./index.html#listings" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Find a Home</a>
         <a href="./quick-fix.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Quick Fix Services</a>
@@ -64,129 +64,112 @@
   </header>
 
   <main class="flex-1 px-6 pt-24 pb-16 sm:pt-28 sm:pb-20">
-    <div class="max-w-3xl mx-auto">
+    <style>
+      html { scroll-behavior: smooth; }
+      .policy-body ul { list-style: disc; padding-left: 1.25rem; }
+      .policy-body li + li { margin-top: .5rem; }
+      .toc-link.active { color: #fff; border-left-color: #A855F7; }
+      .toc-link.active span { color: #C4B5FD; }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    </style>
+    <div class="max-w-6xl mx-auto">
 
-      <span class="inline-block text-[11px] font-mono uppercase tracking-widest text-brand-400 bg-brand-500/10 border border-brand-500/30 rounded-full px-3 py-1 mb-6">Policies</span>
-      <h1 class="font-display font-bold text-3xl sm:text-4xl mb-4">Policy &amp; Transaction Guidelines</h1>
-      <p class="text-slate-400 leading-relaxed mb-12 max-w-2xl">
+      <p class="text-sm text-slate-500"><a href="./index.html" class="hover:text-white transition">Home</a> <span class="mx-1.5">/</span> Policies</p>
+      <h1 class="mt-3 font-display font-bold text-3xl sm:text-4xl text-white">Policy &amp; Transaction Guidelines</h1>
+      <p class="mt-4 text-slate-400 leading-relaxed max-w-2xl">
         MainTown Realty is committed to providing a trusted, transparent, and structured housing experience for all users.
       </p>
+      <p class="mt-3 text-xs text-slate-500">Last updated October 2026</p>
 
-      <div class="flex flex-col gap-8">
+      <!-- Mobile contents -->
+      <details id="mobileToc" class="lg:hidden mt-8 border-y border-white/10 py-3">
+        <summary class="cursor-pointer list-none flex items-center justify-between text-sm font-semibold text-white">On this page <span class="text-slate-500 text-xs font-normal">7 sections</span></summary>
+        <ol class="mt-3 text-sm"><li><a href="#verification" class="block py-2 text-slate-300 hover:text-white"><span class="text-slate-500 tabular-nums mr-2">1.</span>Preliminary Verification</a></li><li><a href="#payment" class="block py-2 text-slate-300 hover:text-white"><span class="text-slate-500 tabular-nums mr-2">2.</span>Payment</a></li><li><a href="#refund" class="block py-2 text-slate-300 hover:text-white"><span class="text-slate-500 tabular-nums mr-2">3.</span>Refunds</a></li><li><a href="#matching" class="block py-2 text-slate-300 hover:text-white"><span class="text-slate-500 tabular-nums mr-2">4.</span>Property Matching</a></li><li><a href="#partners" class="block py-2 text-slate-300 hover:text-white"><span class="text-slate-500 tabular-nums mr-2">5.</span>Partners &amp; Agents</a></li><li><a href="#responsibility" class="block py-2 text-slate-300 hover:text-white"><span class="text-slate-500 tabular-nums mr-2">6.</span>Your Responsibilities</a></li><li><a href="#transparency" class="block py-2 text-slate-300 hover:text-white"><span class="text-slate-500 tabular-nums mr-2">7.</span>Our Transparency Commitment</a></li></ol>
+      </details>
 
-        <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="w-9 h-9 shrink-0 rounded-lg bg-brand-500/15 flex items-center justify-center text-brand-400">
-              <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/></svg>
-            </span>
-            <h2 class="font-display font-semibold text-lg text-white">1. Preliminary Verification Policy</h2>
+      <div class="mt-10 lg:mt-14 lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-16">
+
+        <!-- Desktop contents -->
+        <aside class="hidden lg:block">
+          <nav aria-label="Contents" class="sticky top-28">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Contents</p>
+            <ol class="border-l border-white/10 text-sm"><li><a href="#verification" data-toc="verification" class="toc-link block py-1.5 pl-4 -ml-px border-l-2 border-transparent text-slate-400 hover:text-white transition"><span class="text-slate-500 tabular-nums mr-2">1.</span>Preliminary Verification</a></li><li><a href="#payment" data-toc="payment" class="toc-link block py-1.5 pl-4 -ml-px border-l-2 border-transparent text-slate-400 hover:text-white transition"><span class="text-slate-500 tabular-nums mr-2">2.</span>Payment</a></li><li><a href="#refund" data-toc="refund" class="toc-link block py-1.5 pl-4 -ml-px border-l-2 border-transparent text-slate-400 hover:text-white transition"><span class="text-slate-500 tabular-nums mr-2">3.</span>Refunds</a></li><li><a href="#matching" data-toc="matching" class="toc-link block py-1.5 pl-4 -ml-px border-l-2 border-transparent text-slate-400 hover:text-white transition"><span class="text-slate-500 tabular-nums mr-2">4.</span>Property Matching</a></li><li><a href="#partners" data-toc="partners" class="toc-link block py-1.5 pl-4 -ml-px border-l-2 border-transparent text-slate-400 hover:text-white transition"><span class="text-slate-500 tabular-nums mr-2">5.</span>Partners &amp; Agents</a></li><li><a href="#responsibility" data-toc="responsibility" class="toc-link block py-1.5 pl-4 -ml-px border-l-2 border-transparent text-slate-400 hover:text-white transition"><span class="text-slate-500 tabular-nums mr-2">6.</span>Your Responsibilities</a></li><li><a href="#transparency" data-toc="transparency" class="toc-link block py-1.5 pl-4 -ml-px border-l-2 border-transparent text-slate-400 hover:text-white transition"><span class="text-slate-500 tabular-nums mr-2">7.</span>Our Transparency Commitment</a></li></ol>
+          </nav>
+        </aside>
+
+        <div class="max-w-2xl">
+        <section id="verification" class="policy-section scroll-mt-28 py-9 border-t border-white/10 first:border-t-0 first:pt-0">
+          <h2 class="font-display font-semibold text-xl sm:text-2xl text-white"><span class="text-slate-500 tabular-nums mr-2">1.</span>Preliminary Verification</h2>
+          <p class="mt-3 text-slate-200 font-medium leading-relaxed">In short: Automated, early checks on listing documents. Helpful, but not legal advice or a guarantee of title.</p>
+          <div class="policy-body mt-5 text-slate-400 leading-relaxed"><p>The documents supplied for every listing, and the identity details of participants, go through automated, preliminary verification checks to help flag problems early and reduce fraud.</p>
+<div class="mt-5 border-l-2 border-amber-400/70 pl-4 text-slate-300">
+  <p>Preliminary verification means automated checks that the documents supplied for a listing were provided, appear complete on their face and are internally consistent. It is not a legal opinion, a Land Registry search or a certificate of title, and MainTown does not guarantee the validity or transferability of any title. Before you pay or sign, instruct an independent lawyer and carry out your own searches and inspection.</p>
+</div></div>
+        </section>
+        <section id="payment" class="policy-section scroll-mt-28 py-9 border-t border-white/10 first:border-t-0 first:pt-0">
+          <h2 class="font-display font-semibold text-xl sm:text-2xl text-white"><span class="text-slate-500 tabular-nums mr-2">2.</span>Payment</h2>
+          <p class="mt-3 text-slate-200 font-medium leading-relaxed">In short: You pay through licensed payment partners, straight to the landlord or seller. MainTown does not hold your money.</p>
+          <div class="policy-body mt-5 text-slate-400 leading-relaxed"><ul>
+  <li>Payments are only made after preliminary verification checks, your own due diligence and confirmation</li>
+  <li>Payments are processed through licensed payment partners and go directly to the landlord or seller. MainTown does not hold your funds</li>
+  <li>All fees are shown before you commit</li>
+  <li>MainTown Realty does not support unverified or off-platform transactions</li>
+</ul></div>
+        </section>
+        <section id="refund" class="policy-section scroll-mt-28 py-9 border-t border-white/10 first:border-t-0 first:pt-0">
+          <h2 class="font-display font-semibold text-xl sm:text-2xl text-white"><span class="text-slate-500 tabular-nums mr-2">3.</span>Refunds</h2>
+          <p class="mt-3 text-slate-200 font-medium leading-relaxed">In short: Whether you get a refund depends on the stage, the agreement and the check outcome. We tell you before you pay.</p>
+          <div class="policy-body mt-5 text-slate-400 leading-relaxed"><p>Refund eligibility depends on:</p>
+<ul>
+  <li>Stage of transaction</li>
+  <li>Nature of agreement</li>
+  <li>Preliminary verification outcome</li>
+</ul>
+<p class="mt-4">Clear refund terms will be communicated before any payment is made.</p></div>
+        </section>
+        <section id="matching" class="policy-section scroll-mt-28 py-9 border-t border-white/10 first:border-t-0 first:pt-0">
+          <h2 class="font-display font-semibold text-xl sm:text-2xl text-white"><span class="text-slate-500 tabular-nums mr-2">4.</span>Property Matching</h2>
+          <p class="mt-3 text-slate-200 font-medium leading-relaxed">In short: Listings are checked before they appear, but you should still inspect in person and do your own legal checks.</p>
+          <div class="policy-body mt-5 text-slate-400 leading-relaxed"><p>Every listing on MainTown goes through preliminary verification before it is shown to you. This is an early check on the documents supplied, not a guarantee of title or condition, so always inspect in person and do your own legal checks.</p></div>
+        </section>
+        <section id="partners" class="policy-section scroll-mt-28 py-9 border-t border-white/10 first:border-t-0 first:pt-0">
+          <h2 class="font-display font-semibold text-xl sm:text-2xl text-white"><span class="text-slate-500 tabular-nums mr-2">5.</span>Partners &amp; Agents</h2>
+          <p class="mt-3 text-slate-200 font-medium leading-relaxed">In short: Everyone in our network is expected to be open, professional and verified.</p>
+          <div class="policy-body mt-5 text-slate-400 leading-relaxed"><p>All agents, landlords, and service providers within our network are expected to operate under:</p>
+<ul>
+  <li>Transparency</li>
+  <li>Professional conduct</li>
+  <li>Verified engagement</li>
+</ul></div>
+        </section>
+        <section id="responsibility" class="policy-section scroll-mt-28 py-9 border-t border-white/10 first:border-t-0 first:pt-0">
+          <h2 class="font-display font-semibold text-xl sm:text-2xl text-white"><span class="text-slate-500 tabular-nums mr-2">6.</span>Your Responsibilities</h2>
+          <p class="mt-3 text-slate-200 font-medium leading-relaxed">In short: Give accurate information, follow the process, and keep every transaction on the platform.</p>
+          <div class="policy-body mt-5 text-slate-400 leading-relaxed"><p>Users are expected to:</p>
+<ul>
+  <li>Provide accurate information</li>
+  <li>Follow the guided process</li>
+  <li>Avoid engaging in unofficial transactions outside the system</li>
+</ul></div>
+        </section>
+        <section id="transparency" class="policy-section scroll-mt-28 py-9 border-t border-white/10 first:border-t-0 first:pt-0">
+          <h2 class="font-display font-semibold text-xl sm:text-2xl text-white"><span class="text-slate-500 tabular-nums mr-2">7.</span>Our Transparency Commitment</h2>
+          <p class="mt-3 text-slate-200 font-medium leading-relaxed">In short: Every step clear, every transaction traceable.</p>
+          <div class="policy-body mt-5 text-slate-400 leading-relaxed"><p>We aim to ensure that:</p>
+<ul>
+  <li>Every step is clear</li>
+  <li>Every transaction is traceable</li>
+  <li>Every interaction builds trust</li>
+</ul></div>
+        </section>
+
+          <div class="mt-4 pt-9 border-t border-white/10">
+            <p class="font-display font-semibold text-white text-lg">We exist to remove uncertainty.</p>
+            <p class="mt-2 text-slate-400">Full terms are shown in the app when you sign up. If something here is unclear, ask us before you pay.</p>
+            <a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%20have%20a%20question%20about%20your%20policies." target="_blank" rel="noopener noreferrer" class="mt-5 inline-flex items-center bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-2.5 rounded-lg transition text-sm">Ask us on WhatsApp</a>
           </div>
-          <p class="text-slate-400 leading-relaxed">
-            The documents supplied for every listing, and the identity details of participants, go through automated, preliminary verification checks to help flag problems early and reduce fraud.
-          </p>
-          <p class="text-slate-400 leading-relaxed mt-3">
-            Preliminary verification means automated checks that the documents supplied for a listing were provided, appear complete on their face and are internally consistent. It is not a legal opinion, a Land Registry search or a certificate of title, and MainTown does not guarantee the validity or transferability of any title. Before you pay or sign, instruct an independent lawyer and carry out your own searches and inspection.
-          </p>
         </div>
-
-        <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="w-9 h-9 shrink-0 rounded-lg bg-brand-500/15 flex items-center justify-center text-brand-400">
-              <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path stroke-linecap="round" d="M2.5 10h19"/></svg>
-            </span>
-            <h2 class="font-display font-semibold text-lg text-white">2. Payment Policy</h2>
-          </div>
-          <ul class="text-slate-400 leading-relaxed list-disc list-inside space-y-1">
-            <li>Payments are only made after preliminary verification checks, your own due diligence and confirmation</li>
-            <li>Payments are processed through licensed payment partners and go directly to the landlord or seller. MainTown does not hold your funds</li>
-            <li>All fees are shown before you commit</li>
-            <li>MainTown Realty does not support unverified or off-platform transactions</li>
-          </ul>
-        </div>
-
-        <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="w-9 h-9 shrink-0 rounded-lg bg-brand-500/15 flex items-center justify-center text-brand-400">
-              <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5"/><path stroke-linecap="round" stroke-linejoin="round" d="M4.6 15A8 8 0 0 0 19 9M19.4 9A8 8 0 0 0 5 15"/></svg>
-            </span>
-            <h2 class="font-display font-semibold text-lg text-white">3. Refund Policy</h2>
-          </div>
-          <p class="text-slate-400 leading-relaxed mb-3">Refund eligibility depends on:</p>
-          <ul class="text-slate-400 leading-relaxed list-disc list-inside space-y-1 mb-3">
-            <li>Stage of transaction</li>
-            <li>Nature of agreement</li>
-            <li>Preliminary verification outcome</li>
-          </ul>
-          <p class="text-slate-400 leading-relaxed">Clear refund terms will be communicated before any payment is made.</p>
-        </div>
-
-        <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="w-9 h-9 shrink-0 rounded-lg bg-brand-500/15 flex items-center justify-center text-brand-400">
-              <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21V9l9-6 9 6v12"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 21v-8h6v8"/></svg>
-            </span>
-            <h2 class="font-display font-semibold text-lg text-white">4. Property Matching Policy</h2>
-          </div>
-          <p class="text-slate-400 leading-relaxed">
-            Every listing on MainTown goes through preliminary verification before it is shown to you. This is an early check on the documents supplied, not a guarantee of title or condition, so always inspect in person and do your own legal checks.
-          </p>
-        </div>
-
-        <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="w-9 h-9 shrink-0 rounded-lg bg-brand-500/15 flex items-center justify-center text-brand-400">
-              <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path stroke-linecap="round" d="M2.5 20c0-3.3 3-6 6.5-6s6.5 2.7 6.5 6"/><circle cx="17.5" cy="8.5" r="2.3"/><path stroke-linecap="round" d="M15.5 14.2c2.6.5 4.5 2.6 4.5 5.3"/></svg>
-            </span>
-            <h2 class="font-display font-semibold text-lg text-white">5. Partner &amp; Agent Policy</h2>
-          </div>
-          <p class="text-slate-400 leading-relaxed mb-3">All agents, landlords, and service providers within our network are expected to operate under:</p>
-          <ul class="text-slate-400 leading-relaxed list-disc list-inside space-y-1">
-            <li>Transparency</li>
-            <li>Professional conduct</li>
-            <li>Verified engagement</li>
-          </ul>
-        </div>
-
-        <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="w-9 h-9 shrink-0 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-400">
-              <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4M12 17h.01"/><path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9L2.7 17a1.8 1.8 0 0 0 1.6 2.7h15.4a1.8 1.8 0 0 0 1.6-2.7L13.7 3.9a1.8 1.8 0 0 0-3.4 0z"/></svg>
-            </span>
-            <h2 class="font-display font-semibold text-lg text-white">6. User Responsibility</h2>
-          </div>
-          <p class="text-slate-400 leading-relaxed mb-3">Users are expected to:</p>
-          <ul class="text-slate-400 leading-relaxed list-disc list-inside space-y-1">
-            <li>Provide accurate information</li>
-            <li>Follow the guided process</li>
-            <li>Avoid engaging in unofficial transactions outside the system</li>
-          </ul>
-        </div>
-
-        <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="w-9 h-9 shrink-0 rounded-lg bg-brand-500/15 flex items-center justify-center text-brand-400">
-              <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
-            </span>
-            <h2 class="font-display font-semibold text-lg text-white">7. Transparency Commitment</h2>
-          </div>
-          <p class="text-slate-400 leading-relaxed mb-3">We aim to ensure that:</p>
-          <ul class="text-slate-400 leading-relaxed list-disc list-inside space-y-1">
-            <li>Every step is clear</li>
-            <li>Every transaction is traceable</li>
-            <li>Every interaction builds trust</li>
-          </ul>
-        </div>
-
       </div>
-
-      <div class="mt-12 rounded-2xl border border-brand-500/30 bg-brand-500/10 p-6 text-center">
-        <p class="font-display font-semibold text-white text-lg mb-1">We exist to remove uncertainty.</p>
-        <p class="text-slate-300 mb-5">Full terms are shown in the app when you sign up.</p>
-        <a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%20have%20a%20question%20about%20your%20policies." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition">
-          Ask us on WhatsApp
-        </a>
-      </div>
-
     </div>
   </main>
 
@@ -311,6 +294,24 @@
       mobileMenuIcon.textContent = '✕';
     }
   });
+</script>
+
+<script>
+  // Contents: highlight the section being read; close the mobile list after tapping a link
+  (function () {
+    var links = document.querySelectorAll('.toc-link');
+    var secs = document.querySelectorAll('.policy-section');
+    function setActive(id) { links.forEach(function (l) { l.classList.toggle('active', l.dataset.toc === id); }); }
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) setActive(e.target.id); });
+      }, { rootMargin: '-15% 0px -70% 0px' });
+      secs.forEach(function (s) { io.observe(s); });
+    }
+    setActive(secs.length ? secs[0].id : '');
+    var m = document.getElementById('mobileToc');
+    if (m) m.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', function () { m.removeAttribute('open'); }); });
+  })();
 </script>
 </body>
 </html>
