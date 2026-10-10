@@ -1968,12 +1968,47 @@
     infoModal.classList.remove('hidden');
     infoModal.classList.add('flex');
     document.body.style.overflow = 'hidden';
+    // Give the sheet its own history entry so the phone's Back button closes it
+    // (and lands on the Explore listings) instead of leaving for the previous page.
+    if (!infoHistory) { try { history.pushState({ mtInfo: 1 }, ''); infoHistory = true; } catch (_) {} }
   }
-  function closeInfoModalFn() {
+  let infoHistory = false;
+  function hideInfoModal() {
     infoModal.classList.add('hidden');
     infoModal.classList.remove('flex');
     document.body.style.overflow = '';
   }
+  function closeInfoModalFn() {
+    hideInfoModal();
+    // Closed with the X / outside tap / Esc: drop the extra history entry we added.
+    if (infoHistory) { infoHistory = false; try { if (history.state && history.state.mtInfo) history.back(); } catch (_) {} }
+  }
+  // Phone / browser Back while the sheet is open: close it and stay on the listings.
+  window.addEventListener('popstate', () => {
+    if (!videoTourModal.classList.contains('hidden')) {
+      // Back pressed over the video tour: close just the video, keep the sheet open.
+      closeVideoTour();
+      try { history.pushState({ mtInfo: 1 }, ''); infoHistory = true; } catch (_) {}
+      return;
+    }
+    if (!infoModal.classList.contains('hidden')) { infoHistory = false; hideInfoModal(); }
+  });
+  // Rent Now / Buy Now inside the sheet leave the page: remove our history entry first so
+  // pressing Back on the next page returns to the listings, not to a stale duplicate.
+  infoModal.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('#infoModalBody a[href]');
+    if (!a || a.hasAttribute('data-book-id') || a.target === '_blank') return;
+    const href = a.href;
+    if (!infoHistory || !(history.state && history.state.mtInfo)) return;
+    e.preventDefault();
+    infoHistory = false;
+    hideInfoModal();
+    let went = false;
+    const go = () => { if (went) return; went = true; window.location.href = href; };
+    window.addEventListener('popstate', go, { once: true });
+    setTimeout(go, 400);
+    history.back();
+  });
   listingsGrid.addEventListener('click', (e) => {
     const btn = e.target.closest('.info-btn');
     if (!btn) return;
