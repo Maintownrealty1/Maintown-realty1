@@ -1052,34 +1052,66 @@
       listEl.innerHTML = '<p class="text-sm text-slate-500">No sign-ups yet.</p>';
       return;
     }
-    const signupsWithAgreementUrls = await Promise.all(
+   const signupsWithSignedUrls = await Promise.all(
   filtered.map(async (s) => {
-    if (!s.agreement_pdf_url) {
-      return { ...s, agreementSignedUrl: null };
+    // Signed URL for agreement PDF
+    let agreementSignedUrl = null;
+
+    if (s.agreement_pdf_url) {
+      const { data, error } = await sb.storage
+        .from('onboarding-media')
+        .createSignedUrl(s.agreement_pdf_url, 300);
+
+      if (error) {
+        console.error('Could not create agreement signed URL:', error);
+      } else {
+        agreementSignedUrl = data.signedUrl;
+      }
     }
 
-    const { data, error } = await sb.storage
-      .from('onboarding-media')
-      .createSignedUrl(s.agreement_pdf_url, 300);
+    // Signed URLs for KYC documents
+    const kycDocuments = Array.isArray(s.kyc_documents)
+      ? await Promise.all(
+          s.kyc_documents.map(async (d) => {
+            if (!d?.url) {
+              return { ...d, signedUrl: null };
+            }
 
-    if (error) {
-      console.error('Could not create agreement signed URL:', error);
-      return { ...s, agreementSignedUrl: null };
-    }
+            const { data, error } = await sb.storage
+              .from('onboarding-media')
+              .createSignedUrl(d.url, 300);
 
-    return { ...s, agreementSignedUrl: data.signedUrl };
+            if (error) {
+              console.error('Could not create KYC signed URL:', error);
+              return { ...d, signedUrl: null };
+            }
+
+            return { ...d, signedUrl: data.signedUrl };
+          })
+        )
+      : [];
+
+    return {
+      ...s,
+      agreementSignedUrl,
+      kycDocuments
+    };
   })
 );
 
-listEl.innerHTML = signupsWithAgreementUrls.map(s => {
+listEl.innerHTML = signupsWithSignedUrls.map(s => {
       const kycItems = Array.isArray(s.kyc_items) ? s.kyc_items : [];
       const kycHtml = kycItems.length
         ? kycItems.map(k => `<li>${k}</li>`).join('')
         : '<li class="list-none text-slate-500">No KYC checklist recorded.</li>';
-      const kycDocs = Array.isArray(s.kyc_documents) ? s.kyc_documents : [];
-      const kycDocsHtml = kycDocs.length
-        ? kycDocs.map(d => `<a href="${d.url}" target="_blank" rel="noopener noreferrer" class="btn-secondary !py-1.5 !text-xs">${d.label}</a>`).join('')
-        : '<span class="text-xs text-slate-600">No documents uploaded.</span>';
+      const kycDocs = Array.isArray(s.kycDocuments) ? s.kycDocuments : [];
+const kycDocsHtml = kycDocs.length
+  ? kycDocs.map(d =>
+      d.signedUrl
+        ? `<a href="${d.signedUrl}" target="_blank" rel="noopener noreferrer" class="btn-secondary !py-1.5 !text-xs">${d.label}</a>`
+        : `<span class="text-xs text-red-400">${d.label} (unavailable)</span>`
+    ).join('')
+  : '<span class="text-xs text-slate-600">No documents uploaded.</span>';
       const loginBadge = s.user_id
         ? `<span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded">✓ Login Active</span>`
         : `<span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded">⚠ No Login Linked</span>`;
