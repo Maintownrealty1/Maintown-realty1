@@ -38,6 +38,12 @@
   input:focus, select:focus, textarea:focus { border-color: #8B5CF6; }
   label { font-size: 12.5px; font-weight: 600; color: #94A3B8; display: block; margin-bottom: 6px; }
   .field { margin-bottom: 16px; }
+  .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill { padding: 9px 16px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #cbd5e1; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .pill.on { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+  .price-box { border: 1px solid #1e293b; background: rgba(2,6,23,.55); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+  .price-box h3 { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+  .hint { font-size: 12px; color: #94a3b8; margin-top: 6px; }
   .btn-primary {
     background: linear-gradient(90deg, #8B5CF6, #7C3AED); color: #fff; font-weight: 600;
     padding: 12px 20px; border-radius: 10px; transition: opacity 0.15s ease; font-size: 14px;
@@ -132,6 +138,36 @@
         </div>
 
         <!-- ===== Flexible Rent only ===== -->
+        <div class="sm:col-span-2" data-cat="rent">
+          <div class="field">
+            <label>Residential or Commercial</label>
+            <select id="f-usage">
+              <option value="residential">Residential (flat, house)</option>
+              <option value="commercial">Commercial (shop, office, warehouse, hall)</option>
+            </select>
+          </div>
+          <div id="f-commercial-fields" style="display:none;">
+            <div class="grid sm:grid-cols-2 gap-x-5">
+              <div class="field">
+                <label>Commercial Type</label>
+                <select id="f-com-type"><option>Shop</option><option>Office</option><option>Warehouse</option><option>Event Hall</option></select>
+              </div>
+              <div class="field">
+                <label>Size (sqm)</label>
+                <input type="number" id="f-com-sqm" min="0" placeholder="e.g. 45">
+              </div>
+              <div class="field">
+                <label>Parking Spaces</label>
+                <input type="number" id="f-com-parking" min="0" step="1" placeholder="e.g. 5">
+              </div>
+              <div class="field">
+                <label>Power Supply</label>
+                <select id="f-com-power"><option>Public grid</option><option>Grid + generator</option><option>Grid + inverter/solar</option><option>Generator only</option></select>
+              </div>
+            </div>
+            <p class="hint" style="margin:-6px 0 14px;">Commercial space is paid annually, in full upfront. There is no monthly flex-rent, so only the annual rent is needed.</p>
+          </div>
+        </div>
         <div class="field" data-cat="rent">
           <label>Monthly Rent (₦)</label>
           <input type="number" id="f-rent" placeholder="e.g. 150000">
@@ -156,8 +192,15 @@
         </div>
 
         <!-- ===== Land & Property only ===== -->
-        <div class="field" data-cat="land">
-          <label>Property Type</label>
+        <div class="field sm:col-span-2" data-cat="land">
+          <label>What are you listing?</label>
+          <div class="pill-row">
+            <button type="button" class="pill on" id="f-kind-land">Land only</button>
+            <button type="button" class="pill" id="f-kind-house">House / Building</button>
+          </div>
+        </div>
+        <div class="field" data-cat="land" data-land-house="1">
+          <label>House Type</label>
           <select id="f-land-type">
             <option value="Land (Plot)">Land (Plot)</option>
             <option value="Duplex">Duplex</option>
@@ -170,7 +213,7 @@
           </select>
         </div>
         <div class="field" data-cat="land">
-          <label>Plot Size</label>
+          <label id="f-plot-size-label">Plot Size</label>
           <input type="text" id="f-plot-size" placeholder="e.g. 650 sqm or 2 plots">
         </div>
         <div class="field" data-cat="land">
@@ -194,9 +237,94 @@
             <option value="Agricultural">Agricultural</option>
           </select>
         </div>
-        <div class="field" data-cat="land">
-          <label>Sale Price (₦)</label>
-          <input type="number" id="f-sale-price" placeholder="e.g. 45000000">
+
+        <!-- Pricing & payment options (Land & Property) -->
+        <div class="sm:col-span-2" data-cat="land">
+          <div class="price-box">
+            <h3>Pricing &amp; payment options</h3>
+            <div class="field">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="f-parts-on" style="width:auto;"> Sold in parts (full plot / half plot) — e.g. a 3-acre land
+              </label>
+            </div>
+            <div id="f-parts-wrap" style="display:none;">
+              <div class="grid sm:grid-cols-2 gap-x-5">
+                <div class="field">
+                  <label>Size of one full plot</label>
+                  <input type="text" id="f-part-size" placeholder="e.g. 600 sqm">
+                </div>
+                <div class="field">
+                  <label>Full plots available — optional</label>
+                  <input type="number" id="f-plots-count" min="1" placeholder="e.g. 12">
+                </div>
+              </div>
+              <div class="field">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                  <input type="checkbox" id="f-half-on" style="width:auto;" checked> Also sell half plots
+                </label>
+              </div>
+              <p class="hint" style="margin:-6px 0 12px;">The prices below are for ONE FULL PLOT. Put the whole land size (e.g. 3 acres) in "Plot Size" above.</p>
+            </div>
+            <div class="field">
+              <label id="f-sale-price-label">Outright Price (₦) — fixed price for full payment</label>
+              <input type="number" id="f-sale-price" placeholder="e.g. 45000000">
+            </div>
+            <div id="f-half-out-wrap" class="field" style="display:none;">
+              <label>Half Plot — Outright Price (₦)</label>
+              <input type="number" id="f-half-out" placeholder="auto: half of the full plot price">
+            </div>
+            <div class="field">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="f-inst-on" style="width:auto;"> Also offer an installment plan
+              </label>
+            </div>
+            <div id="f-inst-wrap" style="display:none;">
+              <div class="grid sm:grid-cols-2 gap-x-5">
+                <div class="field">
+                  <label>Installment Price (₦) — fixed total</label>
+                  <input type="number" id="f-inst-price" placeholder="e.g. 50000000">
+                </div>
+                <div class="field">
+                  <label>Plan Duration</label>
+                  <select id="f-inst-months">
+                    <option value="3">3 months</option><option value="6">6 months</option>
+                    <option value="9">9 months</option><option value="12" selected>12 months</option>
+                    <option value="18">18 months</option><option value="24">24 months</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Initial Deposit (₦) — optional</label>
+                  <input type="number" id="f-inst-deposit" placeholder="e.g. 10000000">
+                </div>
+                <div class="field" id="f-half-inst-wrap" style="display:none;">
+                  <label>Half Plot — Installment Price (₦)</label>
+                  <input type="number" id="f-half-inst" placeholder="auto: half of the full plot installment">
+                </div>
+              </div>
+              <p class="hint" id="f-inst-hint"></p>
+            </div>
+          </div>
+          <div class="price-box">
+            <h3>Legal &amp; document costs</h3>
+            <div class="field">
+              <label>Deed of Assignment Legal Fee</label>
+              <div class="pill-row">
+                <button type="button" class="pill on" id="f-legal-5">5%</button>
+                <button type="button" class="pill" id="f-legal-10">10%</button>
+              </div>
+              <p class="hint" id="f-legal-preview"></p>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-x-5">
+              <div class="field">
+                <label>Survey Plan Cost (₦) — optional</label>
+                <input type="number" id="f-survey-cost" placeholder="e.g. 250000">
+              </div>
+              <div class="field">
+                <label>Red Copy Cost (₦) — optional</label>
+                <input type="number" id="f-redcopy-cost" placeholder="e.g. 150000">
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Only shown when Property Type above isn't raw "Land (Plot)" -->
@@ -229,6 +357,29 @@
         <div class="field" data-cat="short-let">
           <label>Cleaning Fee (₦) — optional</label>
           <input type="number" id="f-cleaning-fee" placeholder="e.g. 15000">
+        </div>
+        <div class="sm:col-span-2" data-cat="short-let">
+          <div class="price-box">
+            <h3>Booking availability</h3>
+            <p class="hint" style="margin:-6px 0 12px;">Guests can only book nights inside this window. Leave both empty to keep the listing always open.</p>
+            <div class="grid sm:grid-cols-2 gap-x-5">
+              <div class="field"><label>Open for booking from</label><input type="date" id="f-sl-from"></div>
+              <div class="field"><label>Open until (last check-out)</label><input type="date" id="f-sl-to"></div>
+            </div>
+            <div class="field">
+              <label>Blocked dates — optional</label>
+              <div class="flex gap-2">
+                <input type="date" id="f-sl-block-input" class="flex-1">
+                <button type="button" class="pill" id="f-sl-block-add">Block</button>
+              </div>
+              <div id="f-sl-block-chips" class="pill-row" style="margin-top:8px;"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>About this space</label>
+            <textarea id="f-sl-about" rows="3" placeholder="Tell guests what makes this place special: the area, the view, who it suits."></textarea>
+          </div>
+          <p class="hint" style="margin:-6px 0 14px;">Tick "What this place offers" in the Features list below. Smoke alarm, carbon monoxide alarm and first aid kit are shown to guests as safety items.</p>
         </div>
       </div>
 
@@ -314,6 +465,7 @@
         <span class="chip" data-role="landlord">Landlord</span>
         <span class="chip" data-role="agent">Agent</span>
         <span class="chip" data-role="diaspora">Diaspora / Canada</span>
+        <span class="chip" data-role="bookings">Picked a property / booking</span>
       </div>
 
       <div id="signupsList" class="space-y-3"></div>
@@ -503,14 +655,18 @@
   checkSession();
 
   // ---------- Feature chips ----------
+  const SL_PRESET_FEATURES = ['Kitchen', 'Wifi', 'Dedicated workspace', 'TV', 'Air conditioning', 'Fan', 'Backup power / generator', 'Hot water', 'Fridge', 'Washing machine', 'Free parking', 'Swimming pool', 'Gym', 'Breakfast included', 'Gated / 24-hour security', 'Exterior security cameras on property', 'Smoke alarm', 'Carbon monoxide alarm', 'First aid kit'];
+  const SL_SAFETY = ['Smoke alarm', 'Carbon monoxide alarm', 'First aid kit'];
   const PRESET_FEATURES = ["Fully Furnished", "Personal Kitchen", "Smart TV", "DSTV", "Air Conditioner", "WiFi", "Standing Fan", "Water Heater", "Clean Water", "Standby Generator", "Housekeeping", "Serviced Court"];
   let selectedFeatures = [];
   const featureChipsEl = document.getElementById('featureChips');
 
+  function currentPresets() { return document.getElementById('f-category').value === 'short-let' ? SL_PRESET_FEATURES : PRESET_FEATURES; }
   function renderFeatureChips() {
-    featureChipsEl.innerHTML = PRESET_FEATURES.map(f =>
+    const PRESETS = currentPresets();
+    featureChipsEl.innerHTML = PRESETS.map(f =>
       `<span class="chip ${selectedFeatures.includes(f) ? 'active' : ''}" data-feature="${f}">${f}</span>`
-    ).join('') + selectedFeatures.filter(f => !PRESET_FEATURES.includes(f)).map(f =>
+    ).join('') + selectedFeatures.filter(f => !PRESETS.includes(f)).map(f =>
       `<span class="chip active" data-feature="${f}">${f} ✕</span>`
     ).join('');
   }
@@ -598,9 +754,111 @@
     const isHouse = categorySelect.value === 'land' && landTypeSelect.value !== 'Land (Plot)';
     document.querySelectorAll('[data-land-house]').forEach(el => { el.style.display = isHouse ? '' : 'none'; });
   }
+  // House / Land switch, Deed of Assignment legal fee %, installment plan
+  let landKind = 'land', landLegalPct = 5;
+  function setLandKind(kind) {
+    landKind = kind;
+    document.getElementById('f-kind-land').classList.toggle('on', kind === 'land');
+    document.getElementById('f-kind-house').classList.toggle('on', kind === 'house');
+    [...landTypeSelect.options].forEach(o => { o.hidden = (kind === 'house' && o.value === 'Land (Plot)'); });
+    if (kind === 'land') landTypeSelect.value = 'Land (Plot)';
+    else if (landTypeSelect.value === 'Land (Plot)') landTypeSelect.value = 'Duplex';
+    document.getElementById('f-plot-size-label').textContent = kind === 'house' ? 'Land Size (sqm or plots)' : 'Plot Size';
+    updateLandHouseFields();
+  }
+  function setLegalPct(p) {
+    landLegalPct = p;
+    document.getElementById('f-legal-5').classList.toggle('on', p === 5);
+    document.getElementById('f-legal-10').classList.toggle('on', p === 10);
+    updateLandPriceHints();
+  }
+  // "Sold in parts": prices entered are per full plot; half-plot prices default to exactly half.
+  let halfOutTouched = false, halfInstTouched = false;
+  function partsOn() { return document.getElementById('f-parts-on').checked; }
+  function halfOn() { return partsOn() && document.getElementById('f-half-on').checked; }
+  function refreshParts() {
+    const on = partsOn();
+    document.getElementById('f-parts-wrap').style.display = on ? '' : 'none';
+    document.getElementById('f-half-out-wrap').style.display = halfOn() ? '' : 'none';
+    document.getElementById('f-half-inst-wrap').style.display = (halfOn() && document.getElementById('f-inst-on').checked) ? '' : 'none';
+    document.getElementById('f-sale-price-label').textContent = on ? 'Full Plot — Outright Price (₦)' : 'Outright Price (₦) — fixed price for full payment';
+    const full = parseInt(document.getElementById('f-sale-price').value, 10) || 0;
+    const inst = parseInt(document.getElementById('f-inst-price').value, 10) || 0;
+    if (!halfOutTouched) document.getElementById('f-half-out').value = full ? Math.round(full / 2) : '';
+    if (!halfInstTouched) document.getElementById('f-half-inst').value = inst ? Math.round(inst / 2) : '';
+  }
+  function updateLandPriceHints() {
+    refreshParts();
+    const out = parseInt(document.getElementById('f-sale-price').value, 10) || 0;
+    const lp = document.getElementById('f-legal-preview');
+    lp.textContent = out ? `${landLegalPct}% of the outright price = ₦${Math.round(out * landLegalPct / 100).toLocaleString('en-US')}` : 'Enter the outright price to see the amount.';
+    const inst = parseInt(document.getElementById('f-inst-price').value, 10) || 0;
+    const months = parseInt(document.getElementById('f-inst-months').value, 10) || 12;
+    const dep = parseInt(document.getElementById('f-inst-deposit').value, 10) || 0;
+    const h = document.getElementById('f-inst-hint');
+    if (!inst) { h.textContent = ''; return; }
+    const left = Math.max(0, inst - dep);
+    h.textContent = `₦${Math.round(left / months).toLocaleString('en-US')} per month for ${months} months after the deposit.` + (out && inst < out ? ' Installment price cannot be lower than the outright price.' : '');
+  }
+  function setInstOn(on) {
+    document.getElementById('f-inst-on').checked = !!on;
+    document.getElementById('f-inst-wrap').style.display = on ? '' : 'none';
+    updateLandPriceHints();
+  }
+  function resetLandExtras() {
+    ['f-inst-price', 'f-inst-deposit', 'f-survey-cost', 'f-redcopy-cost', 'f-part-size', 'f-plots-count', 'f-half-out', 'f-half-inst'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-parts-on').checked = false; document.getElementById('f-half-on').checked = true;
+    halfOutTouched = false; halfInstTouched = false;
+    document.getElementById('f-inst-months').value = '12';
+    setInstOn(false); setLegalPct(5); setLandKind('land');
+  }
+  document.getElementById('f-kind-land').addEventListener('click', () => setLandKind('land'));
+  document.getElementById('f-kind-house').addEventListener('click', () => setLandKind('house'));
+  document.getElementById('f-legal-5').addEventListener('click', () => setLegalPct(5));
+  document.getElementById('f-legal-10').addEventListener('click', () => setLegalPct(10));
+  document.getElementById('f-inst-on').addEventListener('change', (e) => setInstOn(e.target.checked));
+  document.getElementById('f-parts-on').addEventListener('change', updateLandPriceHints);
+  document.getElementById('f-half-on').addEventListener('change', updateLandPriceHints);
+  document.getElementById('f-half-out').addEventListener('input', () => { halfOutTouched = true; });
+  document.getElementById('f-half-inst').addEventListener('input', () => { halfInstTouched = true; });
+  ['f-sale-price', 'f-inst-price', 'f-inst-deposit', 'f-inst-months'].forEach(id => document.getElementById(id).addEventListener('input', updateLandPriceHints));
+  // ---- Commercial rent + shortlet booking window ----
+  let slBlocked = [];
+  function usageIsCommercial() { return categorySelect.value === 'rent' && document.getElementById('f-usage').value === 'commercial'; }
+  function updateUsageFields() {
+    const com = usageIsCommercial();
+    document.getElementById('f-commercial-fields').style.display = com ? '' : 'none';
+    document.getElementById('f-beds').closest('.field').style.display = (com || categorySelect.value === 'land') ? 'none' : '';
+    document.getElementById('f-rent').closest('.field').style.display = (categorySelect.value === 'rent' && !com) ? '' : 'none';
+    const annualField = document.getElementById('f-rent-annual').closest('.field');
+    annualField.querySelector('label').textContent = com ? 'Annual Rent (₦) — paid in full upfront' : 'Annual Rent (₦) — optional, fill manually';
+    const fp = document.getElementById('feePreview'); if (fp && com) fp.style.display = 'none';
+    if (categorySelect.value === 'short-let' || categorySelect.value === 'rent') renderFeatureChips();
+  }
+  function renderSlBlocked() {
+    document.getElementById('f-sl-block-chips').innerHTML = slBlocked.map(d => `<span class="pill on" data-unblock="${d}" style="cursor:pointer;">${d} ✕</span>`).join('');
+  }
+  document.getElementById('f-usage').addEventListener('change', updateUsageFields);
+  categorySelect.addEventListener('change', updateUsageFields);
+  document.getElementById('f-sl-block-add').addEventListener('click', () => {
+    const v = document.getElementById('f-sl-block-input').value;
+    if (v && !slBlocked.includes(v)) { slBlocked.push(v); slBlocked.sort(); renderSlBlocked(); }
+    document.getElementById('f-sl-block-input').value = '';
+  });
+  document.getElementById('f-sl-block-chips').addEventListener('click', (e) => {
+    const c = e.target.closest('[data-unblock]'); if (!c) return;
+    slBlocked = slBlocked.filter(d => d !== c.dataset.unblock); renderSlBlocked();
+  });
+  function resetCommercialAndShortlet() {
+    document.getElementById('f-usage').value = 'residential';
+    ['f-com-sqm', 'f-com-parking', 'f-sl-from', 'f-sl-to', 'f-sl-block-input', 'f-sl-about'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-com-type').selectedIndex = 0; document.getElementById('f-com-power').selectedIndex = 0;
+    slBlocked = []; renderSlBlocked(); updateUsageFields();
+  }
   landTypeSelect.addEventListener('change', updateLandHouseFields);
   categorySelect.addEventListener('change', updateLandHouseFields);
   updateLandHouseFields();
+  setLandKind('land'); updateLandPriceHints();
 
   // ---------- Monthly / Annual rent — fully independent manual fields ----------
   // Monthly Rent and Annual Rent never auto-calculate each other or anything
@@ -662,10 +920,26 @@
   });
 
   // ---------- Upload helper ----------
+  // Phone photos are often 3-8 MB. Shrink them to web size before upload so the live site loads fast.
+  async function compressImage(file, maxEdge = 1600, quality = 0.82) {
+    try {
+      if (!file.type || !file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') return file;
+      const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      const sc = Math.min(1, maxEdge / Math.max(bmp.width, bmp.height));
+      const w = Math.max(1, Math.round(bmp.width * sc)), h = Math.max(1, Math.round(bmp.height * sc));
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h); cx.drawImage(bmp, 0, 0, w, h);
+      const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', quality));
+      if (!blob || blob.size >= file.size) return file;
+      return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+    } catch (e) { return file; }
+  }
+
   async function uploadFile(file) {
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '-');
     const path = `${Date.now()}-${safeName}`;
-    const { error } = await sb.storage.from(MEDIA_BUCKET).upload(path, file, { cacheControl: '3600', upsert: false });
+    // File names are unique (timestamped), so browsers can safely cache them for a year.
+    const { error } = await sb.storage.from(MEDIA_BUCKET).upload(path, file, { cacheControl: '31536000', upsert: false });
     if (error) throw error;
     const { data } = sb.storage.from(MEDIA_BUCKET).getPublicUrl(path);
     return data.publicUrl;
@@ -696,7 +970,19 @@
       }
       rentDisplay = `₦${salePrice.toLocaleString('en-US')}`;
       const landType = document.getElementById('f-land-type').value;
-      const isHouse = landType !== 'Land (Plot)';
+      const isHouse = landKind === 'house' && landType !== 'Land (Plot)';
+      const instOn = document.getElementById('f-inst-on').checked;
+      const instPrice = parseInt(document.getElementById('f-inst-price').value, 10) || 0;
+      const instMonths = parseInt(document.getElementById('f-inst-months').value, 10) || 12;
+      const instDeposit = parseInt(document.getElementById('f-inst-deposit').value, 10) || 0;
+      if (instOn && !instPrice) { showToast('Enter the installment price, or untick the installment plan.', true); return; }
+      if (instOn && instPrice < salePrice) { showToast('The installment price cannot be lower than the outright price.', true); return; }
+      const parts = partsOn(), half = halfOn();
+      const halfOut = parseInt(document.getElementById('f-half-out').value, 10) || 0;
+      const halfInst = parseInt(document.getElementById('f-half-inst').value, 10) || 0;
+      if (half && (!halfOut || halfOut >= salePrice)) { showToast('The half plot outright price must be above zero and lower than the full plot price.', true); return; }
+      if (half && instOn && (!halfInst || halfInst >= instPrice || halfInst < halfOut)) { showToast('Check the half plot installment price: it must be lower than the full plot installment and not below the half plot outright price.', true); return; }
+      if (instOn && instDeposit >= instPrice) { showToast('The initial deposit must be less than the installment price.', true); return; }
       if (isHouse) {
         beds = parseInt(document.getElementById('f-land-beds').value, 10) || 0;
         const bathrooms = parseInt(document.getElementById('f-land-bathrooms').value, 10);
@@ -706,7 +992,29 @@
         if (toilets) fees.push(`Toilets: ${toilets}`);
         if (parking) fees.push(`Parking Spaces: ${parking}`);
       }
-      fees.push(`Property Type: ${landType}`);
+      fees.push(`Property Type: ${isHouse ? landType : 'Land (Plot)'}`);
+      fees.push(`Outright Price: ₦${salePrice.toLocaleString('en-US')}`);
+      if (instOn) {
+        fees.push(`Installment Price: ₦${instPrice.toLocaleString('en-US')}`);
+        fees.push(`Installment Duration: ${instMonths} months`);
+        if (instDeposit) fees.push(`Initial Deposit: ₦${instDeposit.toLocaleString('en-US')}`);
+      }
+      if (parts) {
+        const ps = document.getElementById('f-part-size').value.trim();
+        const pc = parseInt(document.getElementById('f-plots-count').value, 10) || 0;
+        fees.push(`Sold In Parts: ${half ? 'Full plot, Half plot' : 'Full plot'}`);
+        fees.push(`Price Basis: Per full plot${ps ? ' (' + ps + ')' : ''}`);
+        if (pc) fees.push(`Plots Available: ${pc}`);
+        if (half) {
+          fees.push(`Half Plot Price: ₦${halfOut.toLocaleString('en-US')}`);
+          if (instOn) fees.push(`Half Plot Installment: ₦${halfInst.toLocaleString('en-US')}`);
+        }
+      }
+      fees.push(`Legal Fee: ${landLegalPct}% (₦${Math.round(salePrice * landLegalPct / 100).toLocaleString('en-US')})`);
+      const surveyCost = parseInt(document.getElementById('f-survey-cost').value, 10) || 0;
+      const redCopyCost = parseInt(document.getElementById('f-redcopy-cost').value, 10) || 0;
+      if (surveyCost) fees.push(`Survey Plan: ₦${surveyCost.toLocaleString('en-US')}`);
+      if (redCopyCost) fees.push(`Red Copy: ₦${redCopyCost.toLocaleString('en-US')}`);
       const plotSize = document.getElementById('f-plot-size').value.trim();
       const titleDoc = document.getElementById('f-title-doc').value;
       const landUse = document.getElementById('f-land-use').value;
@@ -714,7 +1022,7 @@
       if (titleDoc) fees.push(`Title Document: ${titleDoc}`);
       if (landUse) fees.push(`Land Use: ${landUse}`);
       fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
-        .filter(l => !/^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Plot Size:|^Title Document:|^Land Use:/.test(l)));
+        .filter(l => !/^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Plot Size:|^Title Document:|^Land Use:|^Outright Price:|^Installment Price:|^Installment Duration:|^Initial Deposit:|^Legal Fee:|^Survey Plan:|^Red Copy:|^Sold In Parts:|^Price Basis:|^Plots Available:|^Half Plot Price:|^Half Plot Installment:/.test(l)));
     } else if (category === 'short-let') {
       beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
       const nightly = parseInt(document.getElementById('f-nightly-rate').value, 10);
@@ -732,22 +1040,41 @@
       if (cleaningFee) fees.push(`Cleaning Fee: ₦${cleaningFee.toLocaleString('en-US')}`);
       if (cautionFee) fees.push(`Caution Fee: ₦${cautionFee.toLocaleString('en-US')}`);
       if (serviceCharge) fees.push(`Service Charge: ₦${serviceCharge.toLocaleString('en-US')}/${serviceChargeFreq}`);
+      const slFrom = document.getElementById('f-sl-from').value, slTo = document.getElementById('f-sl-to').value;
+      if ((slFrom && !slTo) || (!slFrom && slTo)) { showToast('Set both the open-from and open-until dates, or leave both empty.', true); return; }
+      if (slFrom && slTo && slTo <= slFrom) { showToast('The last check-out date must be after the open-from date.', true); return; }
+      if (slFrom && slTo) fees.push(`Open For Booking: ${slFrom} to ${slTo}`);
+      if (slBlocked.length) fees.push(`Blocked Dates: ${slBlocked.join(', ')}`);
+      const slAbout = document.getElementById('f-sl-about').value.replace(/\s+/g, ' ').trim();
+      if (slAbout) fees.push(`About This Space: ${slAbout}`);
       fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
-        .filter(l => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:/.test(l)));
+        .filter(l => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:|^Open For Booking:|^Blocked Dates:|^About This Space:/.test(l)));
     } else {
-      // Flexible Rent — unchanged behavior
-      beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
-      const rentNum = parseInt(rentInput.value, 10);
+      // Flexible Rent (residential unchanged) / Commercial rent (annual, upfront)
+      const com = usageIsCommercial();
+      beds = com ? 0 : (parseInt(document.getElementById('f-beds').value, 10) || 0);
+      const rentNum = com ? (parseInt(annualRentInput.value, 10) || 0) : parseInt(rentInput.value, 10);
       if (!title || !location || !rentNum) {
-        showToast('Please fill in Title, Location, and Rent at minimum.', true);
+        showToast(com ? 'Please fill in Title, Location, and Annual Rent at minimum.' : 'Please fill in Title, Location, and Rent at minimum.', true);
         return;
       }
-      rentDisplay = `₦${rentNum.toLocaleString('en-US')}/mo`;
-      annualRentNum = parseInt(annualRentInput.value, 10) || null;
+      rentDisplay = com ? `₦${rentNum.toLocaleString('en-US')}/yr` : `₦${rentNum.toLocaleString('en-US')}/mo`;
+      annualRentNum = com ? rentNum : (parseInt(annualRentInput.value, 10) || null);
       const cautionFee = parseInt(document.getElementById('f-caution-fee').value, 10);
       const serviceCharge = parseInt(document.getElementById('f-service-charge').value, 10);
       const serviceChargeFreq = document.getElementById('f-service-charge-freq').value;
-      fees = feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+      fees = feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
+        .filter(l => !/^Usage:|^Commercial Type:|^Commercial Size:|^Commercial Parking:|^Power Supply:|^Payment Terms:/.test(l));
+      if (com) {
+        fees.unshift('Payment Terms: Annual, paid in full upfront');
+        fees.unshift(`Power Supply: ${document.getElementById('f-com-power').value}`);
+        const cp = parseInt(document.getElementById('f-com-parking').value, 10);
+        if (!isNaN(cp)) fees.unshift(`Commercial Parking: ${cp}`);
+        const cs = parseFloat(document.getElementById('f-com-sqm').value);
+        if (cs > 0) fees.unshift(`Commercial Size: ${cs} sqm`);
+        fees.unshift(`Commercial Type: ${document.getElementById('f-com-type').value}`);
+        fees.unshift('Usage: Commercial');
+      }
       if (cautionFee) fees.push(`Caution Fee: ₦${cautionFee.toLocaleString('en-US')}`);
       if (serviceCharge) fees.push(`Service Charge: ₦${serviceCharge.toLocaleString('en-US')}/${serviceChargeFreq}`);
     }
@@ -761,7 +1088,7 @@
         progressEl.textContent = 'Uploading photos...';
         for (let i = 0; i < imageFiles.length; i++) {
           progressEl.textContent = `Uploading photo ${i + 1} of ${imageFiles.length}...`;
-          imageUrls.push(await uploadFile(imageFiles[i]));
+          imageUrls.push(await uploadFile(await compressImage(imageFiles[i])));
         }
       }
 
@@ -818,6 +1145,8 @@
     document.getElementById('f-title-doc').value = '';
     document.getElementById('f-land-use').value = 'Residential';
     document.getElementById('f-land-type').value = 'Land (Plot)';
+    resetLandExtras();
+    resetCommercialAndShortlet();
     document.getElementById('f-land-beds').value = 1;
     document.getElementById('f-service-charge-freq').value = 'yr';
     document.getElementById('f-beds').value = 1;
@@ -856,7 +1185,9 @@
     }
     listEl.innerHTML = data.map(l => {
       const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' };
-      const categoryLabel = categoryLabels[l.category] || categoryLabels.rent;
+      let categoryLabel = categoryLabels[l.category] || categoryLabels.rent;
+      // Commercial space is stored as a rent listing flagged "Usage: Commercial" — show it as Commercial.
+      if ((!l.category || l.category === 'rent') && (l.fees || []).some(f => String(f).trim() === 'Usage: Commercial')) categoryLabel = 'Commercial';
       return `
       <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
         <div class="min-w-0 flex-1">
@@ -943,6 +1274,8 @@
     document.getElementById('f-title-doc').value = '';
     document.getElementById('f-land-use').value = 'Residential';
     document.getElementById('f-service-charge-freq').value = 'yr';
+    resetLandExtras();
+    resetCommercialAndShortlet();
 
     let remainingFees = allFees;
     if (category === 'land') {
@@ -957,12 +1290,39 @@
       if (plotSize) document.getElementById('f-plot-size').value = plotSize.replace('Plot Size:', '').trim();
       if (titleDoc) document.getElementById('f-title-doc').value = titleDoc.replace('Title Document:', '').trim();
       if (landUse) document.getElementById('f-land-use').value = landUse.replace('Land Use:', '').trim();
-      document.getElementById('f-land-type').value = propType ? propType.replace('Property Type:', '').trim() : 'Land (Plot)';
+      const loadedType = propType ? propType.replace('Property Type:', '').trim() : 'Land (Plot)';
+      document.getElementById('f-land-type').value = loadedType;
+      setLandKind(loadedType === 'Land (Plot)' ? 'land' : 'house');
+      document.getElementById('f-land-type').value = loadedType;
+      const num = (pfx) => { const l = allFees.find(f => f.startsWith(pfx)); return l ? (parseInt(l.replace(/[^0-9]/g, ''), 10) || 0) : 0; };
+      const instLine = allFees.find(f => f.startsWith('Installment Price:'));
+      if (instLine) {
+        setInstOn(true);
+        document.getElementById('f-inst-price').value = num('Installment Price:') || '';
+        const dm = allFees.find(f => f.startsWith('Installment Duration:'));
+        if (dm) document.getElementById('f-inst-months').value = String(parseInt(dm.replace(/[^0-9]/g, ''), 10) || 12);
+        document.getElementById('f-inst-deposit').value = num('Initial Deposit:') || '';
+      }
+      const legalLine = allFees.find(f => f.startsWith('Legal Fee:'));
+      setLegalPct(legalLine && /10\s*%/.test(legalLine) ? 10 : 5);
+      document.getElementById('f-survey-cost').value = num('Survey Plan:') || '';
+      document.getElementById('f-redcopy-cost').value = num('Red Copy:') || '';
+      const partsLine = allFees.find(f => f.startsWith('Sold In Parts:'));
+      if (partsLine) {
+        document.getElementById('f-parts-on').checked = true;
+        document.getElementById('f-half-on').checked = /half/i.test(partsLine);
+        const pb = allFees.find(f => f.startsWith('Price Basis:'));
+        const pm = pb && pb.match(/\(([^)]*)\)/); if (pm) document.getElementById('f-part-size').value = pm[1];
+        document.getElementById('f-plots-count').value = num('Plots Available:') || '';
+        if (num('Half Plot Price:')) { document.getElementById('f-half-out').value = num('Half Plot Price:'); halfOutTouched = true; }
+        if (num('Half Plot Installment:')) { document.getElementById('f-half-inst').value = num('Half Plot Installment:'); halfInstTouched = true; }
+      }
+      updateLandPriceHints();
       document.getElementById('f-land-beds').value = listing.beds || 1;
       if (bathrooms) document.getElementById('f-land-bathrooms').value = parseInt(bathrooms.replace(/[^0-9]/g, ''), 10) || '';
       if (toilets) document.getElementById('f-land-toilets').value = parseInt(toilets.replace(/[^0-9]/g, ''), 10) || '';
       if (parking) document.getElementById('f-land-parking').value = parseInt(parking.replace(/[^0-9]/g, ''), 10) || '';
-      remainingFees = allFees.filter(f => !/^Plot Size:|^Title Document:|^Land Use:|^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:/.test(f));
+      remainingFees = allFees.filter(f => !/^Plot Size:|^Title Document:|^Land Use:|^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Outright Price:|^Installment Price:|^Installment Duration:|^Initial Deposit:|^Legal Fee:|^Survey Plan:|^Red Copy:|^Sold In Parts:|^Price Basis:|^Plots Available:|^Half Plot Price:|^Half Plot Installment:/.test(f));
     } else if (category === 'short-let') {
       document.getElementById('f-nightly-rate').value = rentDigits || '';
       const minStay = allFees.find(f => f.startsWith('Minimum Stay:'));
@@ -976,15 +1336,35 @@
         document.getElementById('f-service-charge').value = parseInt(serviceChargeLine.replace(/[^0-9]/g, ''), 10) || '';
         document.getElementById('f-service-charge-freq').value = /\/mo$/.test(serviceChargeLine.trim()) ? 'mo' : 'yr';
       }
-      remainingFees = allFees.filter(f => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:/.test(f));
+      const openLine = allFees.find(f => f.startsWith('Open For Booking:'));
+      const om = openLine && openLine.match(/(\d{4}-\d{2}-\d{2})\s+to\s+(\d{4}-\d{2}-\d{2})/);
+      if (om) { document.getElementById('f-sl-from').value = om[1]; document.getElementById('f-sl-to').value = om[2]; }
+      const blkLine = allFees.find(f => f.startsWith('Blocked Dates:'));
+      slBlocked = blkLine ? (blkLine.match(/\d{4}-\d{2}-\d{2}/g) || []) : [];
+      renderSlBlocked();
+      const aboutLine = allFees.find(f => f.startsWith('About This Space:'));
+      if (aboutLine) document.getElementById('f-sl-about').value = aboutLine.replace('About This Space:', '').trim();
+      remainingFees = allFees.filter(f => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:|^Open For Booking:|^Blocked Dates:|^About This Space:/.test(f));
     } else {
       rentInput.value = rentDigits || '';
       annualRentInput.value = listing.annual_rent || '';
+      if (allFees.some(f => f.trim() === 'Usage: Commercial')) {
+        const gv = (pfx) => { const l = allFees.find(f => f.startsWith(pfx)); return l ? l.slice(l.indexOf(':') + 1).trim() : ''; };
+        document.getElementById('f-usage').value = 'commercial';
+        if (gv('Commercial Type:')) document.getElementById('f-com-type').value = gv('Commercial Type:');
+        document.getElementById('f-com-sqm').value = parseFloat(gv('Commercial Size:')) || '';
+        document.getElementById('f-com-parking').value = gv('Commercial Parking:');
+        if (gv('Power Supply:')) document.getElementById('f-com-power').value = gv('Power Supply:');
+        rentInput.value = '';
+        annualRentInput.value = listing.annual_rent || rentDigits || '';
+      }
+      remainingFees = allFees.filter(f => !/^Usage:|^Commercial Type:|^Commercial Size:|^Commercial Parking:|^Power Supply:|^Payment Terms:/.test(f));
     }
     feesTextarea.value = remainingFees.join('\n');
     refreshFeePreviewDisplay();
     updateCategoryFields();
     updateLandHouseFields();
+    updateUsageFields();
 
     document.getElementById('f-color').value = listing.color || 'from-brand-500/30 to-slate-900';
     document.getElementById('f-status').value = listing.status || 'available';
@@ -1042,12 +1422,30 @@
       return;
     }
     signupsCache = data || [];
+    // Properties each person picked (Rent Now / Buy Now / Book Now) incl. shortlet dates.
+    selectedByUser = {};
+    const sel = await sb.from('selected_listings').select('*').order('created_at', { ascending: true });
+    if (sel.error) console.warn('Could not read selected_listings:', sel.error.message);
+    (sel.data || []).forEach(r => { (selectedByUser[r.user_id] = selectedByUser[r.user_id] || []).push(r); });
     renderSignups();
+  }
+  let selectedByUser = {};
+  function selectedHtml(userId) {
+    const rows = selectedByUser[userId] || [];
+    if (!rows.length) return '';
+    const kind = { rent: 'Rent', land: 'Buy', 'short-let': 'Book' };
+    return rows.map(r => {
+      let title = r.listing_title || 'A listing', ci = r.check_in, co = r.check_out, n = r.nights;
+      const m = title.match(/\s*\[(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2}), (\d+) nights?\]\s*$/);
+      if (m) { ci = ci || m[1]; co = co || m[2]; n = n || m[3]; title = title.replace(m[0], ''); }
+      const dates = ci && co ? ` · ${ci} → ${co} (${n} night${Number(n) === 1 ? '' : 's'})` : '';
+      return `<p class="text-xs text-brand-300 mt-1">${kind[r.category] || 'Picked'}: ${title}${dates} <span class="text-slate-500">· ${r.status || 'pending'}</span></p>`;
+    }).join('');
   }
 
   async function renderSignups() {
     const listEl = document.getElementById('signupsList');
-    const filtered = signupRoleFilter === 'all' ? signupsCache : signupsCache.filter(s => s.role === signupRoleFilter);
+    const filtered = signupRoleFilter === 'all' ? signupsCache : signupRoleFilter === 'bookings' ? signupsCache.filter(s => (selectedByUser[s.user_id] || []).length) : signupsCache.filter(s => s.role === signupRoleFilter);
     if (!filtered.length) {
       listEl.innerHTML = '<p class="text-sm text-slate-500">No sign-ups yet.</p>';
       return;
@@ -1132,6 +1530,7 @@ const kycDocsHtml = kycDocs.length
                 <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${ROLE_LABELS[s.role] || s.role}</span>
               </p>
               <p class="text-xs text-slate-500 mt-0.5">${s.phone || ''}${s.occupation ? ' · ' + s.occupation : ''}</p>
+              ${selectedHtml(s.user_id)}
               ${guarantorHtml}
             ${incomeHtml}
             </div>

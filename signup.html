@@ -167,6 +167,50 @@
     .screen { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px 28px; box-shadow: 0 24px 60px -24px rgba(0,0,0,0.6); }
   }
   .screen.hidden-screen { display: none; }
+  /* ===== Light form card on the dark page: easier to read while filling in details ===== */
+  .screen { background: #FFFFFF; color: #0F172A; border: 1px solid rgba(15,23,42,0.08); border-radius: 18px; padding: 26px 20px; box-shadow: 0 24px 60px -24px rgba(0,0,0,0.65); }
+  @media (min-width: 640px) { .screen { background: #FFFFFF; border: 1px solid rgba(15,23,42,0.08); padding: 32px 28px; } }
+  .screen h1.title { color: #0F172A; }
+  .screen p.subtitle { color: #475569; }
+  .screen .field-label, .screen .s-section-label { color: #334155; font-weight: 600; }
+  .screen .s-section-label-alt, .screen .role-name, .screen .perk-item-text { color: #0F172A; }
+  .screen .field-input, .screen .country-select { background: #F8FAFC; border: 1px solid #CBD5E1; color: #0F172A; }
+  .screen .field-input::placeholder { color: #94A3B8; }
+  .screen .field-input:focus, .screen .country-select:focus { border-color: #7C3AED; box-shadow: 0 0 0 3px rgba(124,58,237,0.18); }
+  .screen .password-toggle-btn { color: #64748B; }
+  .screen .password-toggle-btn:hover { color: #0F172A; }
+  .screen .role-card { background: #F8FAFC; border: 1px solid #E2E8F0; }
+  .screen .role-card:hover { border-color: #A78BFA; }
+  .screen .role-card.selected { background: #F5F3FF; border-color: #7C3AED; }
+  .screen .role-sub, .screen .role-hint, .screen .kyc-note, .screen .scroll-hint { color: #64748B; }
+  .screen .selected-listing { background: #F5F3FF; border: 1px solid #DDD6FE; }
+  .screen .selected-listing-label { color: #6D28D9; }
+  .screen .selected-listing-title { color: #0F172A; }
+  .screen .btn-back { background: #F1F5F9; border: 1px solid #CBD5E1; color: #0F172A; }
+  .screen .btn-back:hover { background: #E2E8F0; }
+  .screen .kyc-icon-wrap { background: #F5F3FF; border-color: #DDD6FE; }
+  .screen .kyc-icon-wrap svg { color: #7C3AED; }
+  .screen .kyc-role-badge { background: #F5F3FF; border-color: #DDD6FE; color: #6D28D9; }
+  .screen .legal-box { background: #F8FAFC; border: 1px solid #E2E8F0; color: #334155; }
+  .screen .legal-box h3 { color: #0F172A; }
+  .screen .legal-box p { color: #475569; }
+  .screen .legal-box .critical-section { background: #FEF2F2; border-color: #FECACA; }
+  .screen .legal-box .critical-section h3, .screen .legal-box .critical-section p { color: #B91C1C; }
+  .screen .critical-badge { color: #B45309; }
+  .screen .agree-row { color: #334155; }
+  .screen .perk-item, .screen .commission-box { background: #F8FAFC; border: 1px solid #E2E8F0; }
+  .screen .commission-box { color: #334155; }
+  .screen .commission-box h3, .screen .commission-box li b { color: #0F172A; }
+  .screen .notice-box { background: #F5F3FF; border-color: #DDD6FE; }
+  .screen .notice-box p { color: #334155; }
+  .screen .notice-box p b { color: #6D28D9; }
+  .screen .text-brand-400 { color: #7C3AED; }
+  .screen .text-amber-400 { color: #B45309; }
+  .screen [style*="#93c5fd"] { color: #2563EB !important; }
+  .screen .legal-link-status { color: #64748B; }
+  .screen .progress-track { background: #E2E8F0; }
+  .screen .progress-pct { color: #6D28D9; }
+
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -203,6 +247,7 @@
   .legal-drawer-close:hover { background: #1B2740; border-color: rgba(139,92,246,0.5); }
   .legal-drawer-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: #fff; margin: 4px 0 16px; flex-shrink: 0; }
 </style>
+<script src="./theme.js"></script>
 </head>
 <body class="bg-grain font-body text-slate-200 antialiased selection:bg-brand-600 selection:text-white">
 
@@ -266,7 +311,7 @@
     <h1 class="title">Create your account</h1>
     <p class="subtitle">Tell us who you are so we can tailor your experience.</p>
 
-    <div class="selected-listing-slot"></div>
+    
 
     <div class="role-group" id="role-group">
       <button type="button" class="role-card" data-role="tenant">
@@ -485,7 +530,7 @@
         <h4 class="font-display font-semibold text-slate-900 text-[10px] sm:text-sm uppercase tracking-wide mb-2.5 sm:mb-4">Work With Us</h4>
         <ul class="flex flex-col gap-2 sm:gap-3 text-slate-400 leading-snug">
           <li><a href="./partner-as-an-agent.html" class="hover:text-brand-600 transition">Partner as Agent/Landlord</a></li>
-          <li><a href="./signup.html" class="hover:text-brand-600 transition">List Your Property</a></li>
+          <li><a href="./signup.html?role=landlord" class="hover:text-brand-600 transition">List Your Property</a></li>
           <li><a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27m%20interested%20in%20becoming%20a%20technician%20on%20Quick%20Fix." target="_blank" rel="noopener noreferrer" class="hover:text-brand-600 transition">Become a Technician</a></li>
         </ul>
         <a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27d%20like%20to%20join%20your%20network." target="_blank" rel="noopener noreferrer" class="flex sm:inline-flex w-full sm:w-auto items-center justify-center gap-1 sm:gap-1.5 mt-3 sm:mt-5 text-center leading-tight text-[9px] sm:text-xs font-semibold text-brand-600 border border-brand-600/30 hover:bg-brand-600/5 rounded-full px-2 sm:px-3.5 py-1 sm:py-1.5 transition">
@@ -500,7 +545,7 @@
         <ul class="flex flex-col gap-2 sm:gap-3 text-slate-400 leading-snug">
           <li><a href="./policies.html" class="hover:text-brand-600 transition">Policies</a></li>
           <li><a href="./tips-for-renters.html" class="hover:text-brand-600 transition">Tips for Renters</a></li>
-          <li><a href="https://chat.whatsapp.com/YOUR-INVITE-CODE-HERE" target="_blank" rel="noopener noreferrer" class="hover:text-brand-600 transition">Housing Updates</a></li>
+          <li><a href="./housingupdates.html" class="hover:text-brand-600 transition">Housing Updates</a></li>
         </ul>
       </div>
 
@@ -576,7 +621,14 @@
     id: urlParams.get('listingId') || '',
     category: urlParams.get('category') || '',
     title: urlParams.get('title') || '',
+    // Shortlet booking dates picked on the website (validated here so junk in the link is ignored).
+    checkin: /^\d{4}-\d{2}-\d{2}$/.test(urlParams.get('checkin') || '') ? urlParams.get('checkin') : '',
+    checkout: /^\d{4}-\d{2}-\d{2}$/.test(urlParams.get('checkout') || '') ? urlParams.get('checkout') : '',
+    nights: parseInt(urlParams.get('nights'), 10) || 0,
   };
+  if (!selectedListing.checkin || !selectedListing.checkout || selectedListing.checkout <= selectedListing.checkin) {
+    selectedListing.checkin = ''; selectedListing.checkout = ''; selectedListing.nights = 0;
+  }
 
   // ==================================================================
   // Supabase connection — same project as index.html / admin.html.
@@ -742,6 +794,7 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
     currentScreenKey = toEl.id;
     saveState();
+    renderSelectedListing();
     if (window.lucide) lucide.createIcons();
   }
 
@@ -1143,14 +1196,23 @@
       // trigger the dashboard/bell notification to schedule inspection —
       // deliberately non-fatal: a failure here should never stop the
       // account itself from being created.
-      if (selectedListing.id) {
-        const { error: selectedListingError } = await sb.from('selected_listings').insert({
+      if (selectedListing.id && currentRole === 'tenant') {
+        const hasDates = !!(selectedListing.checkin && selectedListing.checkout);
+        const baseRow = {
           user_id: userId,
           listing_id: selectedListing.id,
           listing_title: selectedListing.title || null,
           category: selectedListing.category || null,
           status: 'pending_inspection',
-        });
+        };
+        let { error: selectedListingError } = await sb.from('selected_listings').insert(
+          hasDates ? { ...baseRow, check_in: selectedListing.checkin, check_out: selectedListing.checkout, nights: selectedListing.nights || null } : baseRow
+        );
+        // If the table has no date columns yet, keep the dates anyway by tucking them into the title.
+        if (selectedListingError && hasDates) {
+          const tag = ` [${selectedListing.checkin} to ${selectedListing.checkout}, ${selectedListing.nights} night${selectedListing.nights === 1 ? '' : 's'}]`;
+          ({ error: selectedListingError } = await sb.from('selected_listings').insert({ ...baseRow, listing_title: (selectedListing.title || '') + tag }));
+        }
         if (selectedListingError) {
           console.error('Could not save selected listing (account still created fine):', selectedListingError.message);
         }
@@ -1172,9 +1234,12 @@
 
     let message = `Hello MainTown Realty, I just signed up on the website.\n\nName: ${name}\nRole: ${roleLabel}\nEmail: ${email}\nPhone: ${phone}`;
     if (occupation) message += `\nOccupation: ${occupation}`;
-    if (selectedListing.title) {
+    if (selectedListing.title && currentRole === 'tenant') {
       const actionLabel = { rent: 'renting', land: 'buying', 'short-let': 'booking' }[selectedListing.category] || 'this property';
       message += `\n\nI'm interested in ${actionLabel}: ${selectedListing.title}`;
+      if (selectedListing.checkin && selectedListing.checkout) {
+        message += `\nCheck-in: ${selectedListing.checkin}\nCheck-out: ${selectedListing.checkout}\nNights: ${selectedListing.nights}`;
+      }
     }
     message += `\n\nI've reviewed and agreed to the Terms of Service. Signed: ${signature}`;
 
@@ -1197,6 +1262,19 @@
       saved = JSON.parse(raw);
     } catch (e) { return; }
     if (!saved || !saved.role) return;
+
+    // A link that names a role ("Rent Now" -> tenant, "I'm a landlord" -> landlord, "I'm an agent" -> agent)
+    // always wins over the last saved choice. Keep the contact details already typed, but start
+    // on Step 1 with the role from the link instead of resuming another role's unfinished signup.
+    // Links with no role (the plain Sign up button) still resume the last saved choice below.
+    const urlRole = (urlParams.get('role') || '').toLowerCase();
+    if (['tenant', 'landlord', 'agent'].includes(urlRole) && saved.role !== urlRole) {
+      if (saved.fullname) fullNameInput.value = saved.fullname;
+      if (saved.countryCode) document.getElementById('country-code').value = saved.countryCode;
+      if (saved.phone) phoneInput.value = saved.phone;
+      if (saved.email) emailInput.value = saved.email;
+      return;
+    }
 
     const card = document.querySelector(`.role-card[data-role="${saved.role}"]`);
     if (!card) return;
@@ -1260,11 +1338,11 @@
   function renderSelectedListing() {
     document.querySelectorAll('.selected-listing-slot').forEach(slot => {
       slot.innerHTML = '';
-      if (!selectedListing.title) return;
+      if (!selectedListing.title || currentRole !== 'tenant') return;
       const chip = document.createElement('div');
       chip.className = 'selected-listing';
       chip.innerHTML = '<i data-lucide="home"></i><div><p class="selected-listing-label">Selected property</p><p class="selected-listing-title"></p></div>';
-      chip.querySelector('.selected-listing-title').textContent = selectedListing.title;
+      chip.querySelector('.selected-listing-title').textContent = selectedListing.title + (selectedListing.checkin && selectedListing.checkout ? ` · ${selectedListing.checkin} to ${selectedListing.checkout}` : '');
       slot.appendChild(chip);
     });
   }
