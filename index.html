@@ -571,6 +571,11 @@
         <h4 class="font-display font-semibold text-white mb-2">Automated Auto-Pay Protocol</h4>
         <p class="text-sm text-slate-400 leading-relaxed">Rent is auto-debited and paid straight to the landlord on schedule, with real-time verification and no funds held in escrow.</p>
       </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-850/50 p-6 hover:border-brand-500/40 transition">
+        <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-lg mb-4">📄</div>
+        <h4 class="font-display font-semibold text-white mb-2">Protected Land &amp; Property Purchases</h4>
+        <p class="text-sm text-slate-400 leading-relaxed">On a sale, the seller's share is held by our licensed payment partner, not by MainTown, until you confirm the original documents have arrived and look genuine. If you report a problem, the payment stays held while it is reviewed.</p>
+      </div>
     </div>
 
     <div>
@@ -1937,6 +1942,7 @@
       if (get('Half Plot Price')) pay.push(['Half plot (outright)', cur(get('Half Plot Price'))]);
       if (get('Half Plot Installment')) pay.push(['Half plot (installment)', cur(get('Half Plot Installment'))]);
       if (get('Price Basis')) pay.push(['Prices are', get('Price Basis').toLowerCase()]);
+      pay.push(['Payment protection', 'Seller\'s share is held until you confirm the original documents']);
     } else if (cat === 'short-let') {
       pay.push(['Per night', cur(String(info.rent).replace('/night', ' / night')), true]);
       const ms = get('Minimum Stay'); if (ms) pay.push(['Minimum stay', ms]);
