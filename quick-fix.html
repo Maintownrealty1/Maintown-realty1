@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quick Fix — MainTown Realty</title>
+<title>Admin — MainTown Realty</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
 
 <script>
   tailwind.config = {
@@ -18,8 +17,13 @@
         colors: {
           slate: { 950: '#0B1120', 900: '#0F172A', 850: '#141E33', 800: '#1B2740', 700: '#28395C' },
           brand: { 300: '#C4B5FD', 400: '#A855F7', 500: '#8B5CF6', 600: '#7C3AED', 700: '#6D28D9' },
+          amber: { 400: '#FBBF24', 500: '#F59E0B' },
         },
-        fontFamily: { display: ['"Space Grotesk"', 'sans-serif'], body: ['Inter', 'sans-serif'] },
+        fontFamily: {
+          display: ['"Space Grotesk"', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
       }
     }
   }
@@ -27,11 +31,11 @@
 
 <style>
   body { background-color: #0B1120; font-family: 'Inter', sans-serif; }
-  input, textarea {
+  input, select, textarea {
     background: #141E33; border: 1px solid #28395C; color: #fff; border-radius: 10px;
     padding: 10px 12px; font-size: 14px; width: 100%; outline: none;
   }
-  input:focus, textarea:focus { border-color: #8B5CF6; }
+  input:focus, select:focus, textarea:focus { border-color: #8B5CF6; }
   label { font-size: 12.5px; font-weight: 600; color: #94A3B8; display: block; margin-bottom: 6px; }
   .field { margin-bottom: 16px; }
   .btn-primary {
@@ -40,11 +44,17 @@
   }
   .btn-primary:hover { opacity: 0.92; }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-  .service-card {
-    background: #0F172A; border: 1px solid #1e293b; border-radius: 16px; padding: 22px;
-    cursor: pointer; transition: all 0.15s ease;
+  .btn-secondary {
+    background: #1B2740; border: 1px solid #28395C; color: #E2E8F0; font-weight: 500;
+    padding: 10px 16px; border-radius: 10px; font-size: 13.5px;
   }
-  .service-card:hover { border-color: #8B5CF6; transform: translateY(-2px); }
+  .btn-secondary:hover { border-color: #8B5CF6; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;
+    background: #1B2740; border: 1px solid #28395C; color: #C4B5FD; padding: 6px 10px; border-radius: 999px;
+    cursor: pointer; transition: all 0.15s ease; user-select: none;
+  }
+  .chip.active { background: rgba(139,92,246,0.2); border-color: #8B5CF6; color: #fff; }
   .toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
     background: #141E33; border: 1px solid #28395C; color: #fff; padding: 12px 20px; border-radius: 10px;
@@ -53,298 +63,618 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.error { border-color: #EF4444; }
 </style>
-<script src="./theme.js"></script>
 </head>
-<body class="text-white min-h-screen flex flex-col">
+<body class="text-white min-h-screen">
 
-<header class="fixed top-0 inset-x-0 z-50 border-b border-white/5 bg-slate-900/80 backdrop-blur-md">
-  <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-    <a href="./index.html" class="flex items-center gap-2 font-display font-bold text-lg">
-      <img src="./logo.webp" alt="MainTown Realty" class="h-7 w-7 object-contain rounded-md">
-      <span class="text-lg font-extrabold text-white tracking-tight">MainTown <span class="text-purple-400">Realty</span></span>
-    </a>
+<!-- ================= LOGIN GATE ================= -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center px-6">
+  <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-8">
+    <h1 class="font-display font-bold text-xl text-white mb-1">MainTown Admin</h1>
+    <p class="text-sm text-slate-500 mb-6">Sign in to manage live listings.</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="you@maintownrealty.com" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button id="loginBtn" class="btn-primary w-full">Sign In</button>
+    <p id="loginError" class="text-xs text-red-400 mt-3 hidden"></p>
+  </div>
+</div>
 
-    <!-- Desktop nav: visible on larger screens, mirrors the mobile menu links -->
-    <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-200">
-      <a href="./index.html#listings" class="hover:text-white transition">Find a Home</a>
-      <a href="./quick-fix.html" class="hover:text-white transition">Quick Fix</a>
-      <a href="./partner-as-an-agent.html" class="hover:text-white transition">Partner as an Agent</a>
-      <a href="./policies.html" class="hover:text-white transition">Policies</a>
-      <a href="./tips-for-renters.html" class="hover:text-white transition">Tips for Renters</a>
-      <a href="./index.html" class="hover:text-white transition">← Back to site</a>
-    </nav>
+<!-- ================= ADMIN PANEL (hidden until logged in) ================= -->
+<div id="adminScreen" class="hidden min-h-screen">
+  <header class="border-b border-slate-800 bg-slate-950/60">
+    <div class="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div>
+        <h1 class="font-display font-bold text-lg text-white">MainTown Admin</h1>
+        <p class="text-xs text-slate-500" id="loggedInAs"></p>
+      </div>
+      <button id="logoutBtn" class="btn-secondary">Log Out</button>
+    </div>
+    <!-- Role-based tab bar — only the tabs this staff member's role is
+         allowed to see get rendered here (see ROLE_VIEWS in the script). -->
+    <nav id="roleTabs" class="max-w-4xl mx-auto px-6 flex gap-2 overflow-x-auto pb-4 hidden"></nav>
+  </header>
 
-    <div class="flex items-center gap-2">
-      <a href="./index.html" class="hidden sm:inline-flex md:hidden text-sm text-slate-400 hover:text-white transition px-2">← Back to site</a>
-      <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
-        <span id="mobileMenuIcon">☰</span>
+  <main class="max-w-4xl mx-auto px-6 py-10">
+
+    <!-- ---- Add Listing Form ---- -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-10" id="listingFormSection" data-view="listings">
+      <h2 class="font-display font-semibold text-lg text-white mb-1" id="formHeading">Add a New Listing</h2>
+      <p class="text-sm text-slate-500 mb-6" id="formSubtext">This publishes straight to your live site — no code, no re-upload.</p>
+
+      <div class="field">
+        <label>Category</label>
+        <select id="f-category">
+          <option value="rent">Flexible Rent</option>
+          <option value="land">Land &amp; Property</option>
+          <option value="short-let">Short Let</option>
+        </select>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-x-5">
+        <div class="field">
+          <label>Listing Title</label>
+          <input type="text" id="f-title" placeholder="e.g. Master's Studio">
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <input type="text" id="f-location" placeholder="e.g. Osapa London, Lekki, Lagos">
+        </div>
+
+        <!-- Flexible Rent + Short Let both use Bedrooms -->
+        <div class="field" data-cat="rent short-let">
+          <label>Bedrooms</label>
+          <input type="number" id="f-beds" min="0" value="1">
+        </div>
+
+        <!-- ===== Flexible Rent only ===== -->
+        <div class="field" data-cat="rent">
+          <label>Monthly Rent (₦)</label>
+          <input type="number" id="f-rent" placeholder="e.g. 150000">
+        </div>
+        <div class="field" data-cat="rent">
+          <label>Annual Rent (₦) — optional, fill manually</label>
+          <input type="number" id="f-rent-annual" placeholder="e.g. 1800000">
+        </div>
+        <div class="field" data-cat="rent short-let">
+          <label>Caution Fee (₦)</label>
+          <input type="number" id="f-caution-fee" placeholder="e.g. 50000">
+        </div>
+        <div class="field" data-cat="rent short-let">
+          <label>Service Charge (₦)</label>
+          <div class="flex gap-2">
+            <input type="number" id="f-service-charge" placeholder="e.g. 20000" class="flex-1">
+            <select id="f-service-charge-freq" class="!w-auto shrink-0">
+              <option value="yr">Yearly</option>
+              <option value="mo">Monthly</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ===== Land & Property only ===== -->
+        <div class="field" data-cat="land">
+          <label>Property Type</label>
+          <select id="f-land-type">
+            <option value="Land (Plot)">Land (Plot)</option>
+            <option value="Duplex">Duplex</option>
+            <option value="Bungalow">Bungalow</option>
+            <option value="Detached House">Detached House</option>
+            <option value="Semi-Detached Duplex">Semi-Detached Duplex</option>
+            <option value="Terrace">Terrace</option>
+            <option value="Block of Flats">Block of Flats</option>
+            <option value="Mansion">Mansion</option>
+          </select>
+        </div>
+        <div class="field" data-cat="land">
+          <label>Plot Size</label>
+          <input type="text" id="f-plot-size" placeholder="e.g. 650 sqm or 2 plots">
+        </div>
+        <div class="field" data-cat="land">
+          <label>Title Document</label>
+          <select id="f-title-doc">
+            <option value="">Select title type</option>
+            <option value="C of O">Certificate of Occupancy (C of O)</option>
+            <option value="Governor's Consent">Governor's Consent</option>
+            <option value="Excision">Excision</option>
+            <option value="Gazette">Gazette</option>
+            <option value="Registered Survey">Registered Survey</option>
+            <option value="Deed of Assignment">Deed of Assignment</option>
+          </select>
+        </div>
+        <div class="field" data-cat="land">
+          <label>Land Use</label>
+          <select id="f-land-use">
+            <option value="Residential">Residential</option>
+            <option value="Commercial">Commercial</option>
+            <option value="Mixed-Use">Mixed-Use</option>
+            <option value="Agricultural">Agricultural</option>
+          </select>
+        </div>
+        <div class="field" data-cat="land">
+          <label>Sale Price (₦)</label>
+          <input type="number" id="f-sale-price" placeholder="e.g. 45000000">
+        </div>
+
+        <!-- Only shown when Property Type above isn't raw "Land (Plot)" -->
+        <div class="field" data-land-house="1">
+          <label>Bedrooms</label>
+          <input type="number" id="f-land-beds" min="0" value="1">
+        </div>
+        <div class="field" data-land-house="1">
+          <label>Bathrooms</label>
+          <input type="number" id="f-land-bathrooms" min="0" placeholder="e.g. 4">
+        </div>
+        <div class="field" data-land-house="1">
+          <label>Toilets</label>
+          <input type="number" id="f-land-toilets" min="0" placeholder="e.g. 5">
+        </div>
+        <div class="field" data-land-house="1">
+          <label>Parking Spaces</label>
+          <input type="number" id="f-land-parking" min="0" placeholder="e.g. 2">
+        </div>
+
+        <!-- ===== Short Let only ===== -->
+        <div class="field" data-cat="short-let">
+          <label>Nightly Rate (₦)</label>
+          <input type="number" id="f-nightly-rate" placeholder="e.g. 65000">
+        </div>
+        <div class="field" data-cat="short-let">
+          <label>Minimum Stay (nights)</label>
+          <input type="number" id="f-min-stay" min="1" placeholder="e.g. 2">
+        </div>
+        <div class="field" data-cat="short-let">
+          <label>Cleaning Fee (₦) — optional</label>
+          <input type="number" id="f-cleaning-fee" placeholder="e.g. 15000">
+        </div>
+      </div>
+
+      <!-- Live annual + suggested fee preview -->
+      <div id="feePreview" class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 mb-5 text-sm text-slate-400 hidden" data-cat="rent">
+        <p>Monthly: <strong class="text-white" id="fp-monthly">—</strong></p>
+        <p class="mt-1">Annual: <strong class="text-white" id="fp-annual">—</strong></p>
+        <p class="mt-1">Suggested Agent Fee (10%): <strong class="text-white" id="fp-agent">—</strong></p>
+        <p class="mt-1">Suggested Legal Fee (5%): <strong class="text-white" id="fp-legal">—</strong></p>
+      </div>
+
+      <div class="field">
+        <label id="f-fees-label">Fees (one per line — auto-calculated, or edit/replace freely)</label>
+        <textarea id="f-fees" rows="3" placeholder="Agent Fee: 10% (₦180,000)&#10;Legal Fee: 5% (₦90,000)"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Features</label>
+        <div id="featureChips" class="flex flex-wrap gap-2 mb-2"></div>
+        <input type="text" id="f-feature-custom" placeholder="Type a feature and press Enter to add a custom one">
+      </div>
+
+      <div class="field">
+        <label>Card Color Tint</label>
+        <select id="f-color">
+          <option value="from-brand-500/30 to-slate-900">Purple (default)</option>
+          <option value="from-brand-400/25 to-slate-900">Light Purple</option>
+          <option value="from-brand-600/30 to-slate-900">Deep Purple</option>
+          <option value="from-amber-500/25 to-slate-900">Amber</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <select id="f-status">
+          <option value="available">Available</option>
+          <option value="sold">Sold</option>
+          <option value="rented">Rented</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Photos (you can select multiple)</label>
+        <input type="file" id="f-images" accept="image/*" multiple class="!p-2">
+        <div id="imagePreview" class="flex flex-wrap gap-2 mt-3"></div>
+        <p id="imagePreviewNote" class="text-xs text-slate-500 mt-1 hidden">These are the current photos. Choose new files above only if you want to replace them.</p>
+      </div>
+
+      <div class="field">
+        <label>Video Walkthrough (optional)</label>
+        <input type="file" id="f-video" accept="video/*" class="!p-2">
+        <p id="videoFileName" class="text-xs text-slate-500 mt-1"></p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 mt-2">
+        <button id="submitBtn" class="btn-primary w-full sm:w-auto">Publish Listing</button>
+        <button id="cancelEditBtn" type="button" class="btn-secondary w-full sm:w-auto hidden">Cancel Edit</button>
+      </div>
+      <div id="uploadProgress" class="text-xs text-slate-500 mt-3 hidden"></div>
+    </section>
+
+    <!-- ---- Existing Listings ---- -->
+    <section class="mb-10" data-view="listings">
+      <button type="button" id="listingsToggle" class="w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none">
+        <h2 class="font-display font-semibold text-lg text-white flex items-center gap-2">
+          Live Listings
+          <span id="listingsCount" class="text-xs font-mono font-normal text-slate-500 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">0</span>
+        </h2>
+        <span id="listingsChevron" class="text-slate-500 text-sm transition-transform shrink-0">▸</span>
       </button>
-    </div>
-  </div>
+      <div id="existingList" class="space-y-3 mt-4 hidden"></div>
+    </section>
 
-  <!-- Mobile Menu (mobile/tablet only) -->
-  <div id="mobileMenu" class="hidden md:hidden border-t border-white/5 bg-slate-950/95 backdrop-blur-md">
-    <nav class="flex flex-col px-6 py-4 gap-1 text-sm max-w-5xl mx-auto">
-      <a href="./index.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Home</a>
-      <a href="./index.html#listings" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Find a Home</a>
-      <a href="./quick-fix.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Quick Fix Services</a>
-      <a href="./partner-as-an-agent.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Partner as an Agent</a>
-      <a href="./policies.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Policies</a>
-      <a href="./tips-for-renters.html" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Tips for Renters</a>
-      <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" class="mobile-nav-link px-2 py-3 rounded-lg text-slate-200 hover:bg-white/5 hover:text-white transition">Instagram</a>
-      <a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%20have%20a%20quick%20fix%20request." target="_blank" rel="noopener noreferrer" class="mt-2 text-center text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-3 rounded-full transition">WhatsApp Us</a>
-    </nav>
-  </div>
-</header>
+    <!-- ---- Sign-Ups & Onboarding (KYC + Legal Agreement + Login) ---- -->
+    <section data-view="signups">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">Sign-Ups &amp; Onboarding</h2>
+      <p class="text-sm text-slate-500 mb-1">Everyone who completes sign up on the site — KYC details, the signed legal agreement (PDF), and account status.</p>
+      <p class="text-xs text-slate-600 mb-5">Login is handled securely by Supabase Auth at the moment of sign up — there's nothing to "activate" here. As soon as someone finishes onboarding, their email + password already work on the live site. This panel is for reviewing who they are (KYC) and their signed agreement, not for storing or viewing passwords.</p>
 
-<main class="flex-1 w-full max-w-5xl mx-auto px-6 pt-24 pb-14 sm:pt-28">
-  <div class="text-center max-w-2xl mx-auto mb-12">
-    <span class="text-xs font-mono uppercase tracking-widest text-brand-400">Quick Fix</span>
-    <h1 class="mt-3 font-display font-bold text-3xl sm:text-4xl text-white">Home Maintenance, Handled</h1>
-    <p class="mt-4 text-slate-400">Pick what needs fixing, snap a quick photo or video, and send us your details — we'll get back to you with a quote and a technician.</p>
-  </div>
-
-  <div id="serviceGrid" class="grid sm:grid-cols-3 gap-4"></div>
-</main>
-
-<!-- ================= Request Modal ================= -->
-<div id="requestModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
-  <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
-    <div class="flex items-center justify-between mb-1">
-      <h2 class="font-display font-semibold text-lg text-white" id="modalServiceTitle">Request Service</h2>
-      <button id="closeRequestModal" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition">✕</button>
-    </div>
-    <p class="text-sm text-slate-500 mb-6">Tell us what's going on — a technician will reach out to confirm and quote.</p>
-
-    <div class="field">
-      <label>Full Name</label>
-      <input type="text" id="r-name" placeholder="Your name">
-    </div>
-    <div class="grid sm:grid-cols-2 gap-x-4">
-      <div class="field">
-        <label>Phone Number</label>
-        <input type="tel" id="r-phone" placeholder="080...">
+      <div id="signupRoleChips" class="flex flex-wrap gap-2 mb-5">
+        <span class="chip active" data-role="all">All</span>
+        <span class="chip" data-role="tenant">Tenant</span>
+        <span class="chip" data-role="landlord">Landlord</span>
+        <span class="chip" data-role="agent">Agent</span>
+        <span class="chip" data-role="diaspora">Diaspora / Canada</span>
       </div>
-      <div class="field">
-        <label>Email</label>
-        <input type="email" id="r-email" placeholder="you@email.com">
-      </div>
-    </div>
-    <div class="field">
-      <label>Address / Location (for the technician to reach you)</label>
-      <input type="text" id="r-address" placeholder="e.g. 12 Admiralty Way, Lekki Phase 1">
-    </div>
-    <div class="field">
-      <label>Describe the Issue</label>
-      <textarea id="r-description" rows="3" placeholder="What needs fixing?"></textarea>
-    </div>
-    <div class="field">
-      <label>Photo or Video (optional, but helps a lot)</label>
-      <input type="file" id="r-media" accept="image/*,video/*" multiple class="!p-2">
-      <div id="mediaPreview" class="flex flex-wrap gap-2 mt-2"></div>
-    </div>
 
-    <button id="submitRequestBtn" class="btn-primary w-full mt-2">Send Request</button>
-    <div id="submitProgress" class="text-xs text-slate-500 mt-3 hidden"></div>
-  </div>
+      <div id="signupsList" class="space-y-3"></div>
+    </section>
+
+    <!-- ---- Quick Fix service requests ---- -->
+    <section data-view="quickfix">
+      <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+        <div>
+          <h2 class="font-display font-semibold text-lg text-white mb-1">Quick Fix Requests</h2>
+          <p class="text-sm text-slate-500">Review customer service requests, attached photos, and update their progress.</p>
+        </div>
+        <button type="button" id="refreshQuickFixBtn" class="btn-secondary">Refresh</button>
+      </div>
+      <div id="quickFixList" class="space-y-3"></div>
+    </section>
+
+    <!-- ---- Finance ----
+         Placeholder dashboard: today the only financial-adjacent data that
+         exists anywhere is listing pricing. Wallet balances, payouts,
+         settlement banks, and escrow (all currently only in index.html's
+         localStorage) get their own tables and their own panel here once
+         that data is wired into Supabase — see the "Finance data" banner. -->
+    <section data-view="finance">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">Finance</h2>
+      <p class="text-sm text-slate-500 mb-5">Pricing across all live listings.</p>
+
+      <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 mb-6 text-xs text-amber-300">
+        Wallet balances, landlord payouts, and settlement account data live in the app right now and aren't reported here yet — that's the next phase of this integration.
+      </div>
+
+      <div id="financeList" class="space-y-2"></div>
+    </section>
+
+    <!-- ---- Staff Access (Super Admin only) ----
+         Add/remove staff and set their role. A newly-added row has no
+         auth_user_id yet — it's "claimed" automatically the first time
+         that person logs in with a matching email (see staff_roles_migration.sql). -->
+    <section data-view="staff">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">Staff Access</h2>
+      <p class="text-sm text-slate-500 mb-5">Who can log into this admin panel, and what dashboard they see.</p>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6">
+        <div class="grid sm:grid-cols-3 gap-x-5">
+          <div class="field !mb-3 sm:!mb-0">
+            <label>Email</label>
+            <input type="email" id="staff-new-email" placeholder="name@maintownrealty.com">
+          </div>
+          <div class="field !mb-3 sm:!mb-0">
+            <label>Full Name (optional)</label>
+            <input type="text" id="staff-new-name" placeholder="e.g. Amaka Obi">
+          </div>
+          <div class="field !mb-3 sm:!mb-0">
+            <label>Role</label>
+            <select id="staff-new-role">
+              <option value="developer">Developer</option>
+              <option value="finance">Finance</option>
+              <option value="legal">Legal</option>
+              <option value="super_admin">Super Admin</option>
+            </select>
+          </div>
+        </div>
+        <button id="staff-add-btn" class="btn-primary mt-2">Add Staff Member</button>
+        <p class="text-xs text-slate-600 mt-3">This grants access — it doesn't create their Supabase Auth login. Invite that separately (Supabase Dashboard → Authentication → Users → Invite), using the same email.</p>
+      </div>
+
+      <div id="staffList" class="space-y-2"></div>
+    </section>
+
+  </main>
 </div>
 
 <div id="toast" class="toast"></div>
 
-<!-- ================= FOOTER ================= -->
-<footer class="mt-auto bg-white border-t-4 border-brand-600 pt-8 sm:pt-12 pb-6 sm:pb-8">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6">
-
-    <!-- Top: 3 columns (stays side-by-side on mobile, like desktop) -->
-    <div class="grid grid-cols-3 gap-3 sm:gap-6 text-[11px] sm:text-sm">
-
-      <!-- Column 1: Explore -->
-      <div>
-        <h4 class="font-display font-bold text-brand-600 text-[11px] sm:text-sm uppercase tracking-wider mb-2.5 sm:mb-4">Explore</h4>
-        <ul class="flex flex-col gap-2 sm:gap-3 text-slate-900 font-semibold leading-snug">
-          <li><a href="./index.html#listings" class="hover:text-brand-600 transition">Find a Home</a></li>
-          <li><a href="./quick-fix.html" class="hover:text-brand-600 transition">Quick Fix Services</a></li>
-          <li><a href="./index.html#listings" class="hover:text-brand-600 transition">Flexible Rent</a></li>
-          <li><a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27d%20like%20to%20get%20in%20touch." target="_blank" rel="noopener noreferrer" class="hover:text-brand-600 transition">Contact Us</a></li>
-        </ul>
-      </div>
-
-      <!-- Column 2: Work With Us -->
-      <div>
-        <h4 class="font-display font-bold text-brand-600 text-[11px] sm:text-sm uppercase tracking-wider mb-2.5 sm:mb-4">Work With Us</h4>
-        <ul class="flex flex-col gap-2 sm:gap-3 text-slate-900 font-semibold leading-snug">
-          <li><a href="./partner-as-an-agent.html" class="hover:text-brand-600 transition">Partner as Agent/Landlord</a></li>
-          <li><a href="./signup.html?role=landlord" class="hover:text-brand-600 transition">List Your Property</a></li>
-          <li><a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27m%20interested%20in%20becoming%20a%20technician%20on%20Quick%20Fix." target="_blank" rel="noopener noreferrer" class="hover:text-brand-600 transition">Become a Technician</a></li>
-        </ul>
-        <a href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27d%20like%20to%20join%20your%20network." target="_blank" rel="noopener noreferrer" class="flex sm:inline-flex w-full sm:w-auto items-center justify-center gap-1 sm:gap-1.5 mt-3 sm:mt-5 text-center leading-tight text-[9px] sm:text-xs font-semibold text-brand-600 border border-brand-600/30 hover:bg-brand-600/5 rounded-full px-2 sm:px-3.5 py-1 sm:py-1.5 transition">
-          <span>Join Our Network</span>
-          <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-        </a>
-      </div>
-
-      <!-- Column 3: Resources -->
-      <div>
-        <h4 class="font-display font-bold text-brand-600 text-[11px] sm:text-sm uppercase tracking-wider mb-2.5 sm:mb-4">Resources</h4>
-        <ul class="flex flex-col gap-2 sm:gap-3 text-slate-900 font-semibold leading-snug">
-          <li><a href="./policies.html" class="hover:text-brand-600 transition">Policies</a></li>
-          <li><a href="./tips-for-renters.html" class="hover:text-brand-600 transition">Tips for Renters</a></li>
-          <li><a href="./housingupdates.html" class="hover:text-brand-600 transition">Housing Updates</a></li>
-        </ul>
-      </div>
-
-    </div>
-
-    <!-- Divider -->
-    <div class="border-t border-slate-200 my-6 sm:my-8"></div>
-
-    <!-- Bottom strip -->
-    <div class="flex items-start justify-between gap-4 sm:gap-6">
-      <div class="flex flex-col items-start gap-2.5 sm:gap-3 text-[12px] sm:text-sm text-slate-900 font-semibold font-body">
-        <a href="https://maintownrealty.com" target="_blank" rel="noopener" class="flex items-center gap-2 hover:text-brand-600 transition whitespace-nowrap">
-          <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-brand-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="9"/>
-            <path stroke-linecap="round" d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3Z"/>
-          </svg>
-          <span>maintownrealty.com</span>
-        </a>
-        <a href="https://wa.me/2348066611017" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 hover:text-[#25D366] transition whitespace-nowrap">
-          <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.3zM12 21.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.8-9.8 9.8z"/></svg>
-          <span class="whitespace-nowrap">+234 806 661 1017</span>
-        </a>
-        <div class="flex items-center gap-5 pt-1.5">
-        <a href="https://instagram.com/Maintownrealty" target="_blank" rel="noopener" class="inline-flex items-center justify-center hover:opacity-75 transition" aria-label="Instagram">
-          <svg class="w-7 h-7 sm:w-8 sm:h-8 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-            <defs>
-              <linearGradient id="igGradientFooter" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#FFDD55"/>
-                <stop offset="35%" stop-color="#FD1D1D"/>
-                <stop offset="70%" stop-color="#C13584"/>
-                <stop offset="100%" stop-color="#833AB4"/>
-              </linearGradient>
-            </defs>
-            <rect x="2" y="2" width="20" height="20" rx="6" fill="none" stroke="url(#igGradientFooter)" stroke-width="2"/>
-            <circle cx="12" cy="12" r="4.2" fill="none" stroke="url(#igGradientFooter)" stroke-width="2"/>
-            <circle cx="17.2" cy="6.8" r="1.15" fill="url(#igGradientFooter)"/>
-          </svg>
-        </a>
-        <a href="https://x.com/MaintownRealty" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center hover:opacity-75 transition" aria-label="X (Twitter)">
-          <svg class="w-7 h-7 sm:w-8 sm:h-8 shrink-0 text-slate-900" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        </a>
-        </div>
-        <p class="mb-2 text-left text-[10.5px] sm:text-xs text-slate-700 font-medium font-body">Preliminary verification means automated checks that the documents supplied for a listing were provided, appear complete on their face and are internally consistent. It is not a legal opinion, a Land Registry search or a certificate of title, and MainTown does not guarantee the validity or transferability of any title. Before you pay or sign, instruct an independent lawyer and carry out your own searches and inspection.</p>
-        <p class="mt-1.5 sm:mt-2 text-left text-[11px] sm:text-xs text-slate-800 font-semibold font-body">© 2026 <span class="font-semibold text-brand-600">MainTown Realty</span>. Nigeria. All rights reserved.</p>
-      </div>
-      <img src="data:image/png;base64,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" alt="MainTown Realty" class="h-11 w-11 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-2xl shrink-0 shadow-md shadow-slate-900/10">
-    </div>
-  </div>
-</footer>
-
-
-<!-- ================= FLOATING WHATSAPP ================= -->
-<a
-  href="https://wa.me/2348066611017?text=Hi%20MainTown%20Realty%2C%20I%27d%20like%20to%20get%20in%20touch."
-  target="_blank"
-  rel="noopener noreferrer"
-  aria-label="Chat with MainTown Realty on WhatsApp"
-  class="group fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-[#25D366] shadow-lg shadow-black/40 flex items-center justify-center transition-transform duration-200 hover:scale-105"
->
-  <span class="absolute inset-0 rounded-full bg-[#25D366] opacity-0 group-hover:opacity-60 group-hover:animate-ping"></span>
-  <svg class="relative w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.3zM12 21.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.8-9.8 9.8z"/>
-  </svg>
-</a>
-
 <script>
-  const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-  const mobileMenuIcon = document.getElementById('mobileMenuIcon');
-  const mobileMenu = document.getElementById('mobileMenu');
-  mobileMenuToggle.addEventListener('click', () => {
-    const isOpen = !mobileMenu.classList.contains('hidden');
-    if (isOpen) {
-      mobileMenu.classList.add('hidden');
-      mobileMenuToggle.setAttribute('aria-expanded', 'false');
-      mobileMenuIcon.textContent = '☰';
-    } else {
-      mobileMenu.classList.remove('hidden');
-      mobileMenuToggle.setAttribute('aria-expanded', 'true');
-      mobileMenuIcon.textContent = '✕';
-    }
-  });
-
+  // ==================================================================
+  // Supabase connection — same project as index.html.
+  // ==================================================================
   const SUPABASE_URL = 'https://obtggomfwvravjcnypid.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_GaTnU4FmPc2slbn8BisXXg_DmxH1vl8';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const MEDIA_BUCKET = 'service-media';
+  const MEDIA_BUCKET = 'listing-media';
 
-  // Optional: fill these in from emailjs.com (free) to also get an email
-  // notification per request. Leave blank to skip email — Supabase storage
-  // + admin.html visibility works either way.
-  const EMAILJS_PUBLIC_KEY = '';
-  const EMAILJS_SERVICE_ID = '';
-  const EMAILJS_TEMPLATE_ID = '';
-
-  const SERVICES = [
-    { name: 'Electrical', icon: 'zap', desc: 'Wiring, sockets, faults, general electrical repairs.' },
-    { name: 'Solar & Inverter', icon: 'sun', desc: 'Installation, servicing, and troubleshooting.' },
-    { name: 'CCTV Installation', icon: 'video', desc: 'Camera setup, wiring, and monitoring configuration.' },
-    { name: 'Plumbing', icon: 'wrench', desc: 'Leaks, blockages, pipe and fitting repairs.' },
-    { name: 'Home Cleaning', icon: 'sparkles', desc: 'Deep cleaning and regular home cleaning service.' },
-    { name: 'Furniture Fixing', icon: 'hammer', desc: 'Repairs for chairs, cabinets, beds, and more.' },
-    { name: 'Fumigation', icon: 'bug', desc: 'Pest control and fumigation for your home.' },
-    { name: 'Air Conditioning', icon: 'wind', desc: 'AC servicing, gas refill, and repairs.' },
-    { name: 'Washing Machine', icon: 'washing-machine', desc: 'Diagnosis and repair for washing machines.' },
-  ];
-
-  const serviceGrid = document.getElementById('serviceGrid');
-  serviceGrid.innerHTML = SERVICES.map(s => `
-    <div class="service-card" data-service="${s.name}">
-      <div class="w-10 h-10 rounded-lg bg-brand-500/15 flex items-center justify-center text-brand-400 mb-4">
-        <i data-lucide="${s.icon}" class="w-5 h-5"></i>
-      </div>
-      <h3 class="font-display font-semibold text-white mb-1.5">${s.name}</h3>
-      <p class="text-sm text-slate-500 leading-relaxed">${s.desc}</p>
-    </div>
-  `).join('');
-  lucide.createIcons();
-
-  const requestModal = document.getElementById('requestModal');
-  const modalServiceTitle = document.getElementById('modalServiceTitle');
-  let currentService = '';
-
-  serviceGrid.addEventListener('click', (e) => {
-    const card = e.target.closest('.service-card');
-    if (!card) return;
-    currentService = card.dataset.service;
-    modalServiceTitle.textContent = `Request: ${currentService}`;
-    requestModal.classList.remove('hidden');
-    requestModal.classList.add('flex');
-  });
-
-  document.getElementById('closeRequestModal').addEventListener('click', () => {
-    requestModal.classList.add('hidden');
-    requestModal.classList.remove('flex');
-  });
-  requestModal.addEventListener('click', (e) => { if (e.target === requestModal) document.getElementById('closeRequestModal').click(); });
-
-  document.getElementById('r-media').addEventListener('change', (e) => {
-    const preview = document.getElementById('mediaPreview');
-    preview.innerHTML = '';
-    Array.from(e.target.files).forEach(file => {
-      const tag = document.createElement('span');
-      tag.className = 'text-xs bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-300';
-      tag.textContent = file.name;
-      preview.appendChild(tag);
-    });
-  });
-
+  const loginScreen = document.getElementById('loginScreen');
+  const adminScreen = document.getElementById('adminScreen');
   const toastEl = document.getElementById('toast');
+
   function showToast(msg, isError) {
     toastEl.textContent = msg;
     toastEl.className = 'toast show' + (isError ? ' error' : '');
     setTimeout(() => { toastEl.classList.remove('show'); }, 3200);
   }
 
+  // ---------- Staff Roles (Super Admin / Developer / Finance / Legal) ----------
+  // Which dashboard tabs each role gets. Edit these arrays to change who
+  // sees what — the tab bar and every data load below all key off this.
+  const ROLE_VIEWS = {
+    super_admin: ['listings', 'signups', 'quickfix', 'finance', 'staff'],
+    developer:   ['listings', 'signups', 'quickfix', 'finance'],
+    finance:     ['finance'],
+    legal:       ['signups'],
+  };
+  const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal' };
+  const VIEW_LABELS = { listings: 'Listings', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', finance: 'Finance', staff: 'Staff Access' };
+  let currentStaffRole = null;
+  let currentView = null;
+
+  // Looks up this signed-in user's staff role. Matches by auth_user_id
+  // first; falls back to matching by email (covers a row a Super Admin
+  // added before this person ever logged in), then "claims" that row by
+  // writing the auth_user_id back — same pattern as the app's own Landlord
+  // claim flow. Returns null if this account has no staff role at all.
+  async function resolveStaffRole(user) {
+    const byId = await sb.from('staff_users').select('*').eq('auth_user_id', user.id).maybeSingle();
+    if (byId.data) return byId.data;
+
+    const byEmail = await sb.from('staff_users').select('*').eq('email', user.email).maybeSingle();
+    if (byEmail.data) {
+      if (!byEmail.data.auth_user_id) {
+        await sb.from('staff_users').update({ auth_user_id: user.id }).eq('id', byEmail.data.id);
+      }
+      return byEmail.data;
+    }
+    return null;
+  }
+
+  function renderRoleTabs() {
+    const tabsEl = document.getElementById('roleTabs');
+    const views = ROLE_VIEWS[currentStaffRole] || [];
+    tabsEl.classList.toggle('hidden', views.length <= 1);
+    tabsEl.innerHTML = views.map(v =>
+      `<button type="button" class="role-tab-btn chip ${v === currentView ? 'active' : ''}" data-view="${v}">${VIEW_LABELS[v]}</button>`
+    ).join('');
+  }
+
+  function switchView(view) {
+    currentView = view;
+    document.querySelectorAll('main [data-view]').forEach(el => {
+      el.classList.toggle('hidden', el.dataset.view !== view);
+    });
+    renderRoleTabs();
+    if (view === 'listings') loadExistingListings();
+    if (view === 'signups') loadSignups();
+    if (view === 'quickfix') loadQuickFixRequests();
+    if (view === 'finance') loadFinanceList();
+    if (view === 'staff') loadStaffUsers();
+  }
+
+  document.getElementById('roleTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.role-tab-btn');
+    if (btn) switchView(btn.dataset.view);
+  });
+
+  // ---------- Auth ----------
+  async function checkSession() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      loginScreen.classList.remove('hidden');
+      adminScreen.classList.add('hidden');
+      return;
+    }
+    const staffRow = await resolveStaffRole(session.user);
+    if (!staffRow) {
+      const errEl = document.getElementById('loginError');
+      errEl.textContent = 'This account has no staff role assigned — ask a Super Admin to add you in Staff Access.';
+      errEl.classList.remove('hidden');
+      await sb.auth.signOut();
+      loginScreen.classList.remove('hidden');
+      adminScreen.classList.add('hidden');
+      return;
+    }
+    currentStaffRole = staffRow.role;
+    loginScreen.classList.add('hidden');
+    adminScreen.classList.remove('hidden');
+    document.getElementById('loggedInAs').textContent = `${session.user.email} · ${ROLE_LABELS_STAFF[currentStaffRole] || currentStaffRole}`;
+    switchView(ROLE_VIEWS[currentStaffRole][0]);
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginError');
+    errEl.classList.add('hidden');
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      errEl.textContent = error.message;
+      errEl.classList.remove('hidden');
+      return;
+    }
+    checkSession();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    currentStaffRole = null;
+    currentView = null;
+    checkSession();
+  });
+
+  checkSession();
+
+  // ---------- Feature chips ----------
+  const PRESET_FEATURES = ["Fully Furnished", "Personal Kitchen", "Smart TV", "DSTV", "Air Conditioner", "WiFi", "Standing Fan", "Water Heater", "Clean Water", "Standby Generator", "Housekeeping", "Serviced Court"];
+  let selectedFeatures = [];
+  const featureChipsEl = document.getElementById('featureChips');
+
+  function renderFeatureChips() {
+    featureChipsEl.innerHTML = PRESET_FEATURES.map(f =>
+      `<span class="chip ${selectedFeatures.includes(f) ? 'active' : ''}" data-feature="${f}">${f}</span>`
+    ).join('') + selectedFeatures.filter(f => !PRESET_FEATURES.includes(f)).map(f =>
+      `<span class="chip active" data-feature="${f}">${f} ✕</span>`
+    ).join('');
+  }
+  renderFeatureChips();
+
+  featureChipsEl.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const f = chip.dataset.feature;
+    if (selectedFeatures.includes(f)) {
+      selectedFeatures = selectedFeatures.filter(x => x !== f);
+    } else {
+      selectedFeatures.push(f);
+    }
+    renderFeatureChips();
+  });
+
+  function commitCustomFeature() {
+    const input = document.getElementById('f-feature-custom');
+    const val = input.value.trim();
+    if (val && !selectedFeatures.includes(val)) {
+      selectedFeatures.push(val);
+      renderFeatureChips();
+    }
+    input.value = '';
+  }
+
+  document.getElementById('f-feature-custom').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitCustomFeature();
+    }
+  });
+  // Also commit on blur — if someone types a feature and taps "Publish
+  // Listing" (or taps elsewhere) without pressing Enter first, the text
+  // would otherwise just sit in the box and silently never get saved.
+  document.getElementById('f-feature-custom').addEventListener('blur', commitCustomFeature);
+
+  // ---------- Category-dependent fields ----------
+  // Elements tagged data-cat="rent" / "land" / "short-let" (space-
+  // separated if shared by more than one, e.g. Bedrooms) show/hide
+  // together based on the selected Category — Flexible Rent, Land &
+  // Property, or Short Let each show only the fields relevant to them.
+  const categorySelect = document.getElementById('f-category');
+  function updateCategoryFields() {
+    const cat = categorySelect.value;
+    document.querySelectorAll('[data-cat]').forEach(el => {
+      const groups = el.dataset.cat.split(' ');
+      el.style.display = groups.includes(cat) ? '' : 'none';
+    });
+
+    // Agent Fee / Legal Fee only ever apply to Flexible Rent. If those
+    // lines were auto-generated earlier (while Rent was selected) and the
+    // category has since changed, strip them out so Short Let / Land
+    // listings don't inherit stale rent-only fee text.
+    const feesBox = document.getElementById('f-fees');
+    if (cat !== 'rent' && feesBox) {
+      feesBox.value = feesBox.value.split('\n')
+        .filter(l => !/^Agent Fee:|^Legal Fee:/.test(l.trim()))
+        .join('\n');
+    }
+
+    // Fees box label/placeholder: only Flexible Rent auto-calculates
+    // Agent/Legal Fee. Short Let and Land use it purely for freeform
+    // extra fees, since Caution Fee / Service Charge have their own inputs.
+    const feesLabel = document.getElementById('f-fees-label');
+    if (feesLabel && feesBox) {
+      if (cat === 'rent') {
+        feesLabel.textContent = 'Fees (one per line — auto-calculated, or edit/replace freely)';
+        feesBox.placeholder = 'Agent Fee: 10% (₦180,000)\nLegal Fee: 5% (₦90,000)';
+      } else {
+        feesLabel.textContent = 'Additional Fees (one per line, optional)';
+        feesBox.placeholder = 'e.g. Weekend Surcharge: ₦10,000';
+      }
+    }
+  }
+  categorySelect.addEventListener('change', updateCategoryFields);
+  updateCategoryFields();
+
+  // ---------- Land & Property: Bedrooms/Bathrooms/Toilets/Parking only ----------
+  // show up when the selected Property Type is an actual house (Duplex,
+  // Bungalow, etc.) rather than raw, empty Land (Plot).
+  const landTypeSelect = document.getElementById('f-land-type');
+  function updateLandHouseFields() {
+    const isHouse = categorySelect.value === 'land' && landTypeSelect.value !== 'Land (Plot)';
+    document.querySelectorAll('[data-land-house]').forEach(el => { el.style.display = isHouse ? '' : 'none'; });
+  }
+  landTypeSelect.addEventListener('change', updateLandHouseFields);
+  categorySelect.addEventListener('change', updateLandHouseFields);
+  updateLandHouseFields();
+
+  // ---------- Monthly / Annual rent — fully independent manual fields ----------
+  // Monthly Rent and Annual Rent never auto-calculate each other or anything
+  // else. The fee preview only suggests Agent/Legal fees off the Annual
+  // Rent field itself — it no longer multiplies Monthly Rent by 12.
+  const rentInput = document.getElementById('f-rent');
+  const annualRentInput = document.getElementById('f-rent-annual');
+  const feesTextarea = document.getElementById('f-fees');
+  const feePreview = document.getElementById('feePreview');
+
+  function refreshFeePreviewDisplay() {
+    const monthly = parseInt(rentInput.value, 10) || 0;
+    const annual = parseInt(annualRentInput.value, 10) || 0;
+    if (!monthly && !annual) { feePreview.classList.add('hidden'); return { monthly, annual }; }
+    feePreview.classList.remove('hidden');
+    document.getElementById('fp-monthly').textContent = monthly ? '₦' + monthly.toLocaleString('en-US') : '—';
+    if (!annual) {
+      document.getElementById('fp-annual').textContent = '—';
+      document.getElementById('fp-agent').textContent = '—';
+      document.getElementById('fp-legal').textContent = '—';
+      return { monthly, annual };
+    }
+    const agent = Math.round(annual * 0.10);
+    const legal = Math.round(annual * 0.05);
+    document.getElementById('fp-annual').textContent = '₦' + annual.toLocaleString('en-US');
+    document.getElementById('fp-agent').textContent = '₦' + agent.toLocaleString('en-US');
+    document.getElementById('fp-legal').textContent = '₦' + legal.toLocaleString('en-US');
+    return { monthly, annual, agent, legal };
+  }
+
+  // Only called from the rent input listeners below (a person actually
+  // typing) — never during edit-population, so it never clobbers fees
+  // that were already saved on a listing.
+  function updateFeePreview() {
+    const { annual, agent, legal } = refreshFeePreviewDisplay();
+    if (!annual) return;
+    // Only auto-fills the fees box when an Annual Rent is actually entered —
+    // feel free to hand-edit the box afterwards for a custom fee.
+    feesTextarea.value = `Agent Fee: 10% (₦${agent.toLocaleString('en-US')})\nLegal Fee: 5% (₦${legal.toLocaleString('en-US')})`;
+  }
+
+  rentInput.addEventListener('input', updateFeePreview);
+  annualRentInput.addEventListener('input', updateFeePreview);
+
+  // ---------- Photo/video previews ----------
+  document.getElementById('f-images').addEventListener('change', (e) => {
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    Array.from(e.target.files).forEach(file => {
+      const url = URL.createObjectURL(file);
+      const img = document.createElement('img');
+      img.src = url;
+      img.className = 'w-16 h-16 object-cover rounded-lg border border-slate-700';
+      preview.appendChild(img);
+    });
+  });
+  document.getElementById('f-video').addEventListener('change', (e) => {
+    document.getElementById('videoFileName').textContent = e.target.files[0] ? e.target.files[0].name : '';
+  });
+
+  // ---------- Upload helper ----------
   async function uploadFile(file) {
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '-');
     const path = `${Date.now()}-${safeName}`;
@@ -354,62 +684,719 @@
     return data.publicUrl;
   }
 
-  function maybeSendEmail(payload) {
-    if (!EMAILJS_PUBLIC_KEY || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID) return;
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
-    script.onload = () => {
-      emailjs.init(EMAILJS_PUBLIC_KEY);
-      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, payload).catch(err => console.warn('Email notify failed', err));
-    };
-    document.head.appendChild(script);
-  }
+  // ---------- Publish ----------
+  document.getElementById('submitBtn').addEventListener('click', async () => {
+    const submitBtn = document.getElementById('submitBtn');
+    const progressEl = document.getElementById('uploadProgress');
+    const category = document.getElementById('f-category').value;
+    const title = document.getElementById('f-title').value.trim();
+    const location = document.getElementById('f-location').value.trim();
+    const color = document.getElementById('f-color').value;
+    const imageFiles = Array.from(document.getElementById('f-images').files);
+    const videoFile = document.getElementById('f-video').files[0];
 
-  document.getElementById('submitRequestBtn').addEventListener('click', async () => {
-    const btn = document.getElementById('submitRequestBtn');
-    const progress = document.getElementById('submitProgress');
-    const name = document.getElementById('r-name').value.trim();
-    const phone = document.getElementById('r-phone').value.trim();
-    const email = document.getElementById('r-email').value.trim();
-    const address = document.getElementById('r-address').value.trim();
-    const description = document.getElementById('r-description').value.trim();
-    const files = Array.from(document.getElementById('r-media').files);
+    // ---- Category-specific fields: rent string, beds, annual_rent, fees ----
+    let beds = 0;
+    let rentDisplay = '';
+    let annualRentNum = null;
+    let fees = [];
 
-    if (!name || !phone || !address) {
-      showToast('Please fill in your name, phone, and address at minimum.', true);
-      return;
+    if (category === 'land') {
+      const salePrice = parseInt(document.getElementById('f-sale-price').value, 10);
+      if (!title || !location || !salePrice) {
+        showToast('Please fill in Title, Location, and Sale Price at minimum.', true);
+        return;
+      }
+      rentDisplay = `₦${salePrice.toLocaleString('en-US')}`;
+      const landType = document.getElementById('f-land-type').value;
+      const isHouse = landType !== 'Land (Plot)';
+      if (isHouse) {
+        beds = parseInt(document.getElementById('f-land-beds').value, 10) || 0;
+        const bathrooms = parseInt(document.getElementById('f-land-bathrooms').value, 10);
+        const toilets = parseInt(document.getElementById('f-land-toilets').value, 10);
+        const parking = parseInt(document.getElementById('f-land-parking').value, 10);
+        if (bathrooms) fees.push(`Bathrooms: ${bathrooms}`);
+        if (toilets) fees.push(`Toilets: ${toilets}`);
+        if (parking) fees.push(`Parking Spaces: ${parking}`);
+      }
+      fees.push(`Property Type: ${landType}`);
+      const plotSize = document.getElementById('f-plot-size').value.trim();
+      const titleDoc = document.getElementById('f-title-doc').value;
+      const landUse = document.getElementById('f-land-use').value;
+      if (plotSize) fees.push(`Plot Size: ${plotSize}`);
+      if (titleDoc) fees.push(`Title Document: ${titleDoc}`);
+      if (landUse) fees.push(`Land Use: ${landUse}`);
+      fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
+        .filter(l => !/^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Plot Size:|^Title Document:|^Land Use:/.test(l)));
+    } else if (category === 'short-let') {
+      beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
+      const nightly = parseInt(document.getElementById('f-nightly-rate').value, 10);
+      if (!title || !location || !nightly) {
+        showToast('Please fill in Title, Location, and Nightly Rate at minimum.', true);
+        return;
+      }
+      rentDisplay = `₦${nightly.toLocaleString('en-US')}/night`;
+      const minStay = parseInt(document.getElementById('f-min-stay').value, 10);
+      const cleaningFee = parseInt(document.getElementById('f-cleaning-fee').value, 10);
+      const cautionFee = parseInt(document.getElementById('f-caution-fee').value, 10);
+      const serviceCharge = parseInt(document.getElementById('f-service-charge').value, 10);
+      const serviceChargeFreq = document.getElementById('f-service-charge-freq').value;
+      if (minStay) fees.push(`Minimum Stay: ${minStay} night${minStay > 1 ? 's' : ''}`);
+      if (cleaningFee) fees.push(`Cleaning Fee: ₦${cleaningFee.toLocaleString('en-US')}`);
+      if (cautionFee) fees.push(`Caution Fee: ₦${cautionFee.toLocaleString('en-US')}`);
+      if (serviceCharge) fees.push(`Service Charge: ₦${serviceCharge.toLocaleString('en-US')}/${serviceChargeFreq}`);
+      fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
+        .filter(l => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:/.test(l)));
+    } else {
+      // Flexible Rent — unchanged behavior
+      beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
+      const rentNum = parseInt(rentInput.value, 10);
+      if (!title || !location || !rentNum) {
+        showToast('Please fill in Title, Location, and Rent at minimum.', true);
+        return;
+      }
+      rentDisplay = `₦${rentNum.toLocaleString('en-US')}/mo`;
+      annualRentNum = parseInt(annualRentInput.value, 10) || null;
+      const cautionFee = parseInt(document.getElementById('f-caution-fee').value, 10);
+      const serviceCharge = parseInt(document.getElementById('f-service-charge').value, 10);
+      const serviceChargeFreq = document.getElementById('f-service-charge-freq').value;
+      fees = feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+      if (cautionFee) fees.push(`Caution Fee: ₦${cautionFee.toLocaleString('en-US')}`);
+      if (serviceCharge) fees.push(`Service Charge: ₦${serviceCharge.toLocaleString('en-US')}/${serviceChargeFreq}`);
     }
 
-    btn.disabled = true;
-    progress.classList.remove('hidden');
+    submitBtn.disabled = true;
+    progressEl.classList.remove('hidden');
     try {
-      const mediaUrls = [];
-      for (let i = 0; i < files.length; i++) {
-        progress.textContent = `Uploading file ${i + 1} of ${files.length}...`;
-        mediaUrls.push(await uploadFile(files[i]));
+      let imageUrls = editingId ? editingExistingImages : [];
+      if (imageFiles.length) {
+        imageUrls = [];
+        progressEl.textContent = 'Uploading photos...';
+        for (let i = 0; i < imageFiles.length; i++) {
+          progressEl.textContent = `Uploading photo ${i + 1} of ${imageFiles.length}...`;
+          imageUrls.push(await uploadFile(imageFiles[i]));
+        }
       }
 
-      progress.textContent = 'Sending request...';
-      const { error } = await sb.from('service_requests').insert({
-        service: currentService, name, phone, email, address, description,
-        media: mediaUrls, status: 'new',
-      });
-      if (error) throw error;
+      let videoUrl = editingId ? editingExistingVideo : null;
+      if (videoFile) {
+        progressEl.textContent = 'Uploading video (this can take a minute)...';
+        videoUrl = await uploadFile(videoFile);
+      }
 
-      maybeSendEmail({ service: currentService, name, phone, email, address, description });
+      commitCustomFeature();
+      const payload = {
+        title, location, beds,
+        category,
+        rent: rentDisplay,
+        annual_rent: annualRentNum,
+        fees, color,
+        features: selectedFeatures,
+        images: imageUrls,
+        video: videoUrl,
+        status: document.getElementById('f-status').value,
+      };
 
-      showToast("Request sent! We'll reach out shortly.");
-      document.getElementById('closeRequestModal').click();
-      ['r-name', 'r-phone', 'r-email', 'r-address', 'r-description'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('r-media').value = '';
-      document.getElementById('mediaPreview').innerHTML = '';
+      if (editingId) {
+        progressEl.textContent = 'Saving changes...';
+        const { data: updatedRows, error } = await sb.from('listings').update(payload).eq('id', editingId).select();
+        if (error) throw error;
+        if (!updatedRows || !updatedRows.length) {
+          throw new Error('No listing was actually updated on the server — this is almost always a missing UPDATE permission (RLS policy) on the "listings" table in Supabase, not a bug in the form. Your edits were not lost; try again after fixing the policy.');
+        }
+        showToast('Listing updated! Your changes are live.');
+        exitEditMode();
+      } else {
+        progressEl.textContent = 'Saving listing...';
+        const { error } = await sb.from('listings').insert(payload);
+        if (error) throw error;
+        showToast('Listing published! It\'s live on your site now.');
+        resetForm();
+      }
+      loadExistingListings();
     } catch (err) {
       console.error(err);
       showToast('Something went wrong: ' + err.message, true);
     } finally {
-      btn.disabled = false;
-      progress.classList.add('hidden');
+      submitBtn.disabled = false;
+      progressEl.classList.add('hidden');
     }
+  });
+
+  function resetForm() {
+    ['f-title', 'f-location', 'f-rent', 'f-rent-annual', 'f-caution-fee', 'f-service-charge',
+     'f-plot-size', 'f-sale-price', 'f-nightly-rate', 'f-min-stay', 'f-cleaning-fee',
+     'f-land-bathrooms', 'f-land-toilets', 'f-land-parking'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-category').value = 'rent';
+    document.getElementById('f-title-doc').value = '';
+    document.getElementById('f-land-use').value = 'Residential';
+    document.getElementById('f-land-type').value = 'Land (Plot)';
+    document.getElementById('f-land-beds').value = 1;
+    document.getElementById('f-service-charge-freq').value = 'yr';
+    document.getElementById('f-beds').value = 1;
+    document.getElementById('f-status').value = 'available';
+    feesTextarea.value = '';
+    document.getElementById('feePreview').classList.add('hidden');
+    document.getElementById('f-images').value = '';
+    document.getElementById('f-video').value = '';
+    document.getElementById('imagePreview').innerHTML = '';
+    document.getElementById('videoFileName').textContent = '';
+    selectedFeatures = [];
+    renderFeatureChips();
+    updateCategoryFields();
+    updateLandHouseFields();
+  }
+
+  // ---------- Existing listings + edit + delete ----------
+  let listingsCache = [];
+  let editingId = null;
+  let editingExistingImages = [];
+  let editingExistingVideo = null;
+
+  async function loadExistingListings() {
+    const listEl = document.getElementById('existingList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
+    const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false });
+    if (error) {
+      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load listings: ${error.message}</p>`;
+      return;
+    }
+    listingsCache = data || [];
+    document.getElementById('listingsCount').textContent = data.length;
+    if (!data.length) {
+      listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet — add your first one above.</p>';
+      return;
+    }
+    listEl.innerHTML = data.map(l => {
+      const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' };
+      const categoryLabel = categoryLabels[l.category] || categoryLabels.rent;
+      return `
+      <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-white truncate">
+            ${l.title}
+            <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${categoryLabel}</span>
+            ${l.status && l.status !== 'available' ? `<span class="ml-2 text-[10px] font-mono font-bold uppercase ${l.status === 'sold' ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-amber-400 bg-amber-500/10 border-amber-500/30'} border px-1.5 py-0.5 rounded">${l.status}</span>` : ''}
+          </p>
+          <p class="text-xs text-slate-500 truncate">${l.location} · ${l.rent}</p>
+        </div>
+        <select class="status-select shrink-0 !w-auto !py-1.5 !text-xs" data-id="${l.id}">
+          <option value="available" ${(!l.status || l.status === 'available') ? 'selected' : ''}>Available</option>
+          <option value="sold" ${l.status === 'sold' ? 'selected' : ''}>Sold</option>
+          <option value="rented" ${l.status === 'rented' ? 'selected' : ''}>Rented</option>
+        </select>
+        <button class="edit-listing-btn btn-secondary shrink-0" data-id="${l.id}">Edit</button>
+        <button class="delete-listing-btn btn-secondary shrink-0" data-id="${l.id}" data-title="${l.title}">Delete</button>
+      </div>
+    `;
+    }).join('');
+  }
+
+  document.getElementById('listingsToggle').addEventListener('click', () => {
+    const listEl = document.getElementById('existingList');
+    const chevron = document.getElementById('listingsChevron');
+    const isOpen = !listEl.classList.contains('hidden');
+    listEl.classList.toggle('hidden', isOpen);
+    chevron.textContent = isOpen ? '▸' : '▾';
+  });
+
+  document.getElementById('existingList').addEventListener('change', async (e) => {
+    const select = e.target.closest('.status-select');
+    if (!select) return;
+    select.disabled = true;
+    const { data: updatedRows, error } = await sb.from('listings').update({ status: select.value }).eq('id', select.dataset.id).select();
+    select.disabled = false;
+    if (error) { showToast('Could not update status: ' + error.message, true); return; }
+    if (!updatedRows || !updatedRows.length) { showToast('Status was not saved — check the UPDATE permission (RLS policy) on "listings" in Supabase.', true); return; }
+    showToast('Status updated.');
+    loadExistingListings();
+  });
+
+  document.getElementById('existingList').addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('.edit-listing-btn');
+    if (editBtn) {
+      const listing = listingsCache.find(l => String(l.id) === String(editBtn.dataset.id));
+      if (listing) startEdit(listing);
+      return;
+    }
+    const btn = e.target.closest('.delete-listing-btn');
+    if (!btn) return;
+    if (!confirm(`Delete "${btn.dataset.title}"? This can't be undone.`)) return;
+    btn.disabled = true;
+    btn.textContent = 'Deleting...';
+    const { error } = await sb.from('listings').delete().eq('id', btn.dataset.id);
+    if (error) {
+      showToast('Could not delete: ' + error.message, true);
+      btn.disabled = false;
+      btn.textContent = 'Delete';
+      return;
+    }
+    showToast('Listing deleted.');
+    loadExistingListings();
+  });
+
+  // ---------- Edit an existing listing ----------
+  function startEdit(listing) {
+    editingId = listing.id;
+    editingExistingImages = Array.isArray(listing.images) ? listing.images : [];
+    editingExistingVideo = listing.video || null;
+
+    const category = listing.category || 'rent';
+    document.getElementById('f-title').value = listing.title || '';
+    document.getElementById('f-location').value = listing.location || '';
+    document.getElementById('f-category').value = category;
+    document.getElementById('f-beds').value = listing.beds || 0;
+    const rentDigits = parseInt(String(listing.rent || '').replace(/[^0-9]/g, ''), 10);
+    const allFees = listing.fees || [];
+
+    // Clear every category-specific field first, then populate only
+    // the ones relevant to this listing's category.
+    ['f-rent', 'f-rent-annual', 'f-caution-fee', 'f-service-charge',
+     'f-plot-size', 'f-sale-price', 'f-nightly-rate', 'f-min-stay', 'f-cleaning-fee'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-title-doc').value = '';
+    document.getElementById('f-land-use').value = 'Residential';
+    document.getElementById('f-service-charge-freq').value = 'yr';
+
+    let remainingFees = allFees;
+    if (category === 'land') {
+      document.getElementById('f-sale-price').value = rentDigits || '';
+      const plotSize = allFees.find(f => f.startsWith('Plot Size:'));
+      const titleDoc = allFees.find(f => f.startsWith('Title Document:'));
+      const landUse = allFees.find(f => f.startsWith('Land Use:'));
+      const propType = allFees.find(f => f.startsWith('Property Type:'));
+      const bathrooms = allFees.find(f => f.startsWith('Bathrooms:'));
+      const toilets = allFees.find(f => f.startsWith('Toilets:'));
+      const parking = allFees.find(f => f.startsWith('Parking Spaces:'));
+      if (plotSize) document.getElementById('f-plot-size').value = plotSize.replace('Plot Size:', '').trim();
+      if (titleDoc) document.getElementById('f-title-doc').value = titleDoc.replace('Title Document:', '').trim();
+      if (landUse) document.getElementById('f-land-use').value = landUse.replace('Land Use:', '').trim();
+      document.getElementById('f-land-type').value = propType ? propType.replace('Property Type:', '').trim() : 'Land (Plot)';
+      document.getElementById('f-land-beds').value = listing.beds || 1;
+      if (bathrooms) document.getElementById('f-land-bathrooms').value = parseInt(bathrooms.replace(/[^0-9]/g, ''), 10) || '';
+      if (toilets) document.getElementById('f-land-toilets').value = parseInt(toilets.replace(/[^0-9]/g, ''), 10) || '';
+      if (parking) document.getElementById('f-land-parking').value = parseInt(parking.replace(/[^0-9]/g, ''), 10) || '';
+      remainingFees = allFees.filter(f => !/^Plot Size:|^Title Document:|^Land Use:|^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:/.test(f));
+    } else if (category === 'short-let') {
+      document.getElementById('f-nightly-rate').value = rentDigits || '';
+      const minStay = allFees.find(f => f.startsWith('Minimum Stay:'));
+      const cleaningFee = allFees.find(f => f.startsWith('Cleaning Fee:'));
+      const cautionFeeLine = allFees.find(f => f.startsWith('Caution Fee:'));
+      const serviceChargeLine = allFees.find(f => f.startsWith('Service Charge:'));
+      if (minStay) document.getElementById('f-min-stay').value = parseInt(minStay.replace(/[^0-9]/g, ''), 10) || '';
+      if (cleaningFee) document.getElementById('f-cleaning-fee').value = parseInt(cleaningFee.replace(/[^0-9]/g, ''), 10) || '';
+      if (cautionFeeLine) document.getElementById('f-caution-fee').value = parseInt(cautionFeeLine.replace(/[^0-9]/g, ''), 10) || '';
+      if (serviceChargeLine) {
+        document.getElementById('f-service-charge').value = parseInt(serviceChargeLine.replace(/[^0-9]/g, ''), 10) || '';
+        document.getElementById('f-service-charge-freq').value = /\/mo$/.test(serviceChargeLine.trim()) ? 'mo' : 'yr';
+      }
+      remainingFees = allFees.filter(f => !/^Minimum Stay:|^Cleaning Fee:|^Caution Fee:|^Service Charge:/.test(f));
+    } else {
+      rentInput.value = rentDigits || '';
+      annualRentInput.value = listing.annual_rent || '';
+    }
+    feesTextarea.value = remainingFees.join('\n');
+    refreshFeePreviewDisplay();
+    updateCategoryFields();
+    updateLandHouseFields();
+
+    document.getElementById('f-color').value = listing.color || 'from-brand-500/30 to-slate-900';
+    document.getElementById('f-status').value = listing.status || 'available';
+    selectedFeatures = Array.isArray(listing.features) ? [...listing.features] : [];
+    renderFeatureChips();
+
+    document.getElementById('f-images').value = '';
+    document.getElementById('f-video').value = '';
+    const imagePreview = document.getElementById('imagePreview');
+    imagePreview.innerHTML = editingExistingImages.map(url =>
+      `<img src="${url}" class="w-16 h-16 object-cover rounded-lg border border-slate-700">`
+    ).join('');
+    document.getElementById('imagePreviewNote').classList.toggle('hidden', !editingExistingImages.length);
+    document.getElementById('videoFileName').textContent = editingExistingVideo ? 'Current video is attached — choose a new file above only to replace it.' : '';
+
+    document.getElementById('formHeading').textContent = 'Edit Listing';
+    document.getElementById('formSubtext').textContent = `Editing "${listing.title}" — make your changes and save.`;
+    document.getElementById('submitBtn').textContent = 'Save Changes';
+    document.getElementById('cancelEditBtn').classList.remove('hidden');
+    document.getElementById('listingFormSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function exitEditMode() {
+    editingId = null;
+    editingExistingImages = [];
+    editingExistingVideo = null;
+    document.getElementById('formHeading').textContent = 'Add a New Listing';
+    document.getElementById('formSubtext').textContent = 'This publishes straight to your live site — no code, no re-upload.';
+    document.getElementById('submitBtn').textContent = 'Publish Listing';
+    document.getElementById('cancelEditBtn').classList.add('hidden');
+    document.getElementById('imagePreviewNote').classList.add('hidden');
+    resetForm();
+  }
+
+  document.getElementById('cancelEditBtn').addEventListener('click', exitEditMode);
+
+  // ---------- Sign-Ups & Onboarding (KYC + Legal Agreement) ----------
+  // Reads the "signups" table that signup.html writes to: login email,
+  // linked Supabase Auth user_id, KYC checklist, signed agreement PDF,
+  // and role. The login itself already works via Supabase Auth from the
+  // moment of sign-up (same project the app will use) — nothing extra
+  // to "activate" here. We deliberately never store or show the raw
+  // password; "Send Password Reset Email" is the safe way to help
+  // someone who's forgotten theirs.
+  let signupRoleFilter = 'all';
+  let signupsCache = [];
+  const ROLE_LABELS = { tenant: 'Tenant', landlord: 'Landlord', agent: 'Agent', diaspora: 'Diaspora / Canada' };
+
+  async function loadSignups() {
+    const listEl = document.getElementById('signupsList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
+    const { data, error } = await sb.from('signups').select('*').order('created_at', { ascending: false });
+    if (error) {
+      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load sign-ups: ${error.message}</p>`;
+      return;
+    }
+    signupsCache = data || [];
+    renderSignups();
+  }
+
+  async function renderSignups() {
+    const listEl = document.getElementById('signupsList');
+    const filtered = signupRoleFilter === 'all' ? signupsCache : signupsCache.filter(s => s.role === signupRoleFilter);
+    if (!filtered.length) {
+      listEl.innerHTML = '<p class="text-sm text-slate-500">No sign-ups yet.</p>';
+      return;
+    }
+    const signupsWithAgreementUrls = await Promise.all(
+  filtered.map(async (s) => {
+    if (!s.agreement_pdf_url) {
+      return { ...s, agreementSignedUrl: null };
+    }
+
+    const { data, error } = await sb.storage
+      .from('onboarding-media')
+      .createSignedUrl(s.agreement_pdf_url, 300);
+
+    if (error) {
+      console.error('Could not create agreement signed URL:', error);
+      return { ...s, agreementSignedUrl: null };
+    }
+
+    return { ...s, agreementSignedUrl: data.signedUrl };
+  })
+);
+
+listEl.innerHTML = signupsWithAgreementUrls.map(s => {
+      const kycItems = Array.isArray(s.kyc_items) ? s.kyc_items : [];
+      const kycHtml = kycItems.length
+        ? kycItems.map(k => `<li>${k}</li>`).join('')
+        : '<li class="list-none text-slate-500">No KYC checklist recorded.</li>';
+      const kycDocs = Array.isArray(s.kyc_documents) ? s.kyc_documents : [];
+      const kycDocsHtml = kycDocs.length
+        ? kycDocs.map(d => `<a href="${d.url}" target="_blank" rel="noopener noreferrer" class="btn-secondary !py-1.5 !text-xs">${d.label}</a>`).join('')
+        : '<span class="text-xs text-slate-600">No documents uploaded.</span>';
+      const loginBadge = s.user_id
+        ? `<span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded">✓ Login Active</span>`
+        : `<span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded">⚠ No Login Linked</span>`;
+      const guarantorHtml = s.guarantor_name
+        ? `<p class="text-xs text-slate-500 mt-2">Guarantor: ${s.guarantor_name} (${s.guarantor_relationship || 'n/a'}) — ${s.guarantor_phone || ''}</p>`
+        : '';
+      const incomeHtml = s.income_range
+        ? `<p class="text-xs text-slate-500 mt-1">Monthly Income Range: <span class="text-slate-300">${s.income_range}</span></p>`
+        : '';
+      return `
+      <div class="signup-card bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <div class="signup-header flex items-start justify-between gap-3 flex-wrap px-4 py-4 cursor-pointer select-none">
+          <div class="min-w-0 flex items-start gap-2">
+            <span class="signup-chevron text-slate-500 text-xs mt-1 shrink-0 transition-transform">▸</span>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-white">
+                ${s.full_name || '—'}
+                <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${ROLE_LABELS[s.role] || s.role}</span>
+              </p>
+              <p class="text-xs text-slate-500 mt-0.5">${s.phone || ''}${s.occupation ? ' · ' + s.occupation : ''}</p>
+              ${guarantorHtml}
+            ${incomeHtml}
+            </div>
+          </div>
+          <select class="signup-status-select shrink-0 !w-auto !py-1.5 !text-xs" data-id="${s.id}">
+            <option value="pending" ${(!s.status || s.status === 'pending') ? 'selected' : ''}>Pending Review</option>
+            <option value="verified" ${s.status === 'verified' ? 'selected' : ''}>Verified</option>
+            <option value="rejected" ${s.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+          </select>
+        </div>
+
+        <div class="signup-details hidden px-4 pb-4">
+          <div class="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2.5">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="min-w-0">
+                <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-0.5">App Login</p>
+                <p class="text-sm text-white font-mono truncate">${s.email || '—'}</p>
+              </div>
+              ${loginBadge}
+            </div>
+            ${s.user_id ? `<p class="text-[10px] text-slate-600 font-mono mt-1.5 truncate">Auth User ID: ${s.user_id}</p>` : ''}
+            <p class="text-[11px] text-slate-500 mt-1.5 leading-snug">This email + the password they set at sign-up already work as a real login on the same Supabase project — no re-onboarding needed once the app is live. Passwords are securely hashed and are never stored or visible here; use "Send Password Reset" if someone needs to reset theirs.</p>
+            ${s.email ? `<button class="reset-password-btn btn-secondary !py-1 !px-2.5 !text-[11px] mt-2" data-email="${s.email}">Send Password Reset Email</button>` : ''}
+          </div>
+
+          <div class="mt-3">
+            <p class="text-xs font-semibold text-slate-400 mb-1">KYC checklist</p>
+            <ul class="text-xs text-slate-300 list-disc list-inside space-y-0.5">${kycHtml}</ul>
+          </div>
+
+          <div class="mt-3">
+            <p class="text-xs font-semibold text-slate-400 mb-1">Uploaded KYC documents / selfie</p>
+            <div class="flex flex-wrap gap-2">${kycDocsHtml}</div>
+          </div>
+${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel="noopener noreferrer" class="btn-secondary !py-1.5 !text-xs">View Signed Agreement (PDF)</a>` : '<span class="text-xs text-slate-600">No signed agreement on file.</span>'}
+          <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-800">
+            }
+            <button class="delete-signup-btn btn-secondary !py-1.5 !text-xs" data-id="${s.id}" data-name="${s.full_name || 'this sign-up'}">Delete</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('signupRoleChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('#signupRoleChips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    signupRoleFilter = chip.dataset.role;
+    renderSignups();
+  });
+
+  document.getElementById('signupsList').addEventListener('click', (e) => {
+    if (e.target.closest('select') || e.target.closest('button') || e.target.closest('a')) return;
+    const header = e.target.closest('.signup-header');
+    if (!header) return;
+    const card = header.closest('.signup-card');
+    const details = card.querySelector('.signup-details');
+    const chevron = header.querySelector('.signup-chevron');
+    const isOpen = !details.classList.contains('hidden');
+    details.classList.toggle('hidden', isOpen);
+    chevron.textContent = isOpen ? '▸' : '▾';
+  });
+
+  document.getElementById('signupsList').addEventListener('change', async (e) => {
+    const select = e.target.closest('.signup-status-select');
+    if (!select) return;
+    select.disabled = true;
+    const { error } = await sb.from('signups').update({ status: select.value }).eq('id', select.dataset.id);
+    select.disabled = false;
+    if (error) { showToast('Could not update status: ' + error.message, true); return; }
+    showToast('Status updated.');
+    loadSignups();
+  });
+
+  document.getElementById('signupsList').addEventListener('click', async (e) => {
+    const resetBtn = e.target.closest('.reset-password-btn');
+    if (resetBtn) {
+      resetBtn.disabled = true;
+      const originalText = resetBtn.textContent;
+      resetBtn.textContent = 'Sending...';
+      const { error } = await sb.auth.resetPasswordForEmail(resetBtn.dataset.email);
+      resetBtn.disabled = false;
+      resetBtn.textContent = originalText;
+      if (error) { showToast('Could not send reset email: ' + error.message, true); return; }
+      showToast(`Password reset email sent to ${resetBtn.dataset.email}.`);
+      return;
+    }
+    const btn = e.target.closest('.delete-signup-btn');
+    if (!btn) return;
+    if (!confirm(`Delete the sign-up record for "${btn.dataset.name}"? This can't be undone.`)) return;
+    btn.disabled = true;
+    btn.textContent = 'Deleting...';
+    const { error } = await sb.from('signups').delete().eq('id', btn.dataset.id);
+    if (error) {
+      showToast('Could not delete: ' + error.message, true);
+      btn.disabled = false;
+      btn.textContent = 'Delete';
+      return;
+    }
+    showToast('Sign-up record deleted.');
+    loadSignups();
+  });
+
+  // ---------- Finance (read-only pricing overview) ----------
+  // Reuses the "listings" table admin.html already manages — no new
+  // table needed for this much. Wallet/payout/escrow data from the app
+  // isn't in Supabase yet (see the banner in the Finance panel).
+  async function loadFinanceList() {
+    const listEl = document.getElementById('financeList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
+    const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false });
+    if (error) {
+      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load listings: ${error.message}</p>`;
+      return;
+    }
+    if (!data.length) {
+      listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet.</p>';
+      return;
+    }
+    const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' };
+    listEl.innerHTML = data.map(l => `
+      <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-white truncate">
+            ${l.title}
+            <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${categoryLabels[l.category] || categoryLabels.rent}</span>
+          </p>
+          <p class="text-xs text-slate-500 truncate">${l.location}</p>
+        </div>
+        <p class="text-sm font-mono text-white shrink-0">${l.rent}</p>
+      </div>
+    `).join('');
+  }
+
+  // ---------- Quick Fix service requests ----------
+  let quickFixCache = [];
+
+  function escapeQuickFix(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[ch]);
+  }
+
+  async function loadQuickFixRequests() {
+    const listEl = document.getElementById('quickFixList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading Quick Fix requests...</p>';
+    const { data, error } = await sb.from('service_requests').select('*').order('created_at', { ascending: false });
+    if (error) {
+      listEl.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load Quick Fix requests: ${escapeQuickFix(error.message)}<p class="text-xs mt-2 text-red-200/80">If this is a permission error, the service_requests table's Row Level Security policies must allow authorised staff to read requests.</p></div>`;
+      return;
+    }
+    quickFixCache = data || [];
+    renderQuickFixRequests();
+  }
+
+  function renderQuickFixRequests() {
+    const listEl = document.getElementById('quickFixList');
+    if (!quickFixCache.length) {
+      listEl.innerHTML = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">No Quick Fix requests found.</div>';
+      return;
+    }
+    listEl.innerHTML = quickFixCache.map(r => {
+      const photos = Array.isArray(r.media) ? r.media : (typeof r.media === 'string' ? (() => { try { const v = JSON.parse(r.media); return Array.isArray(v) ? v : []; } catch { return []; } })() : []);
+      const photoHtml = photos.map((url, i) => {
+        const safeUrl = escapeQuickFix(url);
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg border border-slate-700 p-2 text-xs text-purple-300 hover:bg-white/5"><img src="${safeUrl}" alt="Request attachment ${i + 1}" loading="lazy" class="w-16 h-16 object-cover rounded-md">Open photo ${i + 1} ↗</a>`;
+      }).join('');
+      const created = r.created_at ? new Date(r.created_at).toLocaleString() : 'Date unavailable';
+      const status = ['new', 'in progress', 'completed', 'cancelled'].includes(String(r.status || '').toLowerCase()) ? String(r.status).toLowerCase() : 'new';
+      return `<article class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div><div class="flex flex-wrap items-center gap-2"><h3 class="font-semibold text-white">${escapeQuickFix(r.service || 'Service request')}</h3><span class="text-xs rounded-full border border-slate-700 px-2 py-1 text-slate-300">${escapeQuickFix(status)}</span></div><p class="text-xs text-slate-500 mt-1">Submitted ${escapeQuickFix(created)}</p></div>
+          <label class="text-xs text-slate-400">Status<select class="quickfix-status mt-1 !py-2" data-id="${escapeQuickFix(r.id)}"><option value="new" ${status === 'new' ? 'selected' : ''}>New</option><option value="in progress" ${status === 'in progress' ? 'selected' : ''}>In progress</option><option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option><option value="cancelled" ${status === 'cancelled' ? 'selected' : ''}>Cancelled</option></select></label>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3 mt-4 text-sm">
+          <p><span class="text-slate-500">Customer:</span> <span class="text-slate-200">${escapeQuickFix(r.name || '—')}</span></p>
+          <p><span class="text-slate-500">Phone:</span> <a class="text-purple-300 hover:underline" href="tel:${escapeQuickFix(r.phone || '')}">${escapeQuickFix(r.phone || '—')}</a></p>
+          <p><span class="text-slate-500">Email:</span> ${r.email ? `<a class="text-purple-300 hover:underline break-all" href="mailto:${escapeQuickFix(r.email)}">${escapeQuickFix(r.email)}</a>` : '<span class="text-slate-300">—</span>'}</p>
+          <p><span class="text-slate-500">Address:</span> <span class="text-slate-200">${escapeQuickFix(r.address || '—')}</span></p>
+        </div>
+        <div class="mt-3"><p class="text-xs text-slate-500 mb-1">Description</p><p class="text-sm text-slate-200 whitespace-pre-wrap break-words">${escapeQuickFix(r.description || 'No description provided.')}</p></div>
+        ${photoHtml ? `<div class="mt-4"><p class="text-xs text-slate-500 mb-2">Attachments</p><div class="flex flex-wrap gap-2">${photoHtml}</div></div>` : ''}
+      </article>`;
+    }).join('');
+  }
+
+  document.getElementById('refreshQuickFixBtn').addEventListener('click', loadQuickFixRequests);
+  document.getElementById('quickFixList').addEventListener('change', async (e) => {
+    const select = e.target.closest('.quickfix-status');
+    if (!select) return;
+    const previous = quickFixCache.find(r => r.id === select.dataset.id)?.status || 'new';
+    select.disabled = true;
+    const { error } = await sb.from('service_requests').update({ status: select.value }).eq('id', select.dataset.id);
+    select.disabled = false;
+    if (error) {
+      showToast('Could not update request status: ' + error.message, true);
+      select.value = previous;
+      return;
+    }
+    showToast('Quick Fix request status updated.');
+    loadQuickFixRequests();
+  });
+
+  // ---------- Staff Access (Super Admin only) ----------
+  let staffCache = [];
+  async function loadStaffUsers() {
+    const listEl = document.getElementById('staffList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
+    const { data, error } = await sb.from('staff_users').select('*').order('created_at', { ascending: false });
+    if (error) {
+      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load staff: ${error.message}</p>`;
+      return;
+    }
+    staffCache = data || [];
+    renderStaffList();
+  }
+
+  function renderStaffList() {
+    const listEl = document.getElementById('staffList');
+    if (!staffCache.length) {
+      listEl.innerHTML = '<p class="text-sm text-slate-500">No staff added yet.</p>';
+      return;
+    }
+    listEl.innerHTML = staffCache.map(s => `
+      <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 flex-wrap">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-white truncate">${s.full_name || s.email}</p>
+          <p class="text-xs text-slate-500 truncate">${s.email}${s.auth_user_id ? '' : ' · not logged in yet'}</p>
+        </div>
+        <select class="staff-role-select shrink-0 !w-auto !py-1.5 !text-xs" data-id="${s.id}">
+          <option value="developer" ${s.role === 'developer' ? 'selected' : ''}>Developer</option>
+          <option value="finance" ${s.role === 'finance' ? 'selected' : ''}>Finance</option>
+          <option value="legal" ${s.role === 'legal' ? 'selected' : ''}>Legal</option>
+          <option value="super_admin" ${s.role === 'super_admin' ? 'selected' : ''}>Super Admin</option>
+        </select>
+        <button class="delete-staff-btn btn-secondary shrink-0" data-id="${s.id}" data-email="${s.email}">Remove</button>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('staff-add-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('staff-add-btn');
+    const email = document.getElementById('staff-new-email').value.trim();
+    const fullName = document.getElementById('staff-new-name').value.trim();
+    const role = document.getElementById('staff-new-role').value;
+    if (!email) { showToast('Enter an email address.', true); return; }
+    btn.disabled = true;
+    const { error } = await sb.from('staff_users').insert({ email, full_name: fullName || null, role });
+    btn.disabled = false;
+    if (error) { showToast('Could not add staff: ' + error.message, true); return; }
+    showToast(`${email} added as ${ROLE_LABELS_STAFF[role]}. They'll get this role once they log in with that email.`);
+    document.getElementById('staff-new-email').value = '';
+    document.getElementById('staff-new-name').value = '';
+    loadStaffUsers();
+  });
+
+  document.getElementById('staffList').addEventListener('change', async (e) => {
+    const select = e.target.closest('.staff-role-select');
+    if (!select) return;
+    select.disabled = true;
+    const { error } = await sb.from('staff_users').update({ role: select.value }).eq('id', select.dataset.id);
+    select.disabled = false;
+    if (error) { showToast('Could not update role: ' + error.message, true); return; }
+    showToast('Role updated.');
+    loadStaffUsers();
+  });
+
+  document.getElementById('staffList').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.delete-staff-btn');
+    if (!btn) return;
+    if (!confirm(`Remove admin access for "${btn.dataset.email}"? This can't be undone.`)) return;
+    btn.disabled = true;
+    btn.textContent = 'Removing...';
+    const { error } = await sb.from('staff_users').delete().eq('id', btn.dataset.id);
+    if (error) {
+      showToast('Could not remove: ' + error.message, true);
+      btn.disabled = false;
+      btn.textContent = 'Remove';
+      return;
+    }
+    showToast('Staff access removed.');
+    loadStaffUsers();
   });
 </script>
 
