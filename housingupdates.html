@@ -100,11 +100,14 @@
   <article>
 
     <!-- Hero: background slideshow with the headline on top, like the landing page.
-         To use photos of Ajah, Ikorodu, Badagry and other areas, replace or add .hero-slide lines below. -->
+         Photos: Unsplash (free licence, no attribution needed): plain land, documents, a person on open land. To use your own photos of Ajah, Ikorodu, Badagry etc., replace the image links (data-bg / background-image) below. -->
     <section id="hero" class="relative overflow-hidden text-white pt-28 pb-10 sm:pt-32 sm:pb-14" style="background:#0F172A;">
       <div class="hero-slideshow" aria-hidden="true">
-        <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1559833064-6f4573ec1ac9?fm=jpg&amp;q=80&amp;w=2000&amp;auto=format&amp;fit=crop');"></div>
-        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1618828665347-d870c38c95c7?fm=jpg&amp;q=80&amp;w=2000&amp;auto=format&amp;fit=crop');"></div>
+        <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1592584858004-95b1f5ec3cff?fm=jpg&amp;q=70&amp;w=1600&amp;auto=format&amp;fit=crop');background-position:center;"></div> <!-- Plain land under open sky -->
+        <div class="hero-slide" data-bg="https://images.unsplash.com/photo-1759429255330-51145b170dad?fm=jpg&amp;q=70&amp;w=1600&amp;auto=format&amp;fit=crop" style="background-position:center;"></div> <!-- Property documents, house drawings and keys -->
+        <div class="hero-slide" data-bg="https://images.unsplash.com/photo-1629016943072-0bf0ce4e2608?fm=jpg&amp;q=70&amp;w=1600&amp;auto=format&amp;fit=crop" style="background-position:center;"></div> <!-- Open plot of green land -->
+        <div class="hero-slide" data-bg="https://images.unsplash.com/photo-1639432042101-daf7ed2a0efa?fm=jpg&amp;q=70&amp;w=1600&amp;auto=format&amp;fit=crop" style="background-position:center 22%;"></div> <!-- Man standing on open land -->
+        <div class="hero-slide" data-bg="https://images.unsplash.com/photo-1652878530627-cc6f063e3947?fm=jpg&amp;q=70&amp;w=1600&amp;auto=format&amp;fit=crop" style="background-position:center;"></div> <!-- Real estate paper close-up -->
         <div class="hero-overlay"></div>
       </div>
 
@@ -292,6 +295,15 @@
 <script>
   (function () {
     var slides = document.querySelectorAll('#hero .hero-slide');
+    if (!slides.length) return;
+    // Load the other photos only after the page is ready (saves data on mobile).
+    function loadRest() {
+      for (var k = 0; k < slides.length; k++) {
+        var bg = slides[k].getAttribute('data-bg');
+        if (bg) { slides[k].style.backgroundImage = "url('" + bg + "')"; slides[k].removeAttribute('data-bg'); }
+      }
+    }
+    if (document.readyState === 'complete') loadRest(); else window.addEventListener('load', loadRest);
     if (slides.length < 2 || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
     var i = 0;
     setInterval(function () { slides[i].classList.remove('active'); i = (i + 1) % slides.length; slides[i].classList.add('active'); }, 5000);
