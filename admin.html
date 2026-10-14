@@ -132,7 +132,7 @@
         <details class="mb-4 text-xs text-slate-400 bg-slate-950/40 border border-slate-800 rounded-xl p-4">
           <summary class="cursor-pointer text-slate-300 font-medium">Which columns does each listing type use?</summary>
           <div class="mt-3 space-y-2 leading-relaxed">
-            <p><b class="text-slate-200">All types:</b> category (rent, commercial, land, short-let), title, location, price, features and images (separate with | ), video, status (available, sold, rented), extraFees (one per | ).</p>
+            <p><b class="text-slate-200">All types:</b> category (rent, commercial, land, short-let), title, location, price, features and images (separate with | ), video, status (available, sold, rented, booked, unavailable — unavailable hides the listing from the public site), extraFees (one per | ).</p>
             <p><b class="text-slate-200">Rent (residential):</b> price is the monthly rent, plus beds, cautionFee, serviceCharge and serviceChargeFreq (yearly or monthly). Agent Fee (10%) and Legal Fee (5%) are worked out for you from the yearly rent, exactly like the form. Fill annualRent only if the yearly rent is not monthly x 12.</p>
             <p><b class="text-slate-200">Commercial:</b> category commercial (or rent with usage = commercial). price is the annual rent. Uses commercialType (Shop, Office, Warehouse, Event Hall), sqm, parking, power (Public grid, Grid + generator, Grid + inverter/solar, Generator only), cautionFee, serviceCharge.</p>
             <p><b class="text-slate-200">Land &amp; Property:</b> price is the outright price. propertyType (Land (Plot), Duplex, Bungalow, Detached House, Semi-Detached Duplex, Terrace, Block of Flats, Mansion). Houses also use beds, bathrooms, toilets, parking. Installments: installmentPrice, installmentMonths (3, 6, 9, 12, 18, 24), initialDeposit. Sold in parts: soldInParts (yes/no), halfPlot (yes/no), partSize, plotsAvailable, halfPlotPrice and halfPlotInstallment (left empty they default to half). Costs: legalFeePercent (5 or 10, worked out for you), surveyPlan, redCopy. Also plotSize, titleDocument (C of O, Governor's Consent, Excision, Gazette, Registered Survey, Deed of Assignment) and landUse (Residential, Commercial, Mixed-Use, Agricultural).</p>
@@ -469,7 +469,12 @@
           <option value="available">Available</option>
           <option value="sold">Sold</option>
           <option value="rented">Rented</option>
+          <option value="booked">Booked</option>
+          <option value="unavailable">Unavailable (hidden from public site)</option>
+          <option value="pending">Pending review (not public)</option>
+          <option value="closed">Closed / declined (not public)</option>
         </select>
+        <p class="text-[11px] text-slate-500 mt-1">Sold / Rented / Booked keep the listing visible with a label. Unavailable, Pending and Closed remove it from the public live feed completely. Prototype submissions start as Pending until you approve them.</p>
       </div>
 
       <div class="field">
@@ -1205,9 +1210,9 @@
         exitEditMode();
       } else {
         progressEl.textContent = 'Saving listing...';
-        const { error } = await sb.from('listings').insert(payload);
+        const { error } = await sb.from('listings').insert({ ...payload, source: 'web_manual' });
         if (error) throw error;
-        showToast('Listing published! It\'s live on your site now.');
+        showToast(payload.status === 'unavailable' ? 'Listing saved but hidden from the public site.' : 'Listing published! It\'s live on your site now.');
         resetForm();
       }
       loadExistingListings();
@@ -1252,45 +1257,168 @@
   let editingExistingImages = [];
   let editingExistingVideo = null;
 
+  // ---- Listing source + media helpers ----
+  // `source` is stamped at creation time and never changed afterwards:
+  //   web_manual    -> created from this admin panel (single form or bulk import)
+  //   app_prototype -> submitted from the mobile prototype app
+  // Rows created before the `source` column existed default to web_manual.
+  const SOURCE_META = {
+    web_manual:    { label: 'Web Manual',    cls: 'text-sky-300 bg-sky-500/10 border-sky-500/30' },
+    app_prototype: { label: 'App Prototype', cls: 'text-fuchsia-300 bg-fuchsia-500/10 border-fuchsia-500/30' }
+  };
+  const STATUS_META = {
+    sold:        { label: 'Sold',               cls: 'text-red-400 bg-red-500/10 border-red-500/30' },
+    rented:      { label: 'Rented',             cls: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
+    booked:      { label: 'Booked',             cls: 'text-violet-300 bg-violet-500/10 border-violet-500/30' },
+    unavailable: { label: 'Hidden from site',   cls: 'text-slate-300 bg-slate-500/20 border-slate-500/40' },
+    pending:     { label: 'Pending review',     cls: 'text-yellow-300 bg-yellow-500/10 border-yellow-500/40' },
+    closed:      { label: 'Closed (declined)',  cls: 'text-rose-300 bg-rose-500/10 border-rose-500/40' }
+  };
+  let listingSourceFilter = 'all';
+  const sourceOf = l => (l && l.source === 'app_prototype') ? 'app_prototype' : 'web_manual';
+  const escHtml = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Only real, public http(s) URLs can ever render on the live site. blob:/data:/file: URLs are
+  // device-local and are the reason media looked "uploaded" here but never showed on the feed.
+  const isRenderableUrl = u => typeof u === 'string' && /^https?:\/\//i.test(u);
+  const renderableImages = l => (Array.isArray(l && l.images) ? l.images : []).filter(isRenderableUrl);
+
   async function loadExistingListings() {
     const listEl = document.getElementById('existingList');
     listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
     const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false });
     if (error) {
-      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load listings: ${error.message}</p>`;
+      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load listings: ${escHtml(error.message)}</p>`;
       return;
     }
     listingsCache = data || [];
-    document.getElementById('listingsCount').textContent = data.length;
-    if (!data.length) {
+    renderExistingListings();
+  }
+
+  function renderExistingListings() {
+    const listEl = document.getElementById('existingList');
+    const all = listingsCache;
+    document.getElementById('listingsCount').textContent = all.length;
+    if (!all.length) {
       listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet — add your first one above.</p>';
       return;
     }
-    listEl.innerHTML = data.map(l => {
+    const counts = { all: all.length, web_manual: 0, app_prototype: 0, pending: 0 };
+    all.forEach(l => { counts[sourceOf(l)]++; if (l.status === 'pending') counts.pending++; });
+    const filterBtn = (key, label) => `<button type="button" data-source-filter="${key}" class="source-filter-btn text-xs px-3 py-1.5 rounded-lg border ${listingSourceFilter === key ? 'bg-brand-500/20 border-brand-500/50 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'}">${label} <span class="font-mono opacity-70">${counts[key]}</span></button>`;
+    const filterBar = `<div class="flex flex-wrap gap-2 mb-1">${filterBtn('all', 'All')}${filterBtn('web_manual', 'Web Manual')}${filterBtn('app_prototype', 'App Prototype')}${filterBtn('pending', 'Needs review')}</div>`;
+    const rows = all.filter(l => listingSourceFilter === 'all' || (listingSourceFilter === 'pending' ? l.status === 'pending' : sourceOf(l) === listingSourceFilter));
+
+    const rowsHtml = rows.map(l => {
       const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' };
       let categoryLabel = categoryLabels[l.category] || categoryLabels.rent;
       // Commercial space is stored as a rent listing flagged "Usage: Commercial" — show it as Commercial.
       if ((!l.category || l.category === 'rent') && (l.fees || []).some(f => String(f).trim() === 'Usage: Commercial')) categoryLabel = 'Commercial';
-      return `
-      <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-white truncate">
-            ${l.title}
-            <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${categoryLabel}</span>
-            ${l.status && l.status !== 'available' ? `<span class="ml-2 text-[10px] font-mono font-bold uppercase ${l.status === 'sold' ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-amber-400 bg-amber-500/10 border-amber-500/30'} border px-1.5 py-0.5 rounded">${l.status}</span>` : ''}
-          </p>
-          <p class="text-xs text-slate-500 truncate">${l.location} · ${l.rent}</p>
-        </div>
+      const src = SOURCE_META[sourceOf(l)];
+      const st = STATUS_META[l.status];
+      const imgs = renderableImages(l);
+      const badImgs = (Array.isArray(l.images) ? l.images.length : 0) - imgs.length;
+      const hasVideo = isRenderableUrl(l.video);
+      const mediaNote = (!imgs.length && !hasVideo)
+        ? `<span class="text-amber-400">No renderable media${badImgs ? ' (' + badImgs + ' device-only file' + (badImgs > 1 ? 's' : '') + ' skipped)' : ''}</span>`
+        : `<span>${imgs.length} photo${imgs.length === 1 ? '' : 's'}${hasVideo ? ' · video' : ''}${badImgs ? ' · <span class="text-amber-400">' + badImgs + ' broken</span>' : ''}</span>`;
+      const thumb = imgs.length
+        ? `<img src="${escHtml(imgs[0])}" alt="" loading="lazy" class="w-12 h-12 rounded-lg object-cover shrink-0 bg-slate-800" onerror="this.style.visibility='hidden'">`
+        : `<div class="w-12 h-12 rounded-lg shrink-0 bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-500">No img</div>`;
+      const hidden = ['unavailable', 'closed'].includes(l.status);
+      const isPending = l.status === 'pending', isClosed = l.status === 'closed';
+      const isProto = sourceOf(l) === 'app_prototype';
+      const reviewBtn = isProto ? `<button class="review-docs-btn btn-secondary shrink-0" data-id="${l.id}">Host &amp; docs</button>` : '';
+      let controls;
+      if (isPending) {
+        controls = `${reviewBtn}
+          <button class="approve-listing-btn shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/30" data-id="${l.id}">Approve</button>
+          <button class="decline-listing-btn shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/50 text-rose-300 hover:bg-rose-500/30" data-id="${l.id}" data-title="${escHtml(l.title)}">Decline</button>`;
+      } else if (isClosed) {
+        controls = `${reviewBtn}
+          <button class="reopen-listing-btn btn-secondary shrink-0" data-id="${l.id}">Re-review</button>
+          <button class="delete-listing-btn btn-secondary shrink-0" data-id="${l.id}" data-title="${escHtml(l.title)}">Delete</button>`;
+      } else {
+        controls = `${reviewBtn}
         <select class="status-select shrink-0 !w-auto !py-1.5 !text-xs" data-id="${l.id}">
           <option value="available" ${(!l.status || l.status === 'available') ? 'selected' : ''}>Available</option>
           <option value="sold" ${l.status === 'sold' ? 'selected' : ''}>Sold</option>
           <option value="rented" ${l.status === 'rented' ? 'selected' : ''}>Rented</option>
+          <option value="booked" ${l.status === 'booked' ? 'selected' : ''}>Booked</option>
+          <option value="unavailable" ${l.status === 'unavailable' ? 'selected' : ''}>Unavailable (hide)</option>
         </select>
         <button class="edit-listing-btn btn-secondary shrink-0" data-id="${l.id}">Edit</button>
-        <button class="delete-listing-btn btn-secondary shrink-0" data-id="${l.id}" data-title="${l.title}">Delete</button>
+        <button class="delete-listing-btn btn-secondary shrink-0" data-id="${l.id}" data-title="${escHtml(l.title)}">Delete</button>`;
+      }
+      return `
+      <div class="listing-row bg-slate-900 border border-slate-800 rounded-xl ${hidden ? 'opacity-70' : ''} ${isPending ? 'ring-1 ring-yellow-500/40' : ''}" data-row-id="${l.id}">
+      <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+        ${thumb}
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-white truncate">
+            ${escHtml(l.title)}
+            <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${categoryLabel}</span>
+            <span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded ${src.cls}" title="Where this listing was created">${src.label}</span>
+            ${st ? `<span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded ${st.cls}">${st.label}</span>` : ''}
+          </p>
+          <p class="text-xs text-slate-500 truncate">${escHtml(l.location)} · ${escHtml(l.rent)}</p>
+          <p class="text-[11px] text-slate-500 truncate">${mediaNote}</p>
+          ${l.review_note ? `<p class="text-[11px] text-rose-300 truncate">Reason: ${escHtml(l.review_note)}</p>` : ''}
+        </div>
+        ${controls}
+      </div>
+      <div class="review-panel hidden border-t border-slate-800 px-4 py-3 text-xs text-slate-400" data-panel-id="${l.id}"></div>
       </div>
     `;
     }).join('');
+    listEl.innerHTML = filterBar + (rowsHtml || '<p class="text-sm text-slate-500">No listings from this source yet.</p>');
+  }
+
+
+  // ---- Review workflow: prototype submissions arrive as "pending". Approve = goes live
+  // (status available). Decline = "closed" (hidden from everyone, can then be deleted). ----
+  async function reviewListing(id, action, note) {
+    const patch = action === 'approve' ? { status: 'available', review_note: null, reviewed_at: new Date().toISOString() }
+                : action === 'decline' ? { status: 'closed', review_note: note || null, reviewed_at: new Date().toISOString() }
+                : { status: 'pending', review_note: null, reviewed_at: null };
+    const { data: rows, error } = await sb.from('listings').update(patch).eq('id', id).select();
+    if (error) { showToast('Could not update review: ' + error.message, true); return; }
+    if (!rows || !rows.length) { showToast('Not saved — check the UPDATE permission (RLS policy) on "listings".', true); return; }
+    showToast(action === 'approve' ? 'Approved — the listing is now live.' : action === 'decline' ? 'Declined — marked Closed. You can delete it now.' : 'Moved back to pending review.');
+    loadExistingListings();
+  }
+
+  async function toggleReviewPanel(id) {
+    const panel = document.querySelector(`.review-panel[data-panel-id="${id}"]`);
+    if (!panel) return;
+    if (!panel.classList.contains('hidden')) { panel.classList.add('hidden'); return; }
+    panel.classList.remove('hidden');
+    panel.innerHTML = 'Loading host and documents...';
+    const { data, error } = await sb.from('listing_submissions').select('*').eq('listing_id', id).maybeSingle();
+    if (error) { panel.innerHTML = `<span class="text-red-400">Could not load: ${escHtml(error.message)}</span>`; return; }
+    if (!data) { panel.innerHTML = 'No host details were submitted with this listing.'; return; }
+    const h = data.host || {};
+    const line = (k, v) => v ? `<p><span class="text-slate-500">${k}:</span> <span class="text-slate-200">${escHtml(v)}</span></p>` : '';
+    const docs = Array.isArray(data.documents) ? data.documents : [];
+    const docLinks = [];
+    for (const d of docs) {
+      let url = null;
+      if (d.path) {
+        const r = await sb.storage.from('listing-docs').createSignedUrl(d.path, 3600);
+        url = r && r.data && r.data.signedUrl;
+      }
+      docLinks.push(url
+        ? `<a href="${escHtml(url)}" target="_blank" rel="noopener" class="text-brand-300 underline">${escHtml(d.label || d.name || 'Document')}</a> <span class="text-slate-500">(${escHtml(d.name || '')})</span>`
+        : `<span class="text-amber-400">${escHtml(d.label || d.name || 'Document')} — file not available (not uploaded)</span>`);
+    }
+    panel.innerHTML = `
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div><p class="text-slate-300 font-semibold mb-1">Host</p>
+          ${line('Name', h.name)}${line('Role', h.role)}${line('Phone', h.phone)}${line('Email', h.email)}${line('Agent', h.agentName)}${line('Submitted', data.created_at ? new Date(data.created_at).toLocaleString() : '')}
+        </div>
+        <div><p class="text-slate-300 font-semibold mb-1">Title / ownership documents</p>
+          ${docLinks.length ? docLinks.map(x => `<p>${x}</p>`).join('') : '<p class="text-amber-400">No documents attached — review before approving.</p>'}
+        </div>
+      </div>`;
   }
 
   document.getElementById('listingsToggle').addEventListener('click', () => {
@@ -1309,11 +1437,26 @@
     select.disabled = false;
     if (error) { showToast('Could not update status: ' + error.message, true); return; }
     if (!updatedRows || !updatedRows.length) { showToast('Status was not saved — check the UPDATE permission (RLS policy) on "listings" in Supabase.', true); return; }
-    showToast('Status updated.');
+    showToast(select.value === 'unavailable' ? 'Listing hidden — it no longer appears on the public site.' : 'Status updated.');
     loadExistingListings();
   });
 
   document.getElementById('existingList').addEventListener('click', async (e) => {
+    const filterBtn = e.target.closest('.source-filter-btn');
+    if (filterBtn) { listingSourceFilter = filterBtn.dataset.sourceFilter; renderExistingListings(); return; }
+    const approveBtn = e.target.closest('.approve-listing-btn');
+    if (approveBtn) { await reviewListing(approveBtn.dataset.id, 'approve'); return; }
+    const declineBtn = e.target.closest('.decline-listing-btn');
+    if (declineBtn) {
+      const reason = prompt(`Decline "${declineBtn.dataset.title}"?\n\nOptional reason (the host will see this):`, '');
+      if (reason === null) return;
+      await reviewListing(declineBtn.dataset.id, 'decline', reason.trim());
+      return;
+    }
+    const reopenBtn = e.target.closest('.reopen-listing-btn');
+    if (reopenBtn) { await reviewListing(reopenBtn.dataset.id, 'reopen'); return; }
+    const docsBtn = e.target.closest('.review-docs-btn');
+    if (docsBtn) { await toggleReviewPanel(docsBtn.dataset.id); return; }
     const editBtn = e.target.closest('.edit-listing-btn');
     if (editBtn) {
       const listing = listingsCache.find(l => String(l.id) === String(editBtn.dataset.id));
@@ -1339,7 +1482,7 @@
   // ---------- Edit an existing listing ----------
   function startEdit(listing) {
     editingId = listing.id;
-    editingExistingImages = Array.isArray(listing.images) ? listing.images : [];
+    editingExistingImages = (Array.isArray(listing.images) ? listing.images : []).filter(isRenderableUrl); // drop device-only blob:/data: links so a re-save can't re-publish dead media
     editingExistingVideo = listing.video || null;
 
     const category = listing.category || 'rent';
@@ -1586,634 +1729,4 @@ listEl.innerHTML = signupsWithSignedUrls.map(s => {
         ? kycItems.map(k => `<li>${k}</li>`).join('')
         : '<li class="list-none text-slate-500">No KYC checklist recorded.</li>';
       const kycDocs = Array.isArray(s.kycDocuments) ? s.kycDocuments : [];
-const kycDocsHtml = kycDocs.length
-  ? kycDocs.map(d =>
-      d.signedUrl
-        ? `<a href="${d.signedUrl}" target="_blank" rel="noopener noreferrer" class="btn-secondary !py-1.5 !text-xs">${d.label}</a>`
-        : `<span class="text-xs text-red-400">${d.label} (unavailable)</span>`
-    ).join('')
-  : '<span class="text-xs text-slate-600">No documents uploaded.</span>';
-      const loginBadge = s.user_id
-        ? `<span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded">✓ Login Active</span>`
-        : `<span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded">⚠ No Login Linked</span>`;
-      const guarantorHtml = s.guarantor_name
-        ? `<p class="text-xs text-slate-500 mt-2">Guarantor: ${s.guarantor_name} (${s.guarantor_relationship || 'n/a'}) — ${s.guarantor_phone || ''}</p>`
-        : '';
-      const incomeHtml = s.income_range
-        ? `<p class="text-xs text-slate-500 mt-1">Monthly Income Range: <span class="text-slate-300">${s.income_range}</span></p>`
-        : '';
-      return `
-      <div class="signup-card bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-        <div class="signup-header flex items-start justify-between gap-3 flex-wrap px-4 py-4 cursor-pointer select-none">
-          <div class="min-w-0 flex items-start gap-2">
-            <span class="signup-chevron text-slate-500 text-xs mt-1 shrink-0 transition-transform">▸</span>
-            <div class="min-w-0">
-              <p class="text-sm font-semibold text-white">
-                ${s.full_name || '—'}
-                <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${ROLE_LABELS[s.role] || s.role}</span>
-              </p>
-              <p class="text-xs text-slate-500 mt-0.5">${s.phone || ''}${s.occupation ? ' · ' + s.occupation : ''}</p>
-              ${selectedHtml(s.user_id)}
-              ${guarantorHtml}
-            ${incomeHtml}
-            </div>
-          </div>
-          <select class="signup-status-select shrink-0 !w-auto !py-1.5 !text-xs" data-id="${s.id}">
-            <option value="pending" ${(!s.status || s.status === 'pending') ? 'selected' : ''}>Pending Review</option>
-            <option value="verified" ${s.status === 'verified' ? 'selected' : ''}>Verified</option>
-            <option value="rejected" ${s.status === 'rejected' ? 'selected' : ''}>Rejected</option>
-          </select>
-        </div>
-
-        <div class="signup-details hidden px-4 pb-4">
-          <div class="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2.5">
-            <div class="flex items-center justify-between gap-2 flex-wrap">
-              <div class="min-w-0">
-                <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-0.5">App Login</p>
-                <p class="text-sm text-white font-mono truncate">${s.email || '—'}</p>
-              </div>
-              ${loginBadge}
-            </div>
-            ${s.user_id ? `<p class="text-[10px] text-slate-600 font-mono mt-1.5 truncate">Auth User ID: ${s.user_id}</p>` : ''}
-            <p class="text-[11px] text-slate-500 mt-1.5 leading-snug">This email + the password they set at sign-up already work as a real login on the same Supabase project — no re-onboarding needed once the app is live. Passwords are securely hashed and are never stored or visible here; use "Send Password Reset" if someone needs to reset theirs.</p>
-            ${s.email ? `<button class="reset-password-btn btn-secondary !py-1 !px-2.5 !text-[11px] mt-2" data-email="${s.email}">Send Password Reset Email</button>` : ''}
-          </div>
-
-          <div class="mt-3">
-            <p class="text-xs font-semibold text-slate-400 mb-1">KYC checklist</p>
-            <ul class="text-xs text-slate-300 list-disc list-inside space-y-0.5">${kycHtml}</ul>
-          </div>
-
-          <div class="mt-3">
-            <p class="text-xs font-semibold text-slate-400 mb-1">Uploaded KYC documents / selfie</p>
-            <div class="flex flex-wrap gap-2">${kycDocsHtml}</div>
-          </div>
-${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel="noopener noreferrer" class="btn-secondary !py-1.5 !text-xs">View Signed Agreement (PDF)</a>` : '<span class="text-xs text-slate-600">No signed agreement on file.</span>'}
-          <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-800">
-            }
-            <button class="delete-signup-btn btn-secondary !py-1.5 !text-xs" data-id="${s.id}" data-name="${s.full_name || 'this sign-up'}">Delete</button>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  document.getElementById('signupRoleChips').addEventListener('click', (e) => {
-    const chip = e.target.closest('.chip');
-    if (!chip) return;
-    document.querySelectorAll('#signupRoleChips .chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    signupRoleFilter = chip.dataset.role;
-    renderSignups();
-  });
-
-  document.getElementById('signupsList').addEventListener('click', (e) => {
-    if (e.target.closest('select') || e.target.closest('button') || e.target.closest('a')) return;
-    const header = e.target.closest('.signup-header');
-    if (!header) return;
-    const card = header.closest('.signup-card');
-    const details = card.querySelector('.signup-details');
-    const chevron = header.querySelector('.signup-chevron');
-    const isOpen = !details.classList.contains('hidden');
-    details.classList.toggle('hidden', isOpen);
-    chevron.textContent = isOpen ? '▸' : '▾';
-  });
-
-  document.getElementById('signupsList').addEventListener('change', async (e) => {
-    const select = e.target.closest('.signup-status-select');
-    if (!select) return;
-    select.disabled = true;
-    const { error } = await sb.from('signups').update({ status: select.value }).eq('id', select.dataset.id);
-    select.disabled = false;
-    if (error) { showToast('Could not update status: ' + error.message, true); return; }
-    showToast('Status updated.');
-    loadSignups();
-  });
-
-  document.getElementById('signupsList').addEventListener('click', async (e) => {
-    const resetBtn = e.target.closest('.reset-password-btn');
-    if (resetBtn) {
-      resetBtn.disabled = true;
-      const originalText = resetBtn.textContent;
-      resetBtn.textContent = 'Sending...';
-      const { error } = await sb.auth.resetPasswordForEmail(resetBtn.dataset.email);
-      resetBtn.disabled = false;
-      resetBtn.textContent = originalText;
-      if (error) { showToast('Could not send reset email: ' + error.message, true); return; }
-      showToast(`Password reset email sent to ${resetBtn.dataset.email}.`);
-      return;
-    }
-    const btn = e.target.closest('.delete-signup-btn');
-    if (!btn) return;
-    if (!confirm(`Delete the sign-up record for "${btn.dataset.name}"? This can't be undone.`)) return;
-    btn.disabled = true;
-    btn.textContent = 'Deleting...';
-    const { error } = await sb.from('signups').delete().eq('id', btn.dataset.id);
-    if (error) {
-      showToast('Could not delete: ' + error.message, true);
-      btn.disabled = false;
-      btn.textContent = 'Delete';
-      return;
-    }
-    showToast('Sign-up record deleted.');
-    loadSignups();
-  });
-
-  // ---------- Finance (read-only pricing overview) ----------
-  // Reuses the "listings" table admin.html already manages — no new
-  // table needed for this much. Wallet/payout/escrow data from the app
-  // isn't in Supabase yet (see the banner in the Finance panel).
-  async function loadFinanceList() {
-    const listEl = document.getElementById('financeList');
-    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
-    const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false });
-    if (error) {
-      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load listings: ${error.message}</p>`;
-      return;
-    }
-    if (!data.length) {
-      listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet.</p>';
-      return;
-    }
-    const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' };
-    listEl.innerHTML = data.map(l => `
-      <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-white truncate">
-            ${l.title}
-            <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${categoryLabels[l.category] || categoryLabels.rent}</span>
-          </p>
-          <p class="text-xs text-slate-500 truncate">${l.location}</p>
-        </div>
-        <p class="text-sm font-mono text-white shrink-0">${l.rent}</p>
-      </div>
-    `).join('');
-  }
-
-  // ---------- Staff Access (Super Admin only) ----------
-  let staffCache = [];
-  async function loadStaffUsers() {
-    const listEl = document.getElementById('staffList');
-    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
-    const { data, error } = await sb.from('staff_users').select('*').order('created_at', { ascending: false });
-    if (error) {
-      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load staff: ${error.message}</p>`;
-      return;
-    }
-    staffCache = data || [];
-    renderStaffList();
-  }
-
-  function renderStaffList() {
-    const listEl = document.getElementById('staffList');
-    if (!staffCache.length) {
-      listEl.innerHTML = '<p class="text-sm text-slate-500">No staff added yet.</p>';
-      return;
-    }
-    listEl.innerHTML = staffCache.map(s => `
-      <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 flex-wrap">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-white truncate">${s.full_name || s.email}</p>
-          <p class="text-xs text-slate-500 truncate">${s.email}${s.auth_user_id ? '' : ' · not logged in yet'}</p>
-        </div>
-        <select class="staff-role-select shrink-0 !w-auto !py-1.5 !text-xs" data-id="${s.id}">
-          <option value="developer" ${s.role === 'developer' ? 'selected' : ''}>Developer</option>
-          <option value="finance" ${s.role === 'finance' ? 'selected' : ''}>Finance</option>
-          <option value="legal" ${s.role === 'legal' ? 'selected' : ''}>Legal</option>
-          <option value="super_admin" ${s.role === 'super_admin' ? 'selected' : ''}>Super Admin</option>
-        </select>
-        <button class="delete-staff-btn btn-secondary shrink-0" data-id="${s.id}" data-email="${s.email}">Remove</button>
-      </div>
-    `).join('');
-  }
-
-  document.getElementById('staff-add-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('staff-add-btn');
-    const email = document.getElementById('staff-new-email').value.trim();
-    const fullName = document.getElementById('staff-new-name').value.trim();
-    const role = document.getElementById('staff-new-role').value;
-    if (!email) { showToast('Enter an email address.', true); return; }
-    btn.disabled = true;
-    const { error } = await sb.from('staff_users').insert({ email, full_name: fullName || null, role });
-    btn.disabled = false;
-    if (error) { showToast('Could not add staff: ' + error.message, true); return; }
-    showToast(`${email} added as ${ROLE_LABELS_STAFF[role]}. They'll get this role once they log in with that email.`);
-    document.getElementById('staff-new-email').value = '';
-    document.getElementById('staff-new-name').value = '';
-    loadStaffUsers();
-  });
-
-  document.getElementById('staffList').addEventListener('change', async (e) => {
-    const select = e.target.closest('.staff-role-select');
-    if (!select) return;
-    select.disabled = true;
-    const { error } = await sb.from('staff_users').update({ role: select.value }).eq('id', select.dataset.id);
-    select.disabled = false;
-    if (error) { showToast('Could not update role: ' + error.message, true); return; }
-    showToast('Role updated.');
-    loadStaffUsers();
-  });
-
-  document.getElementById('staffList').addEventListener('click', async (e) => {
-    const btn = e.target.closest('.delete-staff-btn');
-    if (!btn) return;
-    if (!confirm(`Remove admin access for "${btn.dataset.email}"? This can't be undone.`)) return;
-    btn.disabled = true;
-    btn.textContent = 'Removing...';
-    const { error } = await sb.from('staff_users').delete().eq('id', btn.dataset.id);
-    if (error) {
-      showToast('Could not remove: ' + error.message, true);
-      btn.disabled = false;
-      btn.textContent = 'Remove';
-      return;
-    }
-    showToast('Staff access removed.');
-    loadStaffUsers();
-  });
-
-  // ---------- Partners ----------
-  // Table: public.partners (see partners_migration.sql). Photos go in the
-  // same storage bucket as listing media, under partners/.
-  let partnersCache = [];
-  const PARTNER_LABELS = { agent: 'Agent', landlord: 'Landlord', partner: 'Partner' };
-  function escPt(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-  async function loadPartners() {
-    const listEl = document.getElementById('partnersList');
-    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
-    const { data, error } = await sb.from('partners').select('*').order('created_at', { ascending: true });
-    if (error) {
-      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load partners: ${escPt(error.message)} — run partners_migration.sql in Supabase first.</p>`;
-      return;
-    }
-    partnersCache = data || [];
-    renderPartners();
-  }
-
-  function renderPartners() {
-    const listEl = document.getElementById('partnersList');
-    if (!partnersCache.length) {
-      listEl.innerHTML = '<p class="text-sm text-slate-500">No partners added here yet.</p>';
-      return;
-    }
-    listEl.innerHTML = partnersCache.map(p => `
-      <div class="flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
-        <div class="w-12 h-12 rounded-lg bg-slate-950 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
-          ${p.photo_url ? `<img src="${escPt(p.photo_url)}" alt="" class="w-full h-full object-contain">` : '<span class="text-xs text-slate-600">No photo</span>'}
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-white truncate">${escPt(p.name)}</p>
-          <p class="text-xs text-slate-500">${PARTNER_LABELS[p.type] || escPt(p.type)}</p>
-        </div>
-        <button class="delete-partner-btn btn-secondary shrink-0" data-id="${escPt(p.id)}" data-name="${escPt(p.name)}">Remove</button>
-      </div>
-    `).join('');
-  }
-
-  document.getElementById('pt-add-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('pt-add-btn');
-    const name = document.getElementById('pt-name').value.trim();
-    const type = document.getElementById('pt-type').value;
-    const file = document.getElementById('pt-photo').files[0];
-    if (!name) { showToast('Enter a name.', true); return; }
-    btn.disabled = true;
-    btn.textContent = 'Saving...';
-    try {
-      let photo_url = null;
-      if (file) {
-        const small = await compressImage(file, 700, 0.85);
-        const safeName = small.name.replace(/[^a-zA-Z0-9.\-_]/g, '-');
-        const path = `partners/${Date.now()}-${safeName}`;
-        const up = await sb.storage.from(MEDIA_BUCKET).upload(path, small, { cacheControl: '31536000', upsert: false });
-        if (up.error) throw up.error;
-        photo_url = sb.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
-      }
-      const { error } = await sb.from('partners').insert({ name, type, photo_url });
-      if (error) throw error;
-      document.getElementById('pt-name').value = '';
-      document.getElementById('pt-photo').value = '';
-      showToast(`${name} added to the partnership page.`);
-      loadPartners();
-    } catch (err) {
-      showToast('Could not add partner: ' + (err.message || err), true);
-    }
-    btn.disabled = false;
-    btn.textContent = 'Add to Partnership Page';
-  });
-
-  document.getElementById('partnersList').addEventListener('click', async (e) => {
-    const btn = e.target.closest('.delete-partner-btn');
-    if (!btn) return;
-    if (!confirm(`Remove "${btn.dataset.name}" from the partnership page?`)) return;
-    btn.disabled = true;
-    const { error } = await sb.from('partners').delete().eq('id', btn.dataset.id);
-    if (error) { showToast('Could not remove: ' + error.message, true); btn.disabled = false; return; }
-    showToast('Partner removed.');
-    loadPartners();
-  });
-</script>
-
-<script>
-  // ---------- Bulk import: builds the same payload as the form, for many listings ----------
-  (function () {
-    const N = (v) => { const n = parseInt(v, 10); return isNaN(n) ? 0 : n; };
-    const money = (n) => '\u20a6' + Number(n).toLocaleString('en-US');
-    // ---- helpers that make CSV values behave exactly like the form's dropdowns / checkboxes ----
-    const norm = (v) => String(v == null ? '' : v).toLowerCase().replace(/[^a-z0-9]/g, '');
-    const YES = (v) => v === true || /^(yes|y|true|1|x|on)$/i.test(String(v == null ? '' : v).trim());
-    const given = (v) => v !== undefined && v !== null && String(v).trim() !== '';
-    const pick = (v, list, aliases, label) => {
-      const s = String(v == null ? '' : v).trim(); if (!s) return '';
-      const k = norm(s), hit = list.find(o => norm(o) === k) || (aliases || {})[k];
-      if (!hit) throw new Error(label + ' "' + s + '" is not one of: ' + list.join(', '));
-      return hit;
-    };
-    const LAND_TYPES = ['Land (Plot)', 'Duplex', 'Bungalow', 'Detached House', 'Semi-Detached Duplex', 'Terrace', 'Block of Flats', 'Mansion'];
-    const LAND_TYPE_ALIAS = { land: 'Land (Plot)', plot: 'Land (Plot)', emptyland: 'Land (Plot)', detached: 'Detached House', semidetached: 'Semi-Detached Duplex', flats: 'Block of Flats', blockofflat: 'Block of Flats' };
-    const TITLE_DOCS = ['C of O', "Governor's Consent", 'Excision', 'Gazette', 'Registered Survey', 'Deed of Assignment'];
-    const TITLE_ALIAS = { cofo: 'C of O', certificateofoccupancy: 'C of O', governorconsent: "Governor's Consent" };
-    const LAND_USES = ['Residential', 'Commercial', 'Mixed-Use', 'Agricultural'];
-    const USE_ALIAS = { mixed: 'Mixed-Use' };
-    const COM_TYPES = ['Shop', 'Office', 'Warehouse', 'Event Hall'];
-    const COM_ALIAS = { hall: 'Event Hall', eventcentre: 'Event Hall', eventcenter: 'Event Hall' };
-    const POWERS = ['Public grid', 'Grid + generator', 'Grid + inverter/solar', 'Generator only'];
-    const POWER_ALIAS = { grid: 'Public grid', solar: 'Grid + inverter/solar', inverter: 'Grid + inverter/solar', generator: 'Generator only' };
-    const freqOf = (v) => /^m/i.test(String(v == null ? '' : v).trim()) ? 'mo' : 'yr';   // same values as the form: yr / mo
-    const isoDate = (v, label) => {
-      const s = String(v == null ? '' : v).trim(); if (!s) return '';
-      let x, y, m, d;
-      if ((x = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))) { y = +x[1]; m = +x[2]; d = +x[3]; }
-      else if ((x = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/))) { d = +x[1]; m = +x[2]; y = +x[3]; }   // day/month/year
-      else throw new Error(label + ' "' + s + '" is not a date. Use YYYY-MM-DD, for example 2026-12-24');
-      const dt = new Date(y, m - 1, d);
-      if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) throw new Error(label + ' "' + s + '" is not a real date');
-      return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-    };
-    // Same preset names as the form's feature chips, so "wifi" becomes "WiFi" and safety items match on the site.
-    function cleanFeatures(list, category) {
-      const presets = category === 'short-let' ? (typeof SL_PRESET_FEATURES !== 'undefined' ? SL_PRESET_FEATURES : []) : (typeof PRESET_FEATURES !== 'undefined' ? PRESET_FEATURES : []);
-      const seen = new Set(), out = [];
-      (Array.isArray(list) ? list : []).forEach(f => {
-        let t = String(f).trim(); if (!t) return;
-        const hit = presets.find(pf => norm(pf) === norm(t)); if (hit) t = hit;
-        if (!seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); out.push(t); }
-      });
-      return out;
-    }
-    function build(it) {
-      let category = String(it.category || 'rent').toLowerCase(), usage = String(it.usage || '').toLowerCase();
-      if (category === 'commercial') { category = 'rent'; usage = 'commercial'; }
-      if (!['rent', 'land', 'short-let'].includes(category)) throw new Error('category must be rent, land, short-let or commercial');
-      const com = category === 'rent' && usage === 'commercial';
-      const title = (it.title || '').trim(), location = (it.location || '').trim();
-      let price = N(it.price); if (com && !price) price = N(it.annualRent);
-      if (!title || !location || !price) throw new Error('title, location and price are required' + (com ? ' (for commercial, price is the annual rent)' : category === 'short-let' ? ' (for short-let, price is the nightly rate)' : ''));
-      const status = String(it.status || 'available').toLowerCase();
-      if (!['available', 'sold', 'rented'].includes(status)) throw new Error('status must be available, sold or rented');
-      let beds = N(it.beds), rent = '', annual = null, fees = [];
-      const extras = (Array.isArray(it.extraFees) ? it.extraFees : []).map(f => String(f).trim()).filter(Boolean);
-      if (category === 'land') {
-        // ----- Land & Property: same lines, same order as the form -----
-        const type = pick(it.propertyType, LAND_TYPES, LAND_TYPE_ALIAS, 'propertyType') || 'Land (Plot)', isHouse = type !== 'Land (Plot)';
-        const inst = N(it.installmentPrice), months = N(it.installmentMonths) || 12, dep = N(it.initialDeposit);
-        if (inst && inst < price) throw new Error('installmentPrice cannot be lower than the outright price');
-        if (inst && dep >= inst) throw new Error('initialDeposit must be less than installmentPrice');
-        const parts = given(it.soldInParts) ? YES(it.soldInParts) : !!(N(it.halfPlotPrice) || N(it.halfPlotInstallment) || N(it.plotsAvailable) || given(it.partSize));
-        const half = parts && (given(it.halfPlot) ? YES(it.halfPlot) : true);
-        const halfOut = N(it.halfPlotPrice) || Math.round(price / 2);                    // defaults to exactly half, like the form
-        const halfInst = N(it.halfPlotInstallment) || (inst ? Math.round(inst / 2) : 0);
-        if (half && (!halfOut || halfOut >= price)) throw new Error('halfPlotPrice must be above zero and lower than the full plot price');
-        if (half && inst && (!halfInst || halfInst >= inst || halfInst < halfOut)) throw new Error('halfPlotInstallment must be lower than the full plot installment and not below halfPlotPrice');
-        let legalPct = 5; if (given(it.legalFeePercent)) { legalPct = N(it.legalFeePercent); if (legalPct !== 5 && legalPct !== 10) throw new Error('legalFeePercent must be 5 or 10'); }
-        if (isHouse) {
-          if (N(it.bathrooms)) fees.push('Bathrooms: ' + N(it.bathrooms));
-          if (N(it.toilets)) fees.push('Toilets: ' + N(it.toilets));
-          if (N(it.parking)) fees.push('Parking Spaces: ' + N(it.parking));
-        } else beds = 0;
-        rent = money(price);
-        fees.push('Property Type: ' + type, 'Outright Price: ' + money(price));
-        if (inst) {
-          fees.push('Installment Price: ' + money(inst), 'Installment Duration: ' + months + ' months');
-          if (dep) fees.push('Initial Deposit: ' + money(dep));
-        }
-        if (parts) {
-          const ps = String(it.partSize || '').trim(), pc = N(it.plotsAvailable);
-          fees.push('Sold In Parts: ' + (half ? 'Full plot, Half plot' : 'Full plot'));
-          fees.push('Price Basis: Per full plot' + (ps ? ' (' + ps + ')' : ''));
-          if (pc) fees.push('Plots Available: ' + pc);
-          if (half) {
-            fees.push('Half Plot Price: ' + money(halfOut));
-            if (inst) fees.push('Half Plot Installment: ' + money(halfInst));
-          }
-        }
-        fees.push('Legal Fee: ' + legalPct + '% (' + money(Math.round(price * legalPct / 100)) + ')');
-        if (N(it.surveyPlan)) fees.push('Survey Plan: ' + money(N(it.surveyPlan)));
-        if (N(it.redCopy)) fees.push('Red Copy: ' + money(N(it.redCopy)));
-        const titleDoc = pick(it.titleDocument, TITLE_DOCS, TITLE_ALIAS, 'titleDocument');
-        const landUse = pick(it.landUse, LAND_USES, USE_ALIAS, 'landUse') || 'Residential';
-        if (String(it.plotSize || '').trim()) fees.push('Plot Size: ' + String(it.plotSize).trim());
-        if (titleDoc) fees.push('Title Document: ' + titleDoc);
-        fees.push('Land Use: ' + landUse);
-        extras.forEach(f => fees.push(f));
-      } else if (category === 'short-let') {
-        // ----- Short Let: nightly rate, stay rules, booking window, blocked dates, About -----
-        rent = money(price) + '/night';
-        if (N(it.minStay)) fees.push('Minimum Stay: ' + N(it.minStay) + ' night' + (N(it.minStay) > 1 ? 's' : ''));
-        if (N(it.cleaningFee)) fees.push('Cleaning Fee: ' + money(N(it.cleaningFee)));
-        if (N(it.cautionFee)) fees.push('Caution Fee: ' + money(N(it.cautionFee)));
-        if (N(it.serviceCharge)) fees.push('Service Charge: ' + money(N(it.serviceCharge)) + '/' + freqOf(it.serviceChargeFreq));
-        const from = isoDate(it.openFrom, 'openFrom'), to = isoDate(it.openUntil, 'openUntil');
-        if ((from && !to) || (!from && to)) throw new Error('set both openFrom and openUntil, or leave both empty');
-        if (from && to && to <= from) throw new Error('openUntil (the last check-out) must be after openFrom');
-        if (from && to) fees.push('Open For Booking: ' + from + ' to ' + to);
-        const blocked = (Array.isArray(it.blockedDates) ? it.blockedDates : String(it.blockedDates || '').split(/[|,;\s]+/)).map(d => isoDate(d, 'blockedDates')).filter(Boolean);
-        const uniq = blocked.filter((d, i) => blocked.indexOf(d) === i).sort();
-        if (uniq.length) fees.push('Blocked Dates: ' + uniq.join(', '));
-        const about = String(it.about || '').replace(/\s+/g, ' ').trim();
-        if (about) fees.push('About This Space: ' + about);
-        extras.forEach(f => fees.push(f));
-      } else {
-        // ----- Flexible Rent (residential) / Commercial (annual, paid upfront) -----
-        if (com) {
-          beds = 0; annual = price; rent = money(price) + '/yr';
-          fees.push('Usage: Commercial', 'Commercial Type: ' + (pick(it.commercialType, COM_TYPES, COM_ALIAS, 'commercialType') || 'Shop'));
-          if (parseFloat(it.sqm) > 0) fees.push('Commercial Size: ' + parseFloat(it.sqm) + ' sqm');
-          if (given(it.parking) && !isNaN(parseInt(it.parking, 10))) fees.push('Commercial Parking: ' + parseInt(it.parking, 10));
-          fees.push('Power Supply: ' + (pick(it.power, POWERS, POWER_ALIAS, 'power') || 'Public grid'), 'Payment Terms: Annual, paid in full upfront');
-          extras.forEach(f => fees.push(f));
-        } else {
-          rent = money(price) + '/mo';
-          annual = N(it.annualRent) || price * 12;
-          // Same auto-calculation as the form: Agent Fee 10% and Legal Fee 5% of the yearly rent
-          if (it.autoFees !== false) {
-            fees.push('Agent Fee: 10% (' + money(Math.round(annual * 0.10)) + ')');
-            fees.push('Legal Fee: 5% (' + money(Math.round(annual * 0.05)) + ')');
-          }
-          extras.forEach(f => fees.push(f));
-        }
-        if (N(it.cautionFee)) fees.push('Caution Fee: ' + money(N(it.cautionFee)));
-        if (N(it.serviceCharge)) fees.push('Service Charge: ' + money(N(it.serviceCharge)) + '/' + freqOf(it.serviceChargeFreq));
-      }
-      return {
-        title, location, beds, category, rent, annual_rent: annual, fees,
-        color: it.color || 'from-brand-500/30 to-slate-900',
-        features: cleanFeatures(it.features, category),
-        images: Array.isArray(it.images) ? it.images : [],
-        video: it.video || null,
-        status
-      };
-    }
-    // ----- CSV support: turns spreadsheet rows into the same listing objects the JSON option uses -----
-    let bulkMode = 'csv';
-    function setMode(m) {
-      bulkMode = m;
-      document.getElementById('bulk-pane-csv').classList.toggle('hidden', m !== 'csv');
-      document.getElementById('bulk-pane-json').classList.toggle('hidden', m !== 'json');
-      document.getElementById('bulk-mode-csv').className = (m === 'csv' ? 'btn-primary' : 'btn-secondary') + ' !py-2 !px-4 text-sm';
-      document.getElementById('bulk-mode-json').className = (m === 'json' ? 'btn-primary' : 'btn-secondary') + ' !py-2 !px-4 text-sm';
-    }
-    function parseCsv(text) {
-      text = String(text || '').replace(/^﻿/, '');
-      const first = text.split(/\r?\n/).find(l => l.trim()) || '';
-      const count = (c) => (first.match(new RegExp(c === '\t' ? '\t' : '\\' + c, 'g')) || []).length;
-      const delim = [',', ';', '\t'].sort((x, y) => count(y) - count(x))[0];
-      const rows = []; let row = [], cur = '', q = false;
-      for (let i = 0; i < text.length; i++) {
-        const ch = text[i];
-        if (q) {
-          if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
-          else cur += ch;
-        } else if (ch === '"') q = true;
-        else if (ch === delim) { row.push(cur); cur = ''; }
-        else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; rows.push(row); row = []; }
-        else cur += ch;
-      }
-      row.push(cur); rows.push(row);
-      return rows.filter(r => r.some(c => String(c).trim() !== ''));
-    }
-    const ALIAS = { photos: 'images', photo: 'images', image: 'images', imagelinks: 'images', photolinks: 'images', imageurls: 'images', pictures: 'images',
-      name: 'title', address: 'location', area: 'location', bedrooms: 'beds', bedroom: 'beds', bathroom: 'bathrooms', toilet: 'toilets',
-      parkingspaces: 'parking', type: 'propertyType', kind: 'propertyType', power: 'power', powersupply: 'power', size: 'sqm', commercialsize: 'sqm',
-      installment: 'installmentPrice', installmentprice: 'installmentPrice', installmentmonths: 'installmentMonths', installmentduration: 'installmentMonths', duration: 'installmentMonths',
-      initialdeposit: 'initialDeposit', deposit: 'initialDeposit', propertytype: 'propertyType', commercialtype: 'commercialType', plotsize: 'plotSize', landsize: 'plotSize',
-      titledocument: 'titleDocument', titledoc: 'titleDocument', landuse: 'landUse', minstay: 'minStay', minimumstay: 'minStay', cleaningfee: 'cleaningFee',
-      cautionfee: 'cautionFee', caution: 'cautionFee', servicecharge: 'serviceCharge', servicechargefreq: 'serviceChargeFreq', servicechargefrequency: 'serviceChargeFreq', annualrent: 'annualRent',
-      extrafees: 'extraFees', otherfees: 'extraFees', autofees: 'autoFees', video: 'video', videolink: 'video', videourl: 'video', features: 'features', amenities: 'features',
-      soldinparts: 'soldInParts', parts: 'soldInParts', halfplot: 'halfPlot', halfplots: 'halfPlot', sellhalfplots: 'halfPlot', partsize: 'partSize', fullplotsize: 'partSize',
-      plotsavailable: 'plotsAvailable', plots: 'plotsAvailable', fullplotsavailable: 'plotsAvailable', halfplotprice: 'halfPlotPrice', halfplotoutright: 'halfPlotPrice',
-      halfplotinstallment: 'halfPlotInstallment', legalfeepercent: 'legalFeePercent', legalpercent: 'legalFeePercent', legalpct: 'legalFeePercent', deedlegalfee: 'legalFeePercent',
-      surveyplan: 'surveyPlan', surveyplancost: 'surveyPlan', surveycost: 'surveyPlan', redcopy: 'redCopy', redcopycost: 'redCopy',
-      openfrom: 'openFrom', opensfrom: 'openFrom', bookingfrom: 'openFrom', availablefrom: 'openFrom', openforbookingfrom: 'openFrom',
-      openuntil: 'openUntil', opento: 'openUntil', bookinguntil: 'openUntil', availableuntil: 'openUntil', lastcheckout: 'openUntil',
-      blockeddates: 'blockedDates', blocked: 'blockedDates', unavailabledates: 'blockedDates', about: 'about', aboutthisspace: 'about', description: 'about' };
-    const CANON = {}; ['category', 'title', 'location', 'price', 'annualRent', 'beds', 'bathrooms', 'toilets', 'parking', 'usage', 'commercialType', 'sqm', 'power', 'propertyType', 'installmentPrice', 'installmentMonths', 'initialDeposit', 'soldInParts', 'halfPlot', 'partSize', 'plotsAvailable', 'halfPlotPrice', 'halfPlotInstallment', 'legalFeePercent', 'surveyPlan', 'redCopy', 'plotSize', 'titleDocument', 'landUse', 'minStay', 'cleaningFee', 'cautionFee', 'serviceCharge', 'serviceChargeFreq', 'openFrom', 'openUntil', 'blockedDates', 'about', 'features', 'extraFees', 'images', 'video', 'status', 'color', 'autoFees'].forEach(k => { CANON[k.toLowerCase()] = k; });
-    const NUMERIC = ['price', 'beds', 'bathrooms', 'toilets', 'parking', 'installmentPrice', 'installmentMonths', 'initialDeposit', 'minStay', 'cleaningFee', 'cautionFee', 'serviceCharge', 'annualRent', 'sqm', 'plotsAvailable', 'halfPlotPrice', 'halfPlotInstallment', 'legalFeePercent', 'surveyPlan', 'redCopy'];
-    const LISTY = ['images', 'features', 'extraFees'];
-    function csvToItems(text) {
-      const rows = parseCsv(text);
-      if (rows.length < 2) throw new Error('The CSV needs a header row and at least one listing row.');
-      const keys = rows[0].map(h => {
-        const flat = String(h).toLowerCase().replace(/[^a-z0-9]/g, '');
-        return ALIAS[flat] || CANON[flat] || '';
-      });
-      if (!keys.includes('title')) throw new Error('No "title" column found in the header row.');
-      return rows.slice(1).map(r => {
-        const it = {};
-        keys.forEach((k, i) => {
-          const v = (r[i] || '').trim(); if (!k || v === '') return;
-          if (NUMERIC.includes(k)) it[k] = String(v).replace(/[^0-9.]/g, '');
-          else if (LISTY.includes(k)) it[k] = v.split(/\s*[|\n]\s*/).map(x => x.trim()).filter(Boolean);
-          else if (k === 'autoFees') it[k] = !/^(no|false|0|n)$/i.test(v);
-          else it[k] = v;
-        });
-        if (it.category) {
-          const c = String(it.category).toLowerCase().replace(/[^a-z]/g, '');
-          it.category = c === 'shortlet' ? 'short-let' : (['land', 'sale', 'sell', 'buy', 'property'].includes(c) ? 'land' : (c === 'commercial' ? 'commercial' : (c === 'rent' || c === 'lease' ? 'rent' : it.category)));
-        }
-        if (it.usage) it.usage = /commercial|shop|office|warehouse|hall/i.test(String(it.usage)) ? 'commercial' : String(it.usage).toLowerCase();
-        if (it.features && it.features.length === 1 && /,/.test(it.features[0]) && !/\|/.test(it.features[0])) it.features = it.features[0].split(/\s*,\s*/);
-        return it;
-      });
-    }
-    function csvTemplate() {
-      const head = ['category', 'title', 'location', 'price', 'annualRent', 'beds', 'bathrooms', 'toilets', 'parking', 'usage', 'commercialType', 'sqm', 'power', 'propertyType', 'installmentPrice', 'installmentMonths', 'initialDeposit', 'soldInParts', 'halfPlot', 'partSize', 'plotsAvailable', 'halfPlotPrice', 'halfPlotInstallment', 'legalFeePercent', 'surveyPlan', 'redCopy', 'plotSize', 'titleDocument', 'landUse', 'minStay', 'cleaningFee', 'cautionFee', 'serviceCharge', 'serviceChargeFreq', 'openFrom', 'openUntil', 'blockedDates', 'about', 'features', 'extraFees', 'images', 'video', 'status'];
-      const ex = [
-        { category: 'rent', title: '2-Bed Flat, Lekki Phase 1', location: 'Lekki Phase 1, Lagos', price: '180000', beds: '2', cautionFee: '200000', serviceCharge: '120000', serviceChargeFreq: 'yearly', features: 'Fully Furnished|WiFi|Standby Generator', images: 'https://example.com/flat1.jpg|https://example.com/flat2.jpg', status: 'available' },
-        { category: 'rent', title: 'Warehouse, Ikeja Industrial Estate', location: 'Ikeja, Lagos', price: '4500000', usage: 'commercial', commercialType: 'Warehouse', sqm: '600', parking: '6', power: 'Grid + generator', cautionFee: '500000', features: 'Loading bay|Security', images: 'https://example.com/wh1.jpg', status: 'available' },
-        { category: 'land', title: '450sqm Land, Ibeju-Lekki', location: 'Ibeju-Lekki, Lagos', price: '8500000', propertyType: 'Land (Plot)', installmentPrice: '9500000', installmentMonths: '12', initialDeposit: '2000000', soldInParts: 'yes', halfPlot: 'yes', partSize: '450sqm', plotsAvailable: '12', legalFeePercent: '5', surveyPlan: '250000', redCopy: '150000', plotSize: '3 acres', titleDocument: 'C of O', landUse: 'Residential', features: 'Dry land|Fenced', images: 'https://example.com/land1.jpg', status: 'available' },
-        { category: 'land', title: '4-Bed Duplex, Lekki', location: 'Lekki, Lagos', price: '120000000', beds: '4', bathrooms: '5', toilets: '6', parking: '4', propertyType: 'Duplex', legalFeePercent: '10', plotSize: '600sqm', titleDocument: 'Deed of Assignment', landUse: 'Residential', features: 'Gated estate|Boys quarters', images: 'https://example.com/duplex1.jpg', status: 'available' },
-        { category: 'short-let', title: 'Studio, Victoria Island', location: 'Victoria Island, Lagos', price: '45000', beds: '1', minStay: '2', cleaningFee: '10000', cautionFee: '30000', openFrom: '2026-11-01', openUntil: '2027-03-31', blockedDates: '2026-12-24|2026-12-25', about: 'Bright studio close to the beach with a quiet work area.', features: 'Wifi|Air conditioning|Smoke alarm', images: 'https://example.com/studio1.jpg', status: 'available' }
-      ].map(o => head.map(h => o[h] || ''));
-      const q = (c) => /[",\n]/.test(c) ? '"' + String(c).replace(/"/g, '""') + '"' : c;
-      return '\ufeff' + [head].concat(ex).map(r => r.map(q).join(',')).join('\r\n');
-    }
-    document.getElementById('bulk-mode-csv').addEventListener('click', () => setMode('csv'));
-    document.getElementById('bulk-mode-json').addEventListener('click', () => setMode('json'));
-    document.getElementById('bulk-csv-file').addEventListener('change', async (e) => {
-      const f = e.target.files[0]; if (!f) return;
-      document.getElementById('bulk-csv').value = await f.text();
-    });
-    document.getElementById('bulk-template-btn').addEventListener('click', () => {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([csvTemplate()], { type: 'text/csv;charset=utf-8' }));
-      a.download = 'maintown-listings-template.csv'; document.body.appendChild(a); a.click(); a.remove();
-    });
-    setMode('csv');
-    function parse() {
-      if (bulkMode === 'csv') {
-        const txt = document.getElementById('bulk-csv').value;
-        if (!txt.trim()) throw new Error('Choose a CSV file or paste your rows first.');
-        return csvToItems(txt);
-      }
-      let arr;
-      try { arr = JSON.parse(document.getElementById('bulk-json').value); } catch (e) { throw new Error('That is not valid JSON: ' + e.message); }
-      if (!Array.isArray(arr) || !arr.length) throw new Error('Paste a list of listings, starting with [ and ending with ]');
-      return arr;
-    }
-    async function run(save) {
-      const log = document.getElementById('bulk-log'); log.innerHTML = '';
-      const say = (m, bad) => { const p = document.createElement('p'); p.textContent = m; if (bad) p.style.color = '#f87171'; log.appendChild(p); };
-      let arr; try { arr = parse(); } catch (e) { say(e.message, true); return; }
-      const payloads = [];
-      arr.forEach((it, i) => { try { payloads.push(build(it)); } catch (e) { say('Listing ' + (i + 1) + ' (' + ((it && it.title) || 'no title') + '): ' + e.message, true); } });
-      if (payloads.length !== arr.length) { say('Fix the problems above, then try again. Nothing was published.', true); return; }
-      // Skip anything already on the site (same title + location) so re-uploading a CSV never creates doubles
-      const keyOf = (p) => (p.title + '|' + p.location).toLowerCase().replace(/\s+/g, ' ').trim();
-      const have = new Set((typeof listingsCache !== 'undefined' ? listingsCache : []).map(keyOf));
-      const fresh = [];
-      payloads.forEach(p => {
-        const k = keyOf(p);
-        if (have.has(k)) say('Already on your site, will be skipped: ' + p.title);
-        else { have.add(k); fresh.push(p); }
-      });
-      if (!save) { say('All ' + payloads.length + ' listings look good' + (fresh.length !== payloads.length ? ' (' + fresh.length + ' new, ' + (payloads.length - fresh.length) + ' already on the site and skipped)' : '') + '. Tap Publish all to go live.'); return; }
-      if (!fresh.length) { say('Nothing new to publish. Every listing in this file is already on your site.'); return; }
-      const btn = document.getElementById('bulk-run-btn'); btn.disabled = true;
-      const files = Array.from(document.getElementById('bulk-images').files);
-      if (files.length && fresh.some(p => !p.images.length)) {
-        const urls = [];
-        try {
-          for (let i = 0; i < files.length; i++) {
-            say('Uploading photo ' + (i + 1) + ' of ' + files.length + '...');
-            urls.push(await uploadFile(await compressImage(files[i])));
-          }
-          fresh.forEach(p => { if (!p.images.length) p.images = urls.slice(); });
-        } catch (e) { say('Photo upload failed: ' + e.message + '. Nothing was published.', true); btn.disabled = false; return; }
-      }
-      let ok = 0;
-      for (let i = 0; i < fresh.length; i++) {
-        const { error } = await sb.from('listings').insert(fresh[i]);
-        if (error) say('Listing ' + (i + 1) + ' (' + fresh[i].title + ') failed: ' + error.message, true);
-        else { ok++; say('Published: ' + fresh[i].title); }
-      }
-      btn.disabled = false;
-      showToast(ok + ' of ' + fresh.length + ' listings published.', ok !== fresh.length);
-      if (ok) loadExistingListings();
-    }
-    document.getElementById('bulk-check-btn').addEventListener('click', () => run(false));
-    document.getElementById('bulk-run-btn').addEventListener('click', () => run(true));
-  })();
-</script>
-
-</body>
-</html>
+const kycDocsHtml = 
