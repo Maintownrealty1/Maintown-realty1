@@ -110,14 +110,46 @@
     <!-- ---- Bulk Import (paste many listings at once) ---- -->
     <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-10" id="bulkImportSection" data-view="listings">
       <h2 class="font-display font-semibold text-lg text-white mb-1">Bulk Import Listings</h2>
-      <p class="text-sm text-slate-500 mb-4">Paste a list of listings (JSON) and publish them all in one go. Each one is saved exactly like the form above, and goes live on your site straight away.</p>
-      <div class="field">
-        <textarea id="bulk-json" rows="8" class="font-mono text-xs" placeholder='[ { "category": "rent", "title": "2-Bed Flat, Lekki", "location": "Lekki Phase 1, Lagos", "price": 180000, "beds": 2, "images": ["https://..."] } ]'></textarea>
+      <p class="text-sm text-slate-500 mb-4">Add many listings at once, from a spreadsheet (CSV) or pasted JSON. Each one is saved exactly like the form below, and goes live on your site straight away.</p>
+      <div class="flex gap-2 mb-4" role="tablist">
+        <button type="button" id="bulk-mode-csv" class="btn-primary !py-2 !px-4 text-sm">Spreadsheet (CSV)</button>
+        <button type="button" id="bulk-mode-json" class="btn-secondary !py-2 !px-4 text-sm">Paste JSON</button>
+      </div>
+      <div id="bulk-pane-csv">
+        <div class="field">
+          <label>CSV / Excel file</label>
+          <input type="file" id="bulk-csv-file" accept=".csv,.tsv,.txt,text/csv" class="!p-2">
+          <p class="text-xs text-slate-500 mt-1">In Excel or Google Sheets use File &gt; Save as / Download &gt; CSV. Put photo links in the <b>images</b> column, separated by a vertical bar ( | ). One row per listing.</p>
+        </div>
+        <div class="field">
+          <label>...or paste rows copied straight from Excel / Sheets (include the header row)</label>
+          <textarea id="bulk-csv" rows="6" class="font-mono text-xs" placeholder="category,title,location,price,beds,images&#10;rent,2-Bed Flat Lekki,Lekki Phase 1 Lagos,180000,2,https://.../1.jpg|https://.../2.jpg"></textarea>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 mb-4">
+          <button type="button" id="bulk-template-btn" class="btn-secondary w-full sm:w-auto">Download CSV template</button>
+          <span class="text-xs text-slate-500">Open it in Excel, replace the sample rows with yours, save as CSV.</span>
+        </div>
+        <details class="mb-4 text-xs text-slate-400 bg-slate-950/40 border border-slate-800 rounded-xl p-4">
+          <summary class="cursor-pointer text-slate-300 font-medium">Which columns does each listing type use?</summary>
+          <div class="mt-3 space-y-2 leading-relaxed">
+            <p><b class="text-slate-200">All types:</b> category (rent, commercial, land, short-let), title, location, price, features and images (separate with | ), video, status (available, sold, rented), extraFees (one per | ).</p>
+            <p><b class="text-slate-200">Rent (residential):</b> price is the monthly rent, plus beds, cautionFee, serviceCharge and serviceChargeFreq (yearly or monthly). Agent Fee (10%) and Legal Fee (5%) are worked out for you from the yearly rent, exactly like the form. Fill annualRent only if the yearly rent is not monthly x 12.</p>
+            <p><b class="text-slate-200">Commercial:</b> category commercial (or rent with usage = commercial). price is the annual rent. Uses commercialType (Shop, Office, Warehouse, Event Hall), sqm, parking, power (Public grid, Grid + generator, Grid + inverter/solar, Generator only), cautionFee, serviceCharge.</p>
+            <p><b class="text-slate-200">Land &amp; Property:</b> price is the outright price. propertyType (Land (Plot), Duplex, Bungalow, Detached House, Semi-Detached Duplex, Terrace, Block of Flats, Mansion). Houses also use beds, bathrooms, toilets, parking. Installments: installmentPrice, installmentMonths (3, 6, 9, 12, 18, 24), initialDeposit. Sold in parts: soldInParts (yes/no), halfPlot (yes/no), partSize, plotsAvailable, halfPlotPrice and halfPlotInstallment (left empty they default to half). Costs: legalFeePercent (5 or 10, worked out for you), surveyPlan, redCopy. Also plotSize, titleDocument (C of O, Governor's Consent, Excision, Gazette, Registered Survey, Deed of Assignment) and landUse (Residential, Commercial, Mixed-Use, Agricultural).</p>
+            <p><b class="text-slate-200">Short Let:</b> price is the nightly rate. beds, minStay, cleaningFee, cautionFee, serviceCharge, serviceChargeFreq, openFrom and openUntil (both or neither, YYYY-MM-DD), blockedDates (separate with | ), about.</p>
+            <p>Listings already on the site (same title and location) are skipped, so uploading the same file twice does not create doubles. Use <b class="text-slate-200">Check only</b> first to see any problems.</p>
+          </div>
+        </details>
+      </div>
+      <div id="bulk-pane-json" class="hidden">
+        <div class="field">
+          <textarea id="bulk-json" rows="8" class="font-mono text-xs" placeholder='[ { "category": "rent", "title": "2-Bed Flat, Lekki", "location": "Lekki Phase 1, Lagos", "price": 180000, "beds": 2, "images": ["https://..."] } ]'></textarea>
+        </div>
       </div>
       <div class="field">
         <label>Photos for listings that have no photo links (optional)</label>
         <input type="file" id="bulk-images" accept="image/*" multiple class="!p-2">
-        <p class="text-xs text-slate-500 mt-1">Best used one listing at a time: paste that listing, pick its photos here, then Publish all.</p>
+        <p class="text-xs text-slate-500 mt-1">Only needed when a listing has no photo links. These photos are attached to every listing that has none, so use it one listing at a time.</p>
       </div>
       <div class="flex flex-wrap items-center gap-3">
         <button type="button" id="bulk-check-btn" class="btn-secondary w-full sm:w-auto">Check only</button>
@@ -1886,14 +1918,73 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   (function () {
     const N = (v) => { const n = parseInt(v, 10); return isNaN(n) ? 0 : n; };
     const money = (n) => '\u20a6' + Number(n).toLocaleString('en-US');
+    // ---- helpers that make CSV values behave exactly like the form's dropdowns / checkboxes ----
+    const norm = (v) => String(v == null ? '' : v).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const YES = (v) => v === true || /^(yes|y|true|1|x|on)$/i.test(String(v == null ? '' : v).trim());
+    const given = (v) => v !== undefined && v !== null && String(v).trim() !== '';
+    const pick = (v, list, aliases, label) => {
+      const s = String(v == null ? '' : v).trim(); if (!s) return '';
+      const k = norm(s), hit = list.find(o => norm(o) === k) || (aliases || {})[k];
+      if (!hit) throw new Error(label + ' "' + s + '" is not one of: ' + list.join(', '));
+      return hit;
+    };
+    const LAND_TYPES = ['Land (Plot)', 'Duplex', 'Bungalow', 'Detached House', 'Semi-Detached Duplex', 'Terrace', 'Block of Flats', 'Mansion'];
+    const LAND_TYPE_ALIAS = { land: 'Land (Plot)', plot: 'Land (Plot)', emptyland: 'Land (Plot)', detached: 'Detached House', semidetached: 'Semi-Detached Duplex', flats: 'Block of Flats', blockofflat: 'Block of Flats' };
+    const TITLE_DOCS = ['C of O', "Governor's Consent", 'Excision', 'Gazette', 'Registered Survey', 'Deed of Assignment'];
+    const TITLE_ALIAS = { cofo: 'C of O', certificateofoccupancy: 'C of O', governorconsent: "Governor's Consent" };
+    const LAND_USES = ['Residential', 'Commercial', 'Mixed-Use', 'Agricultural'];
+    const USE_ALIAS = { mixed: 'Mixed-Use' };
+    const COM_TYPES = ['Shop', 'Office', 'Warehouse', 'Event Hall'];
+    const COM_ALIAS = { hall: 'Event Hall', eventcentre: 'Event Hall', eventcenter: 'Event Hall' };
+    const POWERS = ['Public grid', 'Grid + generator', 'Grid + inverter/solar', 'Generator only'];
+    const POWER_ALIAS = { grid: 'Public grid', solar: 'Grid + inverter/solar', inverter: 'Grid + inverter/solar', generator: 'Generator only' };
+    const freqOf = (v) => /^m/i.test(String(v == null ? '' : v).trim()) ? 'mo' : 'yr';   // same values as the form: yr / mo
+    const isoDate = (v, label) => {
+      const s = String(v == null ? '' : v).trim(); if (!s) return '';
+      let x, y, m, d;
+      if ((x = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))) { y = +x[1]; m = +x[2]; d = +x[3]; }
+      else if ((x = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/))) { d = +x[1]; m = +x[2]; y = +x[3]; }   // day/month/year
+      else throw new Error(label + ' "' + s + '" is not a date. Use YYYY-MM-DD, for example 2026-12-24');
+      const dt = new Date(y, m - 1, d);
+      if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) throw new Error(label + ' "' + s + '" is not a real date');
+      return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    };
+    // Same preset names as the form's feature chips, so "wifi" becomes "WiFi" and safety items match on the site.
+    function cleanFeatures(list, category) {
+      const presets = category === 'short-let' ? (typeof SL_PRESET_FEATURES !== 'undefined' ? SL_PRESET_FEATURES : []) : (typeof PRESET_FEATURES !== 'undefined' ? PRESET_FEATURES : []);
+      const seen = new Set(), out = [];
+      (Array.isArray(list) ? list : []).forEach(f => {
+        let t = String(f).trim(); if (!t) return;
+        const hit = presets.find(pf => norm(pf) === norm(t)); if (hit) t = hit;
+        if (!seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); out.push(t); }
+      });
+      return out;
+    }
     function build(it) {
-      const category = it.category || 'rent';
-      if (!['rent', 'land', 'short-let'].includes(category)) throw new Error('category must be rent, land or short-let');
-      const title = (it.title || '').trim(), location = (it.location || '').trim(), price = N(it.price);
-      if (!title || !location || !price) throw new Error('title, location and price are required');
+      let category = String(it.category || 'rent').toLowerCase(), usage = String(it.usage || '').toLowerCase();
+      if (category === 'commercial') { category = 'rent'; usage = 'commercial'; }
+      if (!['rent', 'land', 'short-let'].includes(category)) throw new Error('category must be rent, land, short-let or commercial');
+      const com = category === 'rent' && usage === 'commercial';
+      const title = (it.title || '').trim(), location = (it.location || '').trim();
+      let price = N(it.price); if (com && !price) price = N(it.annualRent);
+      if (!title || !location || !price) throw new Error('title, location and price are required' + (com ? ' (for commercial, price is the annual rent)' : category === 'short-let' ? ' (for short-let, price is the nightly rate)' : ''));
+      const status = String(it.status || 'available').toLowerCase();
+      if (!['available', 'sold', 'rented'].includes(status)) throw new Error('status must be available, sold or rented');
       let beds = N(it.beds), rent = '', annual = null, fees = [];
+      const extras = (Array.isArray(it.extraFees) ? it.extraFees : []).map(f => String(f).trim()).filter(Boolean);
       if (category === 'land') {
-        const type = it.propertyType || 'Land (Plot)', isHouse = type !== 'Land (Plot)';
+        // ----- Land & Property: same lines, same order as the form -----
+        const type = pick(it.propertyType, LAND_TYPES, LAND_TYPE_ALIAS, 'propertyType') || 'Land (Plot)', isHouse = type !== 'Land (Plot)';
+        const inst = N(it.installmentPrice), months = N(it.installmentMonths) || 12, dep = N(it.initialDeposit);
+        if (inst && inst < price) throw new Error('installmentPrice cannot be lower than the outright price');
+        if (inst && dep >= inst) throw new Error('initialDeposit must be less than installmentPrice');
+        const parts = given(it.soldInParts) ? YES(it.soldInParts) : !!(N(it.halfPlotPrice) || N(it.halfPlotInstallment) || N(it.plotsAvailable) || given(it.partSize));
+        const half = parts && (given(it.halfPlot) ? YES(it.halfPlot) : true);
+        const halfOut = N(it.halfPlotPrice) || Math.round(price / 2);                    // defaults to exactly half, like the form
+        const halfInst = N(it.halfPlotInstallment) || (inst ? Math.round(inst / 2) : 0);
+        if (half && (!halfOut || halfOut >= price)) throw new Error('halfPlotPrice must be above zero and lower than the full plot price');
+        if (half && inst && (!halfInst || halfInst >= inst || halfInst < halfOut)) throw new Error('halfPlotInstallment must be lower than the full plot installment and not below halfPlotPrice');
+        let legalPct = 5; if (given(it.legalFeePercent)) { legalPct = N(it.legalFeePercent); if (legalPct !== 5 && legalPct !== 10) throw new Error('legalFeePercent must be 5 or 10'); }
         if (isHouse) {
           if (N(it.bathrooms)) fees.push('Bathrooms: ' + N(it.bathrooms));
           if (N(it.toilets)) fees.push('Toilets: ' + N(it.toilets));
@@ -1901,47 +1992,179 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
         } else beds = 0;
         rent = money(price);
         fees.push('Property Type: ' + type, 'Outright Price: ' + money(price));
-        const inst = N(it.installmentPrice);
         if (inst) {
-          if (inst < price) throw new Error('installmentPrice cannot be lower than price');
-          fees.push('Installment Price: ' + money(inst), 'Installment Duration: ' + (N(it.installmentMonths) || 12) + ' months');
-          if (N(it.initialDeposit)) fees.push('Initial Deposit: ' + money(N(it.initialDeposit)));
+          fees.push('Installment Price: ' + money(inst), 'Installment Duration: ' + months + ' months');
+          if (dep) fees.push('Initial Deposit: ' + money(dep));
         }
-        fees.push('Legal Fee: ' + landLegalPct + '% (' + money(Math.round(price * landLegalPct / 100)) + ')');
-        if (it.plotSize) fees.push('Plot Size: ' + it.plotSize);
-        if (it.titleDocument) fees.push('Title Document: ' + it.titleDocument);
-        if (it.landUse) fees.push('Land Use: ' + it.landUse);
+        if (parts) {
+          const ps = String(it.partSize || '').trim(), pc = N(it.plotsAvailable);
+          fees.push('Sold In Parts: ' + (half ? 'Full plot, Half plot' : 'Full plot'));
+          fees.push('Price Basis: Per full plot' + (ps ? ' (' + ps + ')' : ''));
+          if (pc) fees.push('Plots Available: ' + pc);
+          if (half) {
+            fees.push('Half Plot Price: ' + money(halfOut));
+            if (inst) fees.push('Half Plot Installment: ' + money(halfInst));
+          }
+        }
+        fees.push('Legal Fee: ' + legalPct + '% (' + money(Math.round(price * legalPct / 100)) + ')');
+        if (N(it.surveyPlan)) fees.push('Survey Plan: ' + money(N(it.surveyPlan)));
+        if (N(it.redCopy)) fees.push('Red Copy: ' + money(N(it.redCopy)));
+        const titleDoc = pick(it.titleDocument, TITLE_DOCS, TITLE_ALIAS, 'titleDocument');
+        const landUse = pick(it.landUse, LAND_USES, USE_ALIAS, 'landUse') || 'Residential';
+        if (String(it.plotSize || '').trim()) fees.push('Plot Size: ' + String(it.plotSize).trim());
+        if (titleDoc) fees.push('Title Document: ' + titleDoc);
+        fees.push('Land Use: ' + landUse);
+        extras.forEach(f => fees.push(f));
       } else if (category === 'short-let') {
+        // ----- Short Let: nightly rate, stay rules, booking window, blocked dates, About -----
         rent = money(price) + '/night';
         if (N(it.minStay)) fees.push('Minimum Stay: ' + N(it.minStay) + ' night' + (N(it.minStay) > 1 ? 's' : ''));
         if (N(it.cleaningFee)) fees.push('Cleaning Fee: ' + money(N(it.cleaningFee)));
         if (N(it.cautionFee)) fees.push('Caution Fee: ' + money(N(it.cautionFee)));
+        if (N(it.serviceCharge)) fees.push('Service Charge: ' + money(N(it.serviceCharge)) + '/' + freqOf(it.serviceChargeFreq));
+        const from = isoDate(it.openFrom, 'openFrom'), to = isoDate(it.openUntil, 'openUntil');
+        if ((from && !to) || (!from && to)) throw new Error('set both openFrom and openUntil, or leave both empty');
+        if (from && to && to <= from) throw new Error('openUntil (the last check-out) must be after openFrom');
+        if (from && to) fees.push('Open For Booking: ' + from + ' to ' + to);
+        const blocked = (Array.isArray(it.blockedDates) ? it.blockedDates : String(it.blockedDates || '').split(/[|,;\s]+/)).map(d => isoDate(d, 'blockedDates')).filter(Boolean);
+        const uniq = blocked.filter((d, i) => blocked.indexOf(d) === i).sort();
+        if (uniq.length) fees.push('Blocked Dates: ' + uniq.join(', '));
+        const about = String(it.about || '').replace(/\s+/g, ' ').trim();
+        if (about) fees.push('About This Space: ' + about);
+        extras.forEach(f => fees.push(f));
       } else {
-        const com = it.usage === 'commercial';
+        // ----- Flexible Rent (residential) / Commercial (annual, paid upfront) -----
         if (com) {
           beds = 0; annual = price; rent = money(price) + '/yr';
-          fees.push('Usage: Commercial', 'Commercial Type: ' + (it.commercialType || 'Office'));
+          fees.push('Usage: Commercial', 'Commercial Type: ' + (pick(it.commercialType, COM_TYPES, COM_ALIAS, 'commercialType') || 'Shop'));
           if (parseFloat(it.sqm) > 0) fees.push('Commercial Size: ' + parseFloat(it.sqm) + ' sqm');
-          if (it.parking !== undefined && !isNaN(parseInt(it.parking, 10))) fees.push('Commercial Parking: ' + parseInt(it.parking, 10));
-          fees.push('Power Supply: ' + (it.power || 'Public grid'), 'Payment Terms: Annual, paid in full upfront');
+          if (given(it.parking) && !isNaN(parseInt(it.parking, 10))) fees.push('Commercial Parking: ' + parseInt(it.parking, 10));
+          fees.push('Power Supply: ' + (pick(it.power, POWERS, POWER_ALIAS, 'power') || 'Public grid'), 'Payment Terms: Annual, paid in full upfront');
+          extras.forEach(f => fees.push(f));
         } else {
           rent = money(price) + '/mo';
-          if (N(it.annualRent)) annual = N(it.annualRent);
+          annual = N(it.annualRent) || price * 12;
+          // Same auto-calculation as the form: Agent Fee 10% and Legal Fee 5% of the yearly rent
+          if (it.autoFees !== false) {
+            fees.push('Agent Fee: 10% (' + money(Math.round(annual * 0.10)) + ')');
+            fees.push('Legal Fee: 5% (' + money(Math.round(annual * 0.05)) + ')');
+          }
+          extras.forEach(f => fees.push(f));
         }
         if (N(it.cautionFee)) fees.push('Caution Fee: ' + money(N(it.cautionFee)));
-        if (N(it.serviceCharge)) fees.push('Service Charge: ' + money(N(it.serviceCharge)) + '/' + (it.serviceChargeFreq || 'year'));
+        if (N(it.serviceCharge)) fees.push('Service Charge: ' + money(N(it.serviceCharge)) + '/' + freqOf(it.serviceChargeFreq));
       }
-      if (Array.isArray(it.extraFees)) it.extraFees.forEach(f => { if (f) fees.push(String(f)); });
       return {
         title, location, beds, category, rent, annual_rent: annual, fees,
         color: it.color || 'from-brand-500/30 to-slate-900',
-        features: Array.isArray(it.features) ? it.features : [],
+        features: cleanFeatures(it.features, category),
         images: Array.isArray(it.images) ? it.images : [],
         video: it.video || null,
-        status: it.status || 'available'
+        status
       };
     }
+    // ----- CSV support: turns spreadsheet rows into the same listing objects the JSON option uses -----
+    let bulkMode = 'csv';
+    function setMode(m) {
+      bulkMode = m;
+      document.getElementById('bulk-pane-csv').classList.toggle('hidden', m !== 'csv');
+      document.getElementById('bulk-pane-json').classList.toggle('hidden', m !== 'json');
+      document.getElementById('bulk-mode-csv').className = (m === 'csv' ? 'btn-primary' : 'btn-secondary') + ' !py-2 !px-4 text-sm';
+      document.getElementById('bulk-mode-json').className = (m === 'json' ? 'btn-primary' : 'btn-secondary') + ' !py-2 !px-4 text-sm';
+    }
+    function parseCsv(text) {
+      text = String(text || '').replace(/^﻿/, '');
+      const first = text.split(/\r?\n/).find(l => l.trim()) || '';
+      const count = (c) => (first.match(new RegExp(c === '\t' ? '\t' : '\\' + c, 'g')) || []).length;
+      const delim = [',', ';', '\t'].sort((x, y) => count(y) - count(x))[0];
+      const rows = []; let row = [], cur = '', q = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (q) {
+          if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+          else cur += ch;
+        } else if (ch === '"') q = true;
+        else if (ch === delim) { row.push(cur); cur = ''; }
+        else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; rows.push(row); row = []; }
+        else cur += ch;
+      }
+      row.push(cur); rows.push(row);
+      return rows.filter(r => r.some(c => String(c).trim() !== ''));
+    }
+    const ALIAS = { photos: 'images', photo: 'images', image: 'images', imagelinks: 'images', photolinks: 'images', imageurls: 'images', pictures: 'images',
+      name: 'title', address: 'location', area: 'location', bedrooms: 'beds', bedroom: 'beds', bathroom: 'bathrooms', toilet: 'toilets',
+      parkingspaces: 'parking', type: 'propertyType', kind: 'propertyType', power: 'power', powersupply: 'power', size: 'sqm', commercialsize: 'sqm',
+      installment: 'installmentPrice', installmentprice: 'installmentPrice', installmentmonths: 'installmentMonths', installmentduration: 'installmentMonths', duration: 'installmentMonths',
+      initialdeposit: 'initialDeposit', deposit: 'initialDeposit', propertytype: 'propertyType', commercialtype: 'commercialType', plotsize: 'plotSize', landsize: 'plotSize',
+      titledocument: 'titleDocument', titledoc: 'titleDocument', landuse: 'landUse', minstay: 'minStay', minimumstay: 'minStay', cleaningfee: 'cleaningFee',
+      cautionfee: 'cautionFee', caution: 'cautionFee', servicecharge: 'serviceCharge', servicechargefreq: 'serviceChargeFreq', servicechargefrequency: 'serviceChargeFreq', annualrent: 'annualRent',
+      extrafees: 'extraFees', otherfees: 'extraFees', autofees: 'autoFees', video: 'video', videolink: 'video', videourl: 'video', features: 'features', amenities: 'features',
+      soldinparts: 'soldInParts', parts: 'soldInParts', halfplot: 'halfPlot', halfplots: 'halfPlot', sellhalfplots: 'halfPlot', partsize: 'partSize', fullplotsize: 'partSize',
+      plotsavailable: 'plotsAvailable', plots: 'plotsAvailable', fullplotsavailable: 'plotsAvailable', halfplotprice: 'halfPlotPrice', halfplotoutright: 'halfPlotPrice',
+      halfplotinstallment: 'halfPlotInstallment', legalfeepercent: 'legalFeePercent', legalpercent: 'legalFeePercent', legalpct: 'legalFeePercent', deedlegalfee: 'legalFeePercent',
+      surveyplan: 'surveyPlan', surveyplancost: 'surveyPlan', surveycost: 'surveyPlan', redcopy: 'redCopy', redcopycost: 'redCopy',
+      openfrom: 'openFrom', opensfrom: 'openFrom', bookingfrom: 'openFrom', availablefrom: 'openFrom', openforbookingfrom: 'openFrom',
+      openuntil: 'openUntil', opento: 'openUntil', bookinguntil: 'openUntil', availableuntil: 'openUntil', lastcheckout: 'openUntil',
+      blockeddates: 'blockedDates', blocked: 'blockedDates', unavailabledates: 'blockedDates', about: 'about', aboutthisspace: 'about', description: 'about' };
+    const CANON = {}; ['category', 'title', 'location', 'price', 'annualRent', 'beds', 'bathrooms', 'toilets', 'parking', 'usage', 'commercialType', 'sqm', 'power', 'propertyType', 'installmentPrice', 'installmentMonths', 'initialDeposit', 'soldInParts', 'halfPlot', 'partSize', 'plotsAvailable', 'halfPlotPrice', 'halfPlotInstallment', 'legalFeePercent', 'surveyPlan', 'redCopy', 'plotSize', 'titleDocument', 'landUse', 'minStay', 'cleaningFee', 'cautionFee', 'serviceCharge', 'serviceChargeFreq', 'openFrom', 'openUntil', 'blockedDates', 'about', 'features', 'extraFees', 'images', 'video', 'status', 'color', 'autoFees'].forEach(k => { CANON[k.toLowerCase()] = k; });
+    const NUMERIC = ['price', 'beds', 'bathrooms', 'toilets', 'parking', 'installmentPrice', 'installmentMonths', 'initialDeposit', 'minStay', 'cleaningFee', 'cautionFee', 'serviceCharge', 'annualRent', 'sqm', 'plotsAvailable', 'halfPlotPrice', 'halfPlotInstallment', 'legalFeePercent', 'surveyPlan', 'redCopy'];
+    const LISTY = ['images', 'features', 'extraFees'];
+    function csvToItems(text) {
+      const rows = parseCsv(text);
+      if (rows.length < 2) throw new Error('The CSV needs a header row and at least one listing row.');
+      const keys = rows[0].map(h => {
+        const flat = String(h).toLowerCase().replace(/[^a-z0-9]/g, '');
+        return ALIAS[flat] || CANON[flat] || '';
+      });
+      if (!keys.includes('title')) throw new Error('No "title" column found in the header row.');
+      return rows.slice(1).map(r => {
+        const it = {};
+        keys.forEach((k, i) => {
+          const v = (r[i] || '').trim(); if (!k || v === '') return;
+          if (NUMERIC.includes(k)) it[k] = String(v).replace(/[^0-9.]/g, '');
+          else if (LISTY.includes(k)) it[k] = v.split(/\s*[|\n]\s*/).map(x => x.trim()).filter(Boolean);
+          else if (k === 'autoFees') it[k] = !/^(no|false|0|n)$/i.test(v);
+          else it[k] = v;
+        });
+        if (it.category) {
+          const c = String(it.category).toLowerCase().replace(/[^a-z]/g, '');
+          it.category = c === 'shortlet' ? 'short-let' : (['land', 'sale', 'sell', 'buy', 'property'].includes(c) ? 'land' : (c === 'commercial' ? 'commercial' : (c === 'rent' || c === 'lease' ? 'rent' : it.category)));
+        }
+        if (it.usage) it.usage = /commercial|shop|office|warehouse|hall/i.test(String(it.usage)) ? 'commercial' : String(it.usage).toLowerCase();
+        if (it.features && it.features.length === 1 && /,/.test(it.features[0]) && !/\|/.test(it.features[0])) it.features = it.features[0].split(/\s*,\s*/);
+        return it;
+      });
+    }
+    function csvTemplate() {
+      const head = ['category', 'title', 'location', 'price', 'annualRent', 'beds', 'bathrooms', 'toilets', 'parking', 'usage', 'commercialType', 'sqm', 'power', 'propertyType', 'installmentPrice', 'installmentMonths', 'initialDeposit', 'soldInParts', 'halfPlot', 'partSize', 'plotsAvailable', 'halfPlotPrice', 'halfPlotInstallment', 'legalFeePercent', 'surveyPlan', 'redCopy', 'plotSize', 'titleDocument', 'landUse', 'minStay', 'cleaningFee', 'cautionFee', 'serviceCharge', 'serviceChargeFreq', 'openFrom', 'openUntil', 'blockedDates', 'about', 'features', 'extraFees', 'images', 'video', 'status'];
+      const ex = [
+        { category: 'rent', title: '2-Bed Flat, Lekki Phase 1', location: 'Lekki Phase 1, Lagos', price: '180000', beds: '2', cautionFee: '200000', serviceCharge: '120000', serviceChargeFreq: 'yearly', features: 'Fully Furnished|WiFi|Standby Generator', images: 'https://example.com/flat1.jpg|https://example.com/flat2.jpg', status: 'available' },
+        { category: 'rent', title: 'Warehouse, Ikeja Industrial Estate', location: 'Ikeja, Lagos', price: '4500000', usage: 'commercial', commercialType: 'Warehouse', sqm: '600', parking: '6', power: 'Grid + generator', cautionFee: '500000', features: 'Loading bay|Security', images: 'https://example.com/wh1.jpg', status: 'available' },
+        { category: 'land', title: '450sqm Land, Ibeju-Lekki', location: 'Ibeju-Lekki, Lagos', price: '8500000', propertyType: 'Land (Plot)', installmentPrice: '9500000', installmentMonths: '12', initialDeposit: '2000000', soldInParts: 'yes', halfPlot: 'yes', partSize: '450sqm', plotsAvailable: '12', legalFeePercent: '5', surveyPlan: '250000', redCopy: '150000', plotSize: '3 acres', titleDocument: 'C of O', landUse: 'Residential', features: 'Dry land|Fenced', images: 'https://example.com/land1.jpg', status: 'available' },
+        { category: 'land', title: '4-Bed Duplex, Lekki', location: 'Lekki, Lagos', price: '120000000', beds: '4', bathrooms: '5', toilets: '6', parking: '4', propertyType: 'Duplex', legalFeePercent: '10', plotSize: '600sqm', titleDocument: 'Deed of Assignment', landUse: 'Residential', features: 'Gated estate|Boys quarters', images: 'https://example.com/duplex1.jpg', status: 'available' },
+        { category: 'short-let', title: 'Studio, Victoria Island', location: 'Victoria Island, Lagos', price: '45000', beds: '1', minStay: '2', cleaningFee: '10000', cautionFee: '30000', openFrom: '2026-11-01', openUntil: '2027-03-31', blockedDates: '2026-12-24|2026-12-25', about: 'Bright studio close to the beach with a quiet work area.', features: 'Wifi|Air conditioning|Smoke alarm', images: 'https://example.com/studio1.jpg', status: 'available' }
+      ].map(o => head.map(h => o[h] || ''));
+      const q = (c) => /[",\n]/.test(c) ? '"' + String(c).replace(/"/g, '""') + '"' : c;
+      return '\ufeff' + [head].concat(ex).map(r => r.map(q).join(',')).join('\r\n');
+    }
+    document.getElementById('bulk-mode-csv').addEventListener('click', () => setMode('csv'));
+    document.getElementById('bulk-mode-json').addEventListener('click', () => setMode('json'));
+    document.getElementById('bulk-csv-file').addEventListener('change', async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      document.getElementById('bulk-csv').value = await f.text();
+    });
+    document.getElementById('bulk-template-btn').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csvTemplate()], { type: 'text/csv;charset=utf-8' }));
+      a.download = 'maintown-listings-template.csv'; document.body.appendChild(a); a.click(); a.remove();
+    });
+    setMode('csv');
     function parse() {
+      if (bulkMode === 'csv') {
+        const txt = document.getElementById('bulk-csv').value;
+        if (!txt.trim()) throw new Error('Choose a CSV file or paste your rows first.');
+        return csvToItems(txt);
+      }
       let arr;
       try { arr = JSON.parse(document.getElementById('bulk-json').value); } catch (e) { throw new Error('That is not valid JSON: ' + e.message); }
       if (!Array.isArray(arr) || !arr.length) throw new Error('Paste a list of listings, starting with [ and ending with ]');
@@ -1954,27 +2177,37 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       const payloads = [];
       arr.forEach((it, i) => { try { payloads.push(build(it)); } catch (e) { say('Listing ' + (i + 1) + ' (' + ((it && it.title) || 'no title') + '): ' + e.message, true); } });
       if (payloads.length !== arr.length) { say('Fix the problems above, then try again. Nothing was published.', true); return; }
-      if (!save) { say('All ' + payloads.length + ' listings look good. Tap Publish all to go live.'); return; }
+      // Skip anything already on the site (same title + location) so re-uploading a CSV never creates doubles
+      const keyOf = (p) => (p.title + '|' + p.location).toLowerCase().replace(/\s+/g, ' ').trim();
+      const have = new Set((typeof listingsCache !== 'undefined' ? listingsCache : []).map(keyOf));
+      const fresh = [];
+      payloads.forEach(p => {
+        const k = keyOf(p);
+        if (have.has(k)) say('Already on your site, will be skipped: ' + p.title);
+        else { have.add(k); fresh.push(p); }
+      });
+      if (!save) { say('All ' + payloads.length + ' listings look good' + (fresh.length !== payloads.length ? ' (' + fresh.length + ' new, ' + (payloads.length - fresh.length) + ' already on the site and skipped)' : '') + '. Tap Publish all to go live.'); return; }
+      if (!fresh.length) { say('Nothing new to publish. Every listing in this file is already on your site.'); return; }
       const btn = document.getElementById('bulk-run-btn'); btn.disabled = true;
       const files = Array.from(document.getElementById('bulk-images').files);
-      if (files.length && payloads.some(p => !p.images.length)) {
+      if (files.length && fresh.some(p => !p.images.length)) {
         const urls = [];
         try {
           for (let i = 0; i < files.length; i++) {
             say('Uploading photo ' + (i + 1) + ' of ' + files.length + '...');
             urls.push(await uploadFile(await compressImage(files[i])));
           }
-          payloads.forEach(p => { if (!p.images.length) p.images = urls.slice(); });
+          fresh.forEach(p => { if (!p.images.length) p.images = urls.slice(); });
         } catch (e) { say('Photo upload failed: ' + e.message + '. Nothing was published.', true); btn.disabled = false; return; }
       }
       let ok = 0;
-      for (let i = 0; i < payloads.length; i++) {
-        const { error } = await sb.from('listings').insert(payloads[i]);
-        if (error) say('Listing ' + (i + 1) + ' (' + payloads[i].title + ') failed: ' + error.message, true);
-        else { ok++; say('Published: ' + payloads[i].title); }
+      for (let i = 0; i < fresh.length; i++) {
+        const { error } = await sb.from('listings').insert(fresh[i]);
+        if (error) say('Listing ' + (i + 1) + ' (' + fresh[i].title + ') failed: ' + error.message, true);
+        else { ok++; say('Published: ' + fresh[i].title); }
       }
       btn.disabled = false;
-      showToast(ok + ' of ' + payloads.length + ' listings published.', ok !== payloads.length);
+      showToast(ok + ' of ' + fresh.length + ' listings published.', ok !== fresh.length);
       if (ok) loadExistingListings();
     }
     document.getElementById('bulk-check-btn').addEventListener('click', () => run(false));
