@@ -107,6 +107,25 @@
 
   <main class="max-w-4xl mx-auto px-6 py-10">
 
+    <!-- ---- Bulk Import (paste many listings at once) ---- -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-10" id="bulkImportSection" data-view="listings">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">Bulk Import Listings</h2>
+      <p class="text-sm text-slate-500 mb-4">Paste a list of listings (JSON) and publish them all in one go. Each one is saved exactly like the form above, and goes live on your site straight away.</p>
+      <div class="field">
+        <textarea id="bulk-json" rows="8" class="font-mono text-xs" placeholder='[ { "category": "rent", "title": "2-Bed Flat, Lekki", "location": "Lekki Phase 1, Lagos", "price": 180000, "beds": 2, "images": ["https://..."] } ]'></textarea>
+      </div>
+      <div class="field">
+        <label>Photos for listings that have no photo links (optional)</label>
+        <input type="file" id="bulk-images" accept="image/*" multiple class="!p-2">
+        <p class="text-xs text-slate-500 mt-1">Best used one listing at a time: paste that listing, pick its photos here, then Publish all.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" id="bulk-check-btn" class="btn-secondary w-full sm:w-auto">Check only</button>
+        <button type="button" id="bulk-run-btn" class="btn-primary w-full sm:w-auto">Publish all</button>
+      </div>
+      <div id="bulk-log" class="text-xs text-slate-400 mt-4 space-y-1"></div>
+    </section>
+
     <!-- ---- Add Listing Form ---- -->
     <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-10" id="listingFormSection" data-view="listings">
       <h2 class="font-display font-semibold text-lg text-white mb-1" id="formHeading">Add a New Listing</h2>
@@ -1860,6 +1879,107 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     showToast('Partner removed.');
     loadPartners();
   });
+</script>
+
+<script>
+  // ---------- Bulk import: builds the same payload as the form, for many listings ----------
+  (function () {
+    const N = (v) => { const n = parseInt(v, 10); return isNaN(n) ? 0 : n; };
+    const money = (n) => '\u20a6' + Number(n).toLocaleString('en-US');
+    function build(it) {
+      const category = it.category || 'rent';
+      if (!['rent', 'land', 'short-let'].includes(category)) throw new Error('category must be rent, land or short-let');
+      const title = (it.title || '').trim(), location = (it.location || '').trim(), price = N(it.price);
+      if (!title || !location || !price) throw new Error('title, location and price are required');
+      let beds = N(it.beds), rent = '', annual = null, fees = [];
+      if (category === 'land') {
+        const type = it.propertyType || 'Land (Plot)', isHouse = type !== 'Land (Plot)';
+        if (isHouse) {
+          if (N(it.bathrooms)) fees.push('Bathrooms: ' + N(it.bathrooms));
+          if (N(it.toilets)) fees.push('Toilets: ' + N(it.toilets));
+          if (N(it.parking)) fees.push('Parking Spaces: ' + N(it.parking));
+        } else beds = 0;
+        rent = money(price);
+        fees.push('Property Type: ' + type, 'Outright Price: ' + money(price));
+        const inst = N(it.installmentPrice);
+        if (inst) {
+          if (inst < price) throw new Error('installmentPrice cannot be lower than price');
+          fees.push('Installment Price: ' + money(inst), 'Installment Duration: ' + (N(it.installmentMonths) || 12) + ' months');
+          if (N(it.initialDeposit)) fees.push('Initial Deposit: ' + money(N(it.initialDeposit)));
+        }
+        fees.push('Legal Fee: ' + landLegalPct + '% (' + money(Math.round(price * landLegalPct / 100)) + ')');
+        if (it.plotSize) fees.push('Plot Size: ' + it.plotSize);
+        if (it.titleDocument) fees.push('Title Document: ' + it.titleDocument);
+        if (it.landUse) fees.push('Land Use: ' + it.landUse);
+      } else if (category === 'short-let') {
+        rent = money(price) + '/night';
+        if (N(it.minStay)) fees.push('Minimum Stay: ' + N(it.minStay) + ' night' + (N(it.minStay) > 1 ? 's' : ''));
+        if (N(it.cleaningFee)) fees.push('Cleaning Fee: ' + money(N(it.cleaningFee)));
+        if (N(it.cautionFee)) fees.push('Caution Fee: ' + money(N(it.cautionFee)));
+      } else {
+        const com = it.usage === 'commercial';
+        if (com) {
+          beds = 0; annual = price; rent = money(price) + '/yr';
+          fees.push('Usage: Commercial', 'Commercial Type: ' + (it.commercialType || 'Office'));
+          if (parseFloat(it.sqm) > 0) fees.push('Commercial Size: ' + parseFloat(it.sqm) + ' sqm');
+          if (it.parking !== undefined && !isNaN(parseInt(it.parking, 10))) fees.push('Commercial Parking: ' + parseInt(it.parking, 10));
+          fees.push('Power Supply: ' + (it.power || 'Public grid'), 'Payment Terms: Annual, paid in full upfront');
+        } else {
+          rent = money(price) + '/mo';
+          if (N(it.annualRent)) annual = N(it.annualRent);
+        }
+        if (N(it.cautionFee)) fees.push('Caution Fee: ' + money(N(it.cautionFee)));
+        if (N(it.serviceCharge)) fees.push('Service Charge: ' + money(N(it.serviceCharge)) + '/' + (it.serviceChargeFreq || 'year'));
+      }
+      if (Array.isArray(it.extraFees)) it.extraFees.forEach(f => { if (f) fees.push(String(f)); });
+      return {
+        title, location, beds, category, rent, annual_rent: annual, fees,
+        color: it.color || 'from-brand-500/30 to-slate-900',
+        features: Array.isArray(it.features) ? it.features : [],
+        images: Array.isArray(it.images) ? it.images : [],
+        video: it.video || null,
+        status: it.status || 'available'
+      };
+    }
+    function parse() {
+      let arr;
+      try { arr = JSON.parse(document.getElementById('bulk-json').value); } catch (e) { throw new Error('That is not valid JSON: ' + e.message); }
+      if (!Array.isArray(arr) || !arr.length) throw new Error('Paste a list of listings, starting with [ and ending with ]');
+      return arr;
+    }
+    async function run(save) {
+      const log = document.getElementById('bulk-log'); log.innerHTML = '';
+      const say = (m, bad) => { const p = document.createElement('p'); p.textContent = m; if (bad) p.style.color = '#f87171'; log.appendChild(p); };
+      let arr; try { arr = parse(); } catch (e) { say(e.message, true); return; }
+      const payloads = [];
+      arr.forEach((it, i) => { try { payloads.push(build(it)); } catch (e) { say('Listing ' + (i + 1) + ' (' + ((it && it.title) || 'no title') + '): ' + e.message, true); } });
+      if (payloads.length !== arr.length) { say('Fix the problems above, then try again. Nothing was published.', true); return; }
+      if (!save) { say('All ' + payloads.length + ' listings look good. Tap Publish all to go live.'); return; }
+      const btn = document.getElementById('bulk-run-btn'); btn.disabled = true;
+      const files = Array.from(document.getElementById('bulk-images').files);
+      if (files.length && payloads.some(p => !p.images.length)) {
+        const urls = [];
+        try {
+          for (let i = 0; i < files.length; i++) {
+            say('Uploading photo ' + (i + 1) + ' of ' + files.length + '...');
+            urls.push(await uploadFile(await compressImage(files[i])));
+          }
+          payloads.forEach(p => { if (!p.images.length) p.images = urls.slice(); });
+        } catch (e) { say('Photo upload failed: ' + e.message + '. Nothing was published.', true); btn.disabled = false; return; }
+      }
+      let ok = 0;
+      for (let i = 0; i < payloads.length; i++) {
+        const { error } = await sb.from('listings').insert(payloads[i]);
+        if (error) say('Listing ' + (i + 1) + ' (' + payloads[i].title + ') failed: ' + error.message, true);
+        else { ok++; say('Published: ' + payloads[i].title); }
+      }
+      btn.disabled = false;
+      showToast(ok + ' of ' + payloads.length + ' listings published.', ok !== payloads.length);
+      if (ok) loadExistingListings();
+    }
+    document.getElementById('bulk-check-btn').addEventListener('click', () => run(false));
+    document.getElementById('bulk-run-btn').addEventListener('click', () => run(true));
+  })();
 </script>
 
 </body>
