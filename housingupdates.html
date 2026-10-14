@@ -58,6 +58,13 @@
   html[data-theme="light"] .prose-mt h2, html[data-theme="light"] .prose-mt strong { color: #0F172A; }
   html[data-theme="light"] .prose-mt h3 { color: #6D28D9; }
   html[data-theme="light"] .prose-mt a { color: #6D28D9; }
+
+  /* Hero background slideshow (same as the landing page) */
+  .hero-slideshow { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+  .hero-slide { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.5s ease-in-out; filter: saturate(1.25) contrast(1.05) brightness(1.02); }
+  .hero-slide.active { opacity: 1; }
+  .hero-slideshow .hero-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(15,23,42,0.86) 0%, rgba(15,23,42,0.66) 45%, rgba(15,23,42,0.42) 75%, rgba(15,23,42,0.5) 100%), linear-gradient(180deg, rgba(15,23,42,0.4) 0%, rgba(15,23,42,0.25) 40%, rgba(15,23,42,0.3) 70%, rgba(15,23,42,0.75) 100%); }
+  @media (prefers-reduced-motion: reduce) { .hero-slide { transition: none; } }
 </style>
 <script type="application/ld+json">
 {
@@ -72,7 +79,7 @@
   "publisher": { "@type": "Organization", "name": "MainTown Realty", "url": "https://maintownrealty.com" }
 }
 </script>
-<script src="./theme.js"></script>
+<script src="./theme.js?v=3"></script>
 </head>
 <body class="text-slate-100 antialiased">
 
@@ -89,22 +96,36 @@
   </div>
 </header>
 
-<main class="pt-28 sm:pt-32 pb-16">
-  <article class="max-w-3xl mx-auto px-4 sm:px-6">
+<main class="pb-16">
+  <article>
 
-    <nav aria-label="Breadcrumb" class="text-xs text-slate-400 mb-4">
-      <a href="./index.html" class="hover:text-white transition">Home</a>
-      <span class="mx-1.5" aria-hidden="true">/</span>
-      <span class="text-slate-300">Housing Updates</span>
-    </nav>
+    <!-- Hero: background slideshow with the headline on top, like the landing page.
+         To use photos of Ajah, Ikorodu, Badagry and other areas, replace or add .hero-slide lines below. -->
+    <section id="hero" class="relative overflow-hidden text-white pt-28 pb-10 sm:pt-32 sm:pb-14" style="background:#0F172A;">
+      <div class="hero-slideshow" aria-hidden="true">
+        <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1559833064-6f4573ec1ac9?fm=jpg&amp;q=80&amp;w=2000&amp;auto=format&amp;fit=crop');"></div>
+        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1618828665347-d870c38c95c7?fm=jpg&amp;q=80&amp;w=2000&amp;auto=format&amp;fit=crop');"></div>
+        <div class="hero-overlay"></div>
+      </div>
 
-    <p class="text-xs font-semibold uppercase tracking-wider text-brand-400 mb-3">Housing Updates · Land and Title</p>
-    <h1 class="font-display font-bold text-white text-[1.9rem] sm:text-4xl leading-tight tracking-tight">5 Documents to Check Before Buying Land in Lagos (Ajah, Ikorodu, Badagry and Beyond)</h1>
-    <p class="mt-4 text-sm text-slate-400">By MainTown Realty · October 11, 2026 · 4 min read</p>
+      <div class="relative z-10 max-w-3xl mx-auto px-4 sm:px-6">
+        <nav aria-label="Breadcrumb" class="text-xs mb-4" style="color:#E2E8F0;">
+          <a href="./index.html" style="color:#E2E8F0;">Home</a>
+          <span class="mx-1.5" aria-hidden="true">/</span>
+          <span style="color:#FFFFFF;">Housing Updates</span>
+        </nav>
 
-    <a href="https://whatsapp.com/channel/0029VbDy4yeJpe8XeziNiw12" target="_blank" rel="noopener noreferrer" class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-100 border border-white/10 hover:border-brand-500 rounded-full px-4 py-2 transition">
+        <p class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:#C4B5FD;text-shadow:0 1px 3px rgba(0,0,0,.6);">Housing Updates · Land and Title</p>
+        <h1 class="font-display font-bold text-white text-[1.9rem] sm:text-4xl md:text-5xl leading-tight tracking-tight" style="text-shadow:0 2px 20px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.6);">5 Documents to Check Before Buying Land in Lagos (Ajah, Ikorodu, Badagry and Beyond)</h1>
+        <p class="mt-4 text-sm" style="color:#E2E8F0;text-shadow:0 1px 3px rgba(0,0,0,.7);">By MainTown Realty · October 11, 2026 · 4 min read</p>
+
+        <a href="https://whatsapp.com/channel/0029VbDy4yeJpe8XeziNiw12" target="_blank" rel="noopener noreferrer" class="mt-5 inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-2" style="color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
       <span class="text-[#25D366]"><svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.3zM12 21.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.8-9.8 9.8zm5.4-7.3c-.3-.1-1.8-.9-2-1s-.5-.1-.7.1-.8 1-.9 1.1-.3.2-.6.1c-1.7-.9-2.8-1.5-3.9-3.4-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.5l-.9-2.1c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1.1 1.1-1.1 2.6s1.1 3 1.3 3.2c.2.2 2.2 3.4 5.3 4.7 2 .8 2.7.9 3.7.8.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4z"/></svg></span> Get property alerts: Join MainTown Realty Channel
     </a>
+      </div>
+    </section>
+
+    <div class="max-w-3xl mx-auto px-4 sm:px-6">
 
     <div class="prose-mt mt-8">
       <p>Land in Lagos can be a smart investment, and it can also be an expensive lesson. Double-sold plots, family disputes and land caught up in government acquisition are the stories buyers hear most, and they usually trace back to the same mistake: paying before checking the paperwork. Whether you are eyeing a plot in Ajah, a growing area like Ikorodu or Badagry, or a home in Lekki, Ikeja or Alimosho, five documents decide whether you are buying real title or just a good story.</p>
@@ -176,6 +197,7 @@
 
     <p class="mt-8 text-xs text-slate-500 leading-relaxed">This article is general information for readers in Nigeria and is not legal advice. Land rules and procedures can change and differ by state and by title type, so confirm the details for your specific plot with a qualified Nigerian lawyer before you pay.</p>
 
+    </div>
   </article>
 </main>
 
@@ -267,5 +289,13 @@
   </div>
 </footer>
 
+<script>
+  (function () {
+    var slides = document.querySelectorAll('#hero .hero-slide');
+    if (slides.length < 2 || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    var i = 0;
+    setInterval(function () { slides[i].classList.remove('active'); i = (i + 1) % slides.length; slides[i].classList.add('active'); }, 5000);
+  })();
+</script>
 </body>
 </html>
