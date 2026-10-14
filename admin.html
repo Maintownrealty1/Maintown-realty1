@@ -453,6 +453,37 @@
       <div id="existingList" class="space-y-3 mt-4 hidden"></div>
     </section>
 
+    <!-- ---- Partners (shown on the Partner as Agent/Landlord page) ---- -->
+    <section data-view="partners">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">Partners</h2>
+      <p class="text-sm text-slate-500 mb-5">Add verified agents, landlords and partners. They appear straight away on the Partner as Agent/Landlord page.</p>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6">
+        <div class="grid sm:grid-cols-2 gap-x-5">
+          <div class="field">
+            <label>Name / Company</label>
+            <input type="text" id="pt-name" placeholder="e.g. Prismmon Enterprises Nig">
+          </div>
+          <div class="field">
+            <label>Type</label>
+            <select id="pt-type">
+              <option value="agent">Agent</option>
+              <option value="landlord">Landlord</option>
+              <option value="partner">Partner</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Photo or Logo</label>
+          <input type="file" id="pt-photo" accept="image/*">
+          <p class="hint">Square images work best. Logos are shown in full, not cropped.</p>
+        </div>
+        <button id="pt-add-btn" class="btn-primary">Add to Partnership Page</button>
+      </div>
+
+      <div id="partnersList" class="space-y-2"></div>
+    </section>
+
     <!-- ---- Sign-Ups & Onboarding (KYC + Legal Agreement + Login) ---- -->
     <section data-view="signups">
       <h2 class="font-display font-semibold text-lg text-white mb-1">Sign-Ups &amp; Onboarding</h2>
@@ -551,13 +582,13 @@
   // Which dashboard tabs each role gets. Edit these arrays to change who
   // sees what — the tab bar and every data load below all key off this.
   const ROLE_VIEWS = {
-    super_admin: ['listings', 'signups', 'finance', 'staff'],
-    developer:   ['listings', 'signups', 'finance'],
+    super_admin: ['listings', 'partners', 'signups', 'finance', 'staff'],
+    developer:   ['listings', 'partners', 'signups', 'finance'],
     finance:     ['finance'],
     legal:       ['signups'],
   };
   const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal' };
-  const VIEW_LABELS = { listings: 'Listings', signups: 'Sign-Ups', finance: 'Finance', staff: 'Staff Access' };
+  const VIEW_LABELS = { listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', finance: 'Finance', staff: 'Staff Access' };
   let currentStaffRole = null;
   let currentView = null;
 
@@ -596,6 +627,7 @@
     });
     renderRoleTabs();
     if (view === 'listings') loadExistingListings();
+    if (view === 'partners') loadPartners();
     if (view === 'signups') loadSignups();
     if (view === 'finance') loadFinanceList();
     if (view === 'staff') loadStaffUsers();
@@ -1746,6 +1778,87 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     }
     showToast('Staff access removed.');
     loadStaffUsers();
+  });
+
+  // ---------- Partners ----------
+  // Table: public.partners (see partners_migration.sql). Photos go in the
+  // same storage bucket as listing media, under partners/.
+  let partnersCache = [];
+  const PARTNER_LABELS = { agent: 'Agent', landlord: 'Landlord', partner: 'Partner' };
+  function escPt(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  async function loadPartners() {
+    const listEl = document.getElementById('partnersList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
+    const { data, error } = await sb.from('partners').select('*').order('created_at', { ascending: true });
+    if (error) {
+      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load partners: ${escPt(error.message)} — run partners_migration.sql in Supabase first.</p>`;
+      return;
+    }
+    partnersCache = data || [];
+    renderPartners();
+  }
+
+  function renderPartners() {
+    const listEl = document.getElementById('partnersList');
+    if (!partnersCache.length) {
+      listEl.innerHTML = '<p class="text-sm text-slate-500">No partners added here yet.</p>';
+      return;
+    }
+    listEl.innerHTML = partnersCache.map(p => `
+      <div class="flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+        <div class="w-12 h-12 rounded-lg bg-slate-950 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
+          ${p.photo_url ? `<img src="${escPt(p.photo_url)}" alt="" class="w-full h-full object-contain">` : '<span class="text-xs text-slate-600">No photo</span>'}
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-white truncate">${escPt(p.name)}</p>
+          <p class="text-xs text-slate-500">${PARTNER_LABELS[p.type] || escPt(p.type)}</p>
+        </div>
+        <button class="delete-partner-btn btn-secondary shrink-0" data-id="${escPt(p.id)}" data-name="${escPt(p.name)}">Remove</button>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('pt-add-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('pt-add-btn');
+    const name = document.getElementById('pt-name').value.trim();
+    const type = document.getElementById('pt-type').value;
+    const file = document.getElementById('pt-photo').files[0];
+    if (!name) { showToast('Enter a name.', true); return; }
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    try {
+      let photo_url = null;
+      if (file) {
+        const small = await compressImage(file, 700, 0.85);
+        const safeName = small.name.replace(/[^a-zA-Z0-9.\-_]/g, '-');
+        const path = `partners/${Date.now()}-${safeName}`;
+        const up = await sb.storage.from(MEDIA_BUCKET).upload(path, small, { cacheControl: '31536000', upsert: false });
+        if (up.error) throw up.error;
+        photo_url = sb.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
+      }
+      const { error } = await sb.from('partners').insert({ name, type, photo_url });
+      if (error) throw error;
+      document.getElementById('pt-name').value = '';
+      document.getElementById('pt-photo').value = '';
+      showToast(`${name} added to the partnership page.`);
+      loadPartners();
+    } catch (err) {
+      showToast('Could not add partner: ' + (err.message || err), true);
+    }
+    btn.disabled = false;
+    btn.textContent = 'Add to Partnership Page';
+  });
+
+  document.getElementById('partnersList').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.delete-partner-btn');
+    if (!btn) return;
+    if (!confirm(`Remove "${btn.dataset.name}" from the partnership page?`)) return;
+    btn.disabled = true;
+    const { error } = await sb.from('partners').delete().eq('id', btn.dataset.id);
+    if (error) { showToast('Could not remove: ' + error.message, true); btn.disabled = false; return; }
+    showToast('Partner removed.');
+    loadPartners();
   });
 </script>
 
