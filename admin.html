@@ -1357,7 +1357,7 @@
   // device-local and are the reason media looked "uploaded" here but never showed on the feed.
   // SET THIS to your public website address (e.g. 'https://maintown.com/') so thumbnails can show
   // photos that are saved as site files like "./osapa-exterior.jpg". Leave '' if unsure.
-  const SITE_BASE = '';
+  const SITE_BASE = 'https://maintownrealty.com/';
   // Usable = a full web link OR a site-relative file path. Not usable = blob:/data:/file: links,
   // which only exist on the device that made them.
   const isRenderableUrl = u => typeof u === 'string' && u.trim() !== '' && !/^(blob:|data:|file:|content:)/i.test(u.trim());
