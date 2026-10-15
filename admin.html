@@ -128,6 +128,7 @@
   <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-8">
     <h1 class="font-display font-bold text-xl text-white mb-1">MainTown Admin</h1>
     <p class="text-sm text-slate-500 mb-6">Sign in to manage live listings.</p>
+    <p id="loginNotice" class="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 mb-4 hidden"></p>
     <div class="field">
       <label>Email</label>
       <input type="email" id="loginEmail" placeholder="you@maintownrealty.com" autocomplete="username">
@@ -137,6 +138,7 @@
       <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button id="loginBtn" class="btn-primary w-full">Sign In</button>
+    <button type="button" id="forgotPasswordBtn" class="block w-full text-center text-xs text-brand-300 hover:underline mt-4">Forgot password?</button>
     <p id="loginError" class="text-xs text-red-400 mt-3 hidden"></p>
   </div>
 </div>
@@ -690,7 +692,7 @@
           </div>
         </div>
         <button id="staff-add-btn" class="btn-primary mt-2">Add Staff Member</button>
-        <p class="text-xs text-slate-600 mt-3">This grants access — it doesn't create their Supabase Auth login. Invite that separately (Supabase Dashboard → Authentication → Users → Invite), using the same email.</p>
+        <p class="text-xs text-slate-600 mt-3">This grants access — it doesn't create their Supabase Auth login. Invite that separately (Supabase Dashboard → Authentication → Users → Invite), using the same email. If someone is locked out, use <strong>Send Reset Link</strong> on their row below — they set a new password and sign straight back in.</p>
       </div>
 
       <div id="staffList" class="space-y-2"></div>
@@ -779,6 +781,47 @@
   document.getElementById('roleTabs').addEventListener('click', (e) => {
     const btn = e.target.closest('.role-tab-btn');
     if (btn) switchView(btn.dataset.view);
+  });
+
+  // ---------- Staff password reset ----------
+  // Every staff reset email lands on reset-password.html (same folder as this
+  // page). That page shows "Password reset — Done" and sends them back here.
+  // NOTE: this exact URL must be in Supabase → Authentication → URL
+  // Configuration → Redirect URLs, otherwise Supabase ignores it.
+  const STAFF_RESET_REDIRECT = new URL('reset-password.html', window.location.href).href;
+  async function sendStaffResetEmail(email) {
+    return sb.auth.resetPasswordForEmail(email, { redirectTo: STAFF_RESET_REDIRECT });
+  }
+
+  // Arriving back from reset-password.html → confirm and ask them to sign in.
+  (function showResetDoneNotice() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reset') !== 'done') return;
+    const n = document.getElementById('loginNotice');
+    n.textContent = 'Password reset complete. Sign in with your new password.';
+    n.classList.remove('hidden');
+    history.replaceState(null, '', window.location.pathname);
+  })();
+
+  document.getElementById('forgotPasswordBtn').addEventListener('click', async () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    const errEl = document.getElementById('loginError');
+    const noticeEl = document.getElementById('loginNotice');
+    errEl.classList.add('hidden');
+    noticeEl.classList.add('hidden');
+    if (!email) {
+      errEl.textContent = 'Enter your email above first, then tap Forgot password.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    const { error } = await sendStaffResetEmail(email);
+    if (error) {
+      errEl.textContent = 'Could not send reset email: ' + error.message;
+      errEl.classList.remove('hidden');
+      return;
+    }
+    noticeEl.textContent = `If ${email} has an admin login, a reset link is on its way. Check your inbox and spam folder.`;
+    noticeEl.classList.remove('hidden');
   });
 
   // ---------- Auth ----------
@@ -2190,6 +2233,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
           <option value="legal" ${s.role === 'legal' ? 'selected' : ''}>Legal</option>
           <option value="super_admin" ${s.role === 'super_admin' ? 'selected' : ''}>Super Admin</option>
         </select>
+        <button class="reset-staff-btn btn-secondary shrink-0" data-email="${s.email}" title="Email this person a link to set a new password and log back in">Send Reset Link</button>
         <button class="delete-staff-btn btn-secondary shrink-0" data-id="${s.id}" data-email="${s.email}">Remove</button>
       </div>
     `).join('');
@@ -2223,6 +2267,20 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   });
 
   document.getElementById('staffList').addEventListener('click', async (e) => {
+    const resetBtn = e.target.closest('.reset-staff-btn');
+    if (resetBtn) {
+      const email = resetBtn.dataset.email;
+      if (!confirm(`Email a password reset link to ${email}?`)) return;
+      resetBtn.disabled = true;
+      const originalText = resetBtn.textContent;
+      resetBtn.textContent = 'Sending...';
+      const { error } = await sendStaffResetEmail(email);
+      resetBtn.disabled = false;
+      resetBtn.textContent = originalText;
+      if (error) { showToast('Could not send reset link: ' + error.message, true); return; }
+      showToast(`Reset link sent to ${email}.`);
+      return;
+    }
     const btn = e.target.closest('.delete-staff-btn');
     if (!btn) return;
     if (!confirm(`Remove admin access for "${btn.dataset.email}"? This can't be undone.`)) return;
