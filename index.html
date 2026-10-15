@@ -1465,13 +1465,35 @@
   // Optional: if your Supabase project is on a plan with Image Transformations, set this to true
   // and cards will load small thumbnails. If a thumbnail fails it falls back to the original.
   const USE_SUPABASE_THUMBS = false;
-  // "Listed by" line chosen in the admin: MainTown Realty (default), a property owner, or a company.
-  function listedByLineFor(l) {
-    const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // "Listed by" host chosen in the admin: MainTown Realty (default), a property owner, or a company.
+  const hostEsc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function mainTownLogoSrc() { const i = document.querySelector('header img'); return i ? i.src : ''; }
+  function hostInfoFor(l) {
     const t = l.listed_by_type, named = (t === 'owner' || t === 'company') && l.listed_by_name;
-    const name = named ? l.listed_by_name : 'MainTown Realty';
-    const photo = named && l.listed_by_photo ? `<img src="${esc(l.listed_by_photo)}" alt="" class="w-4 h-4 md:w-5 md:h-5 rounded-full object-cover shrink-0" loading="lazy" onerror="this.style.display='none'">` : '';
-    return `<p class="mt-1 flex items-center gap-1 text-[8px] sm:text-[10.5px] text-slate-400">${photo}<span class="truncate">Listed by <span class="text-slate-200 font-medium">${esc(name)}</span></span></p>`;
+    return named
+      ? { name: l.listed_by_name, photo: l.listed_by_photo || '', type: t }
+      : { name: 'MainTown Realty', photo: '', type: 'maintown' };
+  }
+  // Round avatar: the host's photo/logo, or their initials if none was uploaded.
+  function hostAvatarHtml(host, sizeCls, textCls) {
+    const isMT = host.type === 'maintown';
+    const photo = host.photo || (isMT ? mainTownLogoSrc() : '');
+    const shape = host.type === 'company' ? 'rounded-lg' : (isMT ? 'rounded-md' : 'rounded-full');
+    const fit = host.type === 'owner' ? 'object-cover' : 'object-contain p-0.5 bg-white';
+    const initials = String(host.name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const fallback = `<span class="${sizeCls} ${shape} shrink-0 inline-flex items-center justify-center bg-brand-600 text-white font-bold ${textCls}">${hostEsc(initials)}</span>`;
+    if (!photo) return fallback;
+    return `<span class="relative inline-flex shrink-0 ${sizeCls}"><img src="${hostEsc(photo)}" alt="${hostEsc(host.name)}" class="${sizeCls} ${shape} ${fit} ring-1 ring-white/20" loading="lazy" onerror="this.outerHTML=this.parentNode.dataset.fb" ></span>`.replace('<span class="relative', `<span data-fb="${hostEsc(fallback)}" class="relative`);
+  }
+  function listedByLineFor(l) {
+    const host = hostInfoFor(l);
+    return `<p class="mt-1.5 flex items-center gap-1.5 md:gap-2 text-[9.5px] sm:text-xs text-slate-400">${hostAvatarHtml(host, 'w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8', 'text-[9px] sm:text-[10px]')}<span class="truncate">Listed by <span class="text-slate-200 font-medium">${hostEsc(host.name)}</span></span></p>`;
+  }
+  // Host row on the info sheet (name + logo/photo).
+  function hostRowHtml(host) {
+    if (!host || !host.name) return '';
+    const label = host.type === 'company' ? 'Listed by company' : host.type === 'owner' ? 'Listed by property owner' : 'Listed by';
+    return `<div class="flex items-center gap-3 mt-4 p-3 rounded-xl bg-slate-800/60 border border-white/10">${hostAvatarHtml(host, 'w-12 h-12', 'text-sm')}<div class="min-w-0"><p class="text-[11px] text-slate-400 leading-none">${label}</p><p class="text-sm font-semibold text-white mt-1 truncate">${hostEsc(host.name)}</p></div></div>`;
   }
   function thumbUrl(url, w) {
     if (!USE_SUPABASE_THUMBS || !url || url.indexOf('/storage/v1/object/public/') === -1) return url;
@@ -1506,6 +1528,7 @@
       caution: l.caution || '',
       features: l.features || [],
       badges: l.badges || [],
+      host: hostInfoFor(l),
       id: l.id, rent: l.rent || '', annual_rent: l.annual_rent || null, images: l.images || [], video: l.video || ''
     }).replace(/'/g, "&#39;");
     const isUnavailable = l.status && l.status !== 'available';
@@ -1995,6 +2018,7 @@
         <div class="flex items-center gap-1.5 text-xs text-brand-400 font-medium"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v3.5c0 .199.079.39.22.53l2.5 2.5a.75.75 0 101.06-1.06l-2.28-2.28V6.75z" clip-rule="evenodd"/></svg>Preliminary Verification</div>
         <h3 class="font-display font-bold text-xl sm:text-2xl text-white mt-2 leading-snug">${escHtml(title)}</h3>
         ${info.location ? `<p class="text-sm text-slate-300 mt-1">${escHtml(info.location)}</p>` : ''}
+        ${hostRowHtml(info.host)}
         ${badgesHtml ? `<div class="flex flex-wrap gap-1.5 mt-3">${badgesHtml}</div>` : ''}
         ${infoSection('About this ' + (cat === 'land' ? 'property' : cat === 'short-let' ? 'space' : isCom ? 'space' : 'home'), `<p class="text-[15px] leading-relaxed text-slate-100">${escHtml(story)}</p>`)}
         <div class="mt-6">
