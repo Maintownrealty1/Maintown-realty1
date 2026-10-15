@@ -632,6 +632,18 @@
       <div id="signupsList" class="space-y-3"></div>
     </section>
 
+    <!-- ---- Quick Fix service requests ---- -->
+    <section data-view="quickfix">
+      <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+        <div>
+          <h2 class="font-display font-semibold text-lg text-white mb-1">Quick Fix Requests</h2>
+          <p class="text-sm text-slate-500">Review customer service requests, attached photos, and update their progress.</p>
+        </div>
+        <button type="button" id="refreshQuickFixBtn" class="btn-secondary">Refresh</button>
+      </div>
+      <div id="quickFixList" class="space-y-3"></div>
+    </section>
+
     <!-- ---- Finance ----
          Placeholder dashboard: today the only financial-adjacent data that
          exists anywhere is listing pricing. Wallet balances, payouts,
@@ -712,13 +724,13 @@
   // Which dashboard tabs each role gets. Edit these arrays to change who
   // sees what — the tab bar and every data load below all key off this.
   const ROLE_VIEWS = {
-    super_admin: ['listings', 'partners', 'signups', 'finance', 'staff'],
-    developer:   ['listings', 'partners', 'signups', 'finance'],
+    super_admin: ['listings', 'partners', 'signups', 'quickfix', 'finance', 'staff'],
+    developer:   ['listings', 'partners', 'signups', 'quickfix', 'finance'],
     finance:     ['finance'],
     legal:       ['signups'],
   };
   const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal' };
-  const VIEW_LABELS = { listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', finance: 'Finance', staff: 'Staff Access' };
+  const VIEW_LABELS = { listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', finance: 'Finance', staff: 'Staff Access' };
   let currentStaffRole = null;
   let currentView = null;
 
@@ -759,6 +771,7 @@
     if (view === 'listings') loadExistingListings();
     if (view === 'partners') loadPartners();
     if (view === 'signups') loadSignups();
+    if (view === 'quickfix') loadQuickFixRequests();
     if (view === 'finance') loadFinanceList();
     if (view === 'staff') loadStaffUsers();
   }
@@ -2075,6 +2088,75 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       </div>
     `).join('');
   }
+
+  // ---------- Quick Fix service requests ----------
+  let quickFixCache = [];
+
+  function escapeQuickFix(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[ch]);
+  }
+
+  async function loadQuickFixRequests() {
+    const listEl = document.getElementById('quickFixList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading Quick Fix requests...</p>';
+    const { data, error } = await sb.from('service_requests').select('*').order('created_at', { ascending: false });
+    if (error) {
+      listEl.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load Quick Fix requests: ${escapeQuickFix(error.message)}<p class="text-xs mt-2 text-red-200/80">If this is a permission error, the service_requests table's Row Level Security policies must allow authorised staff to read requests.</p></div>`;
+      return;
+    }
+    quickFixCache = data || [];
+    renderQuickFixRequests();
+  }
+
+  function renderQuickFixRequests() {
+    const listEl = document.getElementById('quickFixList');
+    if (!quickFixCache.length) {
+      listEl.innerHTML = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">No Quick Fix requests found.</div>';
+      return;
+    }
+    listEl.innerHTML = quickFixCache.map(r => {
+      const photos = Array.isArray(r.media) ? r.media : (typeof r.media === 'string' ? (() => { try { const v = JSON.parse(r.media); return Array.isArray(v) ? v : []; } catch { return []; } })() : []);
+      const photoHtml = photos.map((url, i) => {
+        const safeUrl = escapeQuickFix(url);
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg border border-slate-700 p-2 text-xs text-brand-300 hover:bg-white/5"><img src="${safeUrl}" alt="Request attachment ${i + 1}" loading="lazy" class="w-16 h-16 object-cover rounded-md">Open photo ${i + 1} ↗</a>`;
+      }).join('');
+      const created = r.created_at ? new Date(r.created_at).toLocaleString() : 'Date unavailable';
+      const status = ['new', 'in progress', 'completed', 'cancelled'].includes(String(r.status || '').toLowerCase()) ? String(r.status).toLowerCase() : 'new';
+      return `<article class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div><div class="flex flex-wrap items-center gap-2"><h3 class="font-semibold text-white">${escapeQuickFix(r.service || 'Service request')}</h3><span class="text-xs rounded-full border border-slate-700 px-2 py-1 text-slate-300">${escapeQuickFix(status)}</span></div><p class="text-xs text-slate-500 mt-1">Submitted ${escapeQuickFix(created)}</p></div>
+          <label class="text-xs text-slate-400">Status<select class="quickfix-status mt-1 !py-2" data-id="${escapeQuickFix(r.id)}"><option value="new" ${status === 'new' ? 'selected' : ''}>New</option><option value="in progress" ${status === 'in progress' ? 'selected' : ''}>In progress</option><option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option><option value="cancelled" ${status === 'cancelled' ? 'selected' : ''}>Cancelled</option></select></label>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3 mt-4 text-sm">
+          <p><span class="text-slate-500">Customer:</span> <span class="text-slate-200">${escapeQuickFix(r.name || '—')}</span></p>
+          <p><span class="text-slate-500">Phone:</span> <a class="text-brand-300 hover:underline" href="tel:${escapeQuickFix(r.phone || '')}">${escapeQuickFix(r.phone || '—')}</a></p>
+          <p><span class="text-slate-500">Email:</span> ${r.email ? `<a class="text-brand-300 hover:underline break-all" href="mailto:${escapeQuickFix(r.email)}">${escapeQuickFix(r.email)}</a>` : '<span class="text-slate-300">—</span>'}</p>
+          <p><span class="text-slate-500">Address:</span> <span class="text-slate-200">${escapeQuickFix(r.address || '—')}</span></p>
+        </div>
+        <div class="mt-3"><p class="text-xs text-slate-500 mb-1">Description</p><p class="text-sm text-slate-200 whitespace-pre-wrap break-words">${escapeQuickFix(r.description || 'No description provided.')}</p></div>
+        ${photoHtml ? `<div class="mt-4"><p class="text-xs text-slate-500 mb-2">Attachments</p><div class="flex flex-wrap gap-2">${photoHtml}</div></div>` : ''}
+      </article>`;
+    }).join('');
+  }
+
+  document.getElementById('refreshQuickFixBtn').addEventListener('click', loadQuickFixRequests);
+  document.getElementById('quickFixList').addEventListener('change', async (e) => {
+    const select = e.target.closest('.quickfix-status');
+    if (!select) return;
+    const previous = quickFixCache.find(r => r.id === select.dataset.id)?.status || 'new';
+    select.disabled = true;
+    const { error } = await sb.from('service_requests').update({ status: select.value }).eq('id', select.dataset.id);
+    select.disabled = false;
+    if (error) {
+      showToast('Could not update request status: ' + error.message, true);
+      select.value = previous;
+      return;
+    }
+    showToast('Quick Fix request status updated.');
+    loadQuickFixRequests();
+  });
 
   // ---------- Staff Access (Super Admin only) ----------
   let staffCache = [];
