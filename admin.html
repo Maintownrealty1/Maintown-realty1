@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — MainTown Realty</title>
 
+<script>
+  // Apply the saved light/dark choice before first paint (default: dark).
+  try { document.documentElement.dataset.theme = localStorage.getItem('mtr_admin_theme') === 'light' ? 'light' : 'dark'; }
+  catch (e) { document.documentElement.dataset.theme = 'dark'; }
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -68,12 +73,58 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.error { border-color: #EF4444; }
+
+  /* ===== Theme + drawers ===== */
+  html { color-scheme: dark; }
+  html[data-theme="light"] { color-scheme: light; }
+  .theme-toggle { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 10px; border: 1px solid #28395C; background: #1B2740; color: #E2E8F0; cursor: pointer; }
+  .theme-toggle:hover { border-color: #8B5CF6; }
+  .theme-toggle svg { width: 18px; height: 18px; }
+  .theme-toggle .icon-sun { display: inline; } .theme-toggle .icon-moon { display: none; }
+  html[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+  html[data-theme="light"] .theme-toggle .icon-moon { display: inline; }
+  .drawer-chevron { color: #64748B; font-size: 14px; flex-shrink: 0; }
+  html[data-theme="light"] body { background-color: #F1F5F9; color: #0F172A; }
+  html[data-theme="light"] .bg-slate-950, html[data-theme="light"] .bg-slate-950\/60 { background-color: #FFFFFF; }
+  html[data-theme="light"] .bg-slate-900 { background-color: #FFFFFF; }
+  html[data-theme="light"] .bg-slate-800 { background-color: #E2E8F0; }
+  html[data-theme="light"] .bg-slate-950\/40 { background-color: #F1F5F9; }
+  html[data-theme="light"] .border-slate-800 { border-color: #E2E8F0; }
+  html[data-theme="light"] .border-slate-700 { border-color: #CBD5E1; }
+  html[data-theme="light"] .text-white { color: #0F172A; }
+  html[data-theme="light"] .text-slate-200, html[data-theme="light"] .hover\:text-slate-200:hover { color: #1E293B; }
+  html[data-theme="light"] .text-slate-300 { color: #334155; }
+  html[data-theme="light"] .text-slate-400 { color: #475569; }
+  html[data-theme="light"] .text-slate-500, html[data-theme="light"] .text-slate-600 { color: #64748B; }
+  html[data-theme="light"] .text-brand-300, html[data-theme="light"] .text-violet-300 { color: #6D28D9; }
+  html[data-theme="light"] .text-amber-400, html[data-theme="light"] .text-amber-300 { color: #B45309; }
+  html[data-theme="light"] .text-red-400 { color: #DC2626; }
+  html[data-theme="light"] .text-rose-300 { color: #BE123C; }
+  html[data-theme="light"] .text-yellow-300 { color: #A16207; }
+  html[data-theme="light"] .text-sky-300 { color: #0369A1; }
+  html[data-theme="light"] .text-fuchsia-300 { color: #A21CAF; }
+  html[data-theme="light"] .text-emerald-300, html[data-theme="light"] .text-emerald-400 { color: #047857; }
+  html[data-theme="light"] input, html[data-theme="light"] select, html[data-theme="light"] textarea { background: #FFFFFF; border-color: #CBD5E1; color: #0F172A; }
+  html[data-theme="light"] label { color: #475569; }
+  html[data-theme="light"] .pill { background: #FFFFFF; border-color: #CBD5E1; color: #334155; }
+  html[data-theme="light"] .pill.on { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+  html[data-theme="light"] .price-box { border-color: #E2E8F0; background: #F8FAFC; }
+  html[data-theme="light"] .price-box h3 { color: #0F172A; }
+  html[data-theme="light"] .hint { color: #64748B; }
+  html[data-theme="light"] .btn-secondary, html[data-theme="light"] .theme-toggle { background: #FFFFFF; border-color: #CBD5E1; color: #1E293B; }
+  html[data-theme="light"] .btn-secondary:hover, html[data-theme="light"] .theme-toggle:hover { border-color: #8B5CF6; }
+  html[data-theme="light"] .chip { background: #F1F5F9; border-color: #CBD5E1; color: #6D28D9; }
+  html[data-theme="light"] .chip.active { background: rgba(139,92,246,0.15); border-color: #8B5CF6; color: #4C1D95; }
+  html[data-theme="light"] .toast { background: #FFFFFF; border-color: #CBD5E1; color: #0F172A; box-shadow: 0 8px 24px rgba(15,23,42,.15); }
+  html[data-theme="light"] .toast.error { border-color: #EF4444; }
+  html[data-theme="light"] .bg-slate-900.border, html[data-theme="light"] section.bg-slate-900 { box-shadow: 0 1px 2px rgba(15,23,42,.06); }
 </style>
 </head>
 <body class="text-white min-h-screen">
 
 <!-- ================= LOGIN GATE ================= -->
-<div id="loginScreen" class="min-h-screen flex items-center justify-center px-6">
+<div id="loginScreen" class="relative min-h-screen flex items-center justify-center px-6">
+  <button type="button" class="theme-toggle absolute top-4 right-4" aria-label="Switch between light and dark mode" title="Switch between light and dark mode"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
   <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-8">
     <h1 class="font-display font-bold text-xl text-white mb-1">MainTown Admin</h1>
     <p class="text-sm text-slate-500 mb-6">Sign in to manage live listings.</p>
@@ -98,7 +149,10 @@
         <h1 class="font-display font-bold text-lg text-white">MainTown Admin</h1>
         <p class="text-xs text-slate-500" id="loggedInAs"></p>
       </div>
-      <button id="logoutBtn" class="btn-secondary">Log Out</button>
+      <div class="flex items-center gap-2">
+        <button type="button" class="theme-toggle" aria-label="Switch between light and dark mode" title="Switch between light and dark mode"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+        <button id="logoutBtn" class="btn-secondary">Log Out</button>
+      </div>
     </div>
     <!-- Role-based tab bar — only the tabs this staff member's role is
          allowed to see get rendered here (see ROLE_VIEWS in the script). -->
@@ -478,6 +532,25 @@
       </div>
 
       <div class="field">
+        <label>Listed by (shown to tenants and buyers)</label>
+        <select id="f-listedby-type">
+          <option value="maintown">MainTown Realty — our own direct listing</option>
+          <option value="owner">Property owner / host (their name + photo)</option>
+          <option value="company">Company (company name + logo)</option>
+        </select>
+        <div id="listedByDetails" class="hidden mt-3 space-y-3">
+          <input type="text" id="f-listedby-name" placeholder="Owner's full name">
+          <div>
+            <label id="listedByPhotoLabel" class="!mb-1">Photo (optional)</label>
+            <input type="file" id="f-listedby-photo" accept="image/*" class="!p-2">
+            <div id="listedByPhotoPreview" class="mt-2"></div>
+            <p id="listedByPhotoNote" class="text-xs text-slate-500 mt-1 hidden">Current photo is kept unless you choose a new file.</p>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">Choose MainTown Realty for listings that belong to you. For a property someone gave MainTown to list, show the owner's name or their company instead.</p>
+      </div>
+
+      <div class="field">
         <label>Photos (you can select multiple)</label>
         <input type="file" id="f-images" accept="image/*" multiple class="!p-2">
         <div id="imagePreview" class="flex flex-wrap gap-2 mt-3"></div>
@@ -498,13 +571,14 @@
     </section>
 
     <!-- ---- Existing Listings ---- -->
-    <section class="mb-10" data-view="listings">
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl px-6 sm:px-8 py-5 mb-4" data-view="listings">
       <button type="button" id="listingsToggle" class="w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none">
-        <h2 class="font-display font-semibold text-lg text-white flex items-center gap-2">
+        <h2 class="font-display font-semibold text-lg text-white flex flex-wrap items-center gap-2">
           Live Listings
           <span id="listingsCount" class="text-xs font-mono font-normal text-slate-500 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">0</span>
+          <span id="listingsPending" class="hidden text-[11px] font-mono font-semibold text-yellow-300 bg-yellow-500/10 border border-yellow-500/40 px-2 py-0.5 rounded-full"></span>
         </h2>
-        <span id="listingsChevron" class="text-slate-500 text-sm transition-transform shrink-0">▸</span>
+        <span id="listingsChevron" class="drawer-chevron">▸</span>
       </button>
       <div id="existingList" class="space-y-3 mt-4 hidden"></div>
     </section>
@@ -1197,6 +1271,7 @@
         images: imageUrls,
         video: videoUrl,
         status: document.getElementById('f-status').value,
+        ...(await buildListedByFields()),
       };
 
       if (editingId) {
@@ -1239,6 +1314,7 @@
     document.getElementById('f-service-charge-freq').value = 'yr';
     document.getElementById('f-beds').value = 1;
     document.getElementById('f-status').value = 'available';
+    resetListedBy();
     feesTextarea.value = '';
     document.getElementById('feePreview').classList.add('hidden');
     document.getElementById('f-images').value = '';
@@ -1279,7 +1355,18 @@
   const escHtml = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   // Only real, public http(s) URLs can ever render on the live site. blob:/data:/file: URLs are
   // device-local and are the reason media looked "uploaded" here but never showed on the feed.
-  const isRenderableUrl = u => typeof u === 'string' && /^https?:\/\//i.test(u);
+  // SET THIS to your public website address (e.g. 'https://maintown.com/') so thumbnails can show
+  // photos that are saved as site files like "./osapa-exterior.jpg". Leave '' if unsure.
+  const SITE_BASE = '';
+  // Usable = a full web link OR a site-relative file path. Not usable = blob:/data:/file: links,
+  // which only exist on the device that made them.
+  const isRenderableUrl = u => typeof u === 'string' && u.trim() !== '' && !/^(blob:|data:|file:|content:)/i.test(u.trim());
+  const isRelativeUrl = u => !/^https?:\/\//i.test(u);
+  const resolveImg = u => {
+    if (!isRelativeUrl(u)) return u;
+    if (!SITE_BASE) return null;
+    try { return new URL(u, SITE_BASE).href; } catch (e) { return null; }
+  };
   const renderableImages = l => (Array.isArray(l && l.images) ? l.images : []).filter(isRenderableUrl);
 
   async function loadExistingListings() {
@@ -1298,6 +1385,9 @@
     const listEl = document.getElementById('existingList');
     const all = listingsCache;
     document.getElementById('listingsCount').textContent = all.length;
+    const pendingN = all.filter(l => l.status === 'pending').length;
+    const pendEl = document.getElementById('listingsPending');
+    pendEl.textContent = pendingN + ' to review'; pendEl.classList.toggle('hidden', !pendingN);
     if (!all.length) {
       listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet — add your first one above.</p>';
       return;
@@ -1320,10 +1410,12 @@
       const hasVideo = isRenderableUrl(l.video);
       const mediaNote = (!imgs.length && !hasVideo)
         ? `<span class="text-amber-400">No renderable media${badImgs ? ' (' + badImgs + ' device-only file' + (badImgs > 1 ? 's' : '') + ' skipped)' : ''}</span>`
-        : `<span>${imgs.length} photo${imgs.length === 1 ? '' : 's'}${hasVideo ? ' · video' : ''}${badImgs ? ' · <span class="text-amber-400">' + badImgs + ' broken</span>' : ''}</span>`;
-      const thumb = imgs.length
-        ? `<img src="${escHtml(imgs[0])}" alt="" loading="lazy" class="w-12 h-12 rounded-lg object-cover shrink-0 bg-slate-800" onerror="this.style.visibility='hidden'">`
-        : `<div class="w-12 h-12 rounded-lg shrink-0 bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-500">No img</div>`;
+        : `<span>${imgs.length} photo${imgs.length === 1 ? '' : 's'}${siteFiles ? ' (site files, shown on your website)' : ''}${hasVideo ? ' · video' : ''}${badImgs ? ' · <span class="text-amber-400">' + badImgs + ' broken</span>' : ''}</span>`;
+      const firstSrc = imgs.length ? resolveImg(imgs[0]) : null;
+      const siteFiles = imgs.length && imgs.every(isRelativeUrl);
+      const thumb = firstSrc
+        ? `<img src="${escHtml(firstSrc)}" alt="" loading="lazy" class="w-12 h-12 rounded-lg object-cover shrink-0 bg-slate-800" onerror="this.style.visibility='hidden'">`
+        : `<div class="w-12 h-12 rounded-lg shrink-0 bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-500 text-center leading-tight">${siteFiles ? 'Site file' : 'No img'}</div>`;
       const hidden = ['unavailable', 'closed'].includes(l.status);
       const isPending = l.status === 'pending', isClosed = l.status === 'closed';
       const isProto = sourceOf(l) === 'app_prototype';
@@ -1361,6 +1453,7 @@
             ${st ? `<span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded ${st.cls}">${st.label}</span>` : ''}
           </p>
           <p class="text-xs text-slate-500 truncate">${escHtml(l.location)} · ${escHtml(l.rent)}</p>
+          <p class="text-[11px] text-slate-500 truncate">Listed by: <span class="text-slate-300">${listedByLabel(l)}</span></p>
           <p class="text-[11px] text-slate-500 truncate">${mediaNote}</p>
           ${l.review_note ? `<p class="text-[11px] text-rose-300 truncate">Reason: ${escHtml(l.review_note)}</p>` : ''}
         </div>
@@ -1421,13 +1514,101 @@
       </div>`;
   }
 
-  document.getElementById('listingsToggle').addEventListener('click', () => {
-    const listEl = document.getElementById('existingList');
-    const chevron = document.getElementById('listingsChevron');
-    const isOpen = !listEl.classList.contains('hidden');
-    listEl.classList.toggle('hidden', isOpen);
-    chevron.textContent = isOpen ? '▸' : '▾';
+
+  // ---- "Listed by" control: MainTown Realty / owner (name + photo) / company (name + logo) ----
+  let editingListedByPhoto = null;
+  const listedByLabel = l => {
+    const t = l && l.listed_by_type;
+    if (t === 'owner' || t === 'company') return escHtml(l.listed_by_name || (t === 'owner' ? 'Property owner' : 'Company')) + (t === 'company' ? ' (company)' : ' (owner)');
+    return 'MainTown Realty';
+  };
+  function updateListedByFields() {
+    const t = document.getElementById('f-listedby-type').value;
+    document.getElementById('listedByDetails').classList.toggle('hidden', t === 'maintown');
+    document.getElementById('f-listedby-name').placeholder = t === 'company' ? 'Company name' : "Owner's full name";
+    document.getElementById('listedByPhotoLabel').textContent = t === 'company' ? 'Company logo (optional)' : 'Owner photo (optional)';
+  }
+  function showListedByPhoto(url) {
+    document.getElementById('listedByPhotoPreview').innerHTML = url ? `<img src="${escHtml(url)}" class="w-14 h-14 object-cover rounded-full border border-slate-700">` : '';
+    document.getElementById('listedByPhotoNote').classList.toggle('hidden', !url);
+  }
+  function resetListedBy() {
+    editingListedByPhoto = null;
+    document.getElementById('f-listedby-type').value = 'maintown';
+    document.getElementById('f-listedby-name').value = '';
+    document.getElementById('f-listedby-photo').value = '';
+    showListedByPhoto(null);
+    updateListedByFields();
+  }
+  function loadListedBy(listing) {
+    const t = ['owner', 'company'].includes(listing.listed_by_type) ? listing.listed_by_type : 'maintown';
+    document.getElementById('f-listedby-type').value = t;
+    document.getElementById('f-listedby-name').value = listing.listed_by_name || '';
+    document.getElementById('f-listedby-photo').value = '';
+    editingListedByPhoto = isRenderableUrl(listing.listed_by_photo) ? listing.listed_by_photo : null;
+    showListedByPhoto(editingListedByPhoto && resolveImg(editingListedByPhoto));
+    updateListedByFields();
+  }
+  async function buildListedByFields() {
+    const t = document.getElementById('f-listedby-type').value;
+    if (t === 'maintown') return { listed_by_type: 'maintown', listed_by_name: null, listed_by_photo: null };
+    const name = document.getElementById('f-listedby-name').value.trim();
+    if (!name) throw new Error(t === 'company' ? 'Enter the company name for "Listed by".' : 'Enter the owner\'s name for "Listed by".');
+    let photo = editingListedByPhoto;
+    const f = document.getElementById('f-listedby-photo').files[0];
+    if (f) photo = await uploadFile(f);
+    return { listed_by_type: t, listed_by_name: name, listed_by_photo: photo || null };
+  }
+  document.getElementById('f-listedby-type').addEventListener('change', updateListedByFields);
+  document.getElementById('f-listedby-photo').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (f) showListedByPhoto(URL.createObjectURL(f));
   });
+
+  // ---- Drawers: Bulk Import, Add a New Listing and Live Listings start closed; opening one closes
+  // the others so the page stays short. ----
+  const drawerReg = {};
+  function setDrawer(id, open) {
+    const d = drawerReg[id]; if (!d) return;
+    if (open) Object.keys(drawerReg).forEach(k => { if (k !== id) setDrawer(k, false); });
+    d.body.classList.toggle('hidden', !open);
+    d.chev.textContent = open ? '▾' : '▸';
+    d.header.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  function registerDrawer(id, header, body, chev) {
+    drawerReg[id] = { header, body, chev };
+    header.setAttribute('aria-expanded', 'false');
+    header.addEventListener('click', () => setDrawer(id, body.classList.contains('hidden')));
+  }
+  function makeDrawerFromSection(sectionId, key) {
+    const sec = document.getElementById(sectionId);
+    const h2 = sec.querySelector('h2');
+    const header = document.createElement('button');
+    header.type = 'button';
+    header.className = 'w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none';
+    sec.insertBefore(header, h2);
+    header.appendChild(h2);
+    h2.classList.remove('mb-1');
+    const chev = document.createElement('span');
+    chev.className = 'drawer-chevron'; chev.textContent = '▸';
+    header.appendChild(chev);
+    const body = document.createElement('div');
+    body.className = 'hidden mt-4';
+    while (header.nextSibling) body.appendChild(header.nextSibling);
+    sec.appendChild(body);
+    sec.classList.remove('mb-10'); sec.classList.add('mb-4', '!py-5');
+    registerDrawer(key, header, body, chev);
+  }
+  makeDrawerFromSection('bulkImportSection', 'bulk');
+  makeDrawerFromSection('listingFormSection', 'form');
+  registerDrawer('live', document.getElementById('listingsToggle'), document.getElementById('existingList'), document.getElementById('listingsChevron'));
+
+  // ---- Light / dark switcher (remembered on this device) ----
+  document.querySelectorAll('.theme-toggle').forEach(btn => btn.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('mtr_admin_theme', next); } catch (e) {}
+  }));
 
   document.getElementById('existingList').addEventListener('change', async (e) => {
     const select = e.target.closest('.status-select');
@@ -1594,6 +1775,7 @@
 
     document.getElementById('f-color').value = listing.color || 'from-brand-500/30 to-slate-900';
     document.getElementById('f-status').value = listing.status || 'available';
+    loadListedBy(listing);
     selectedFeatures = Array.isArray(listing.features) ? [...listing.features] : [];
     renderFeatureChips();
 
@@ -1610,6 +1792,7 @@
     document.getElementById('formSubtext').textContent = `Editing "${listing.title}" — make your changes and save.`;
     document.getElementById('submitBtn').textContent = 'Save Changes';
     document.getElementById('cancelEditBtn').classList.remove('hidden');
+    setDrawer('form', true);
     document.getElementById('listingFormSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 

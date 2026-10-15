@@ -1465,6 +1465,14 @@
   // Optional: if your Supabase project is on a plan with Image Transformations, set this to true
   // and cards will load small thumbnails. If a thumbnail fails it falls back to the original.
   const USE_SUPABASE_THUMBS = false;
+  // "Listed by" line chosen in the admin: MainTown Realty (default), a property owner, or a company.
+  function listedByLineFor(l) {
+    const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const t = l.listed_by_type, named = (t === 'owner' || t === 'company') && l.listed_by_name;
+    const name = named ? l.listed_by_name : 'MainTown Realty';
+    const photo = named && l.listed_by_photo ? `<img src="${esc(l.listed_by_photo)}" alt="" class="w-4 h-4 md:w-5 md:h-5 rounded-full object-cover shrink-0" loading="lazy" onerror="this.style.display='none'">` : '';
+    return `<p class="mt-1 flex items-center gap-1 text-[8px] sm:text-[10.5px] text-slate-400">${photo}<span class="truncate">Listed by <span class="text-slate-200 font-medium">${esc(name)}</span></span></p>`;
+  }
   function thumbUrl(url, w) {
     if (!USE_SUPABASE_THUMBS || !url || url.indexOf('/storage/v1/object/public/') === -1) return url;
     return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + w + '&quality=70';
@@ -1515,6 +1523,7 @@
       </div>
       <div class="p-2.5 sm:p-4 md:p-5">
         <h3 class="font-display font-semibold text-white text-[11px] sm:text-base leading-snug overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${l.title}</h3>
+        ${listedByLineFor(l)}
         ${priceBlockFor(l)}
         <div class="mt-2.5 md:mt-5 space-y-1.5 md:space-y-2">
           <div class="grid ${l.video ? 'grid-cols-3' : 'grid-cols-2'} gap-1 md:gap-2">
