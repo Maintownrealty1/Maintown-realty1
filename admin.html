@@ -132,7 +132,7 @@
         <details class="mb-4 text-xs text-slate-400 bg-slate-950/40 border border-slate-800 rounded-xl p-4">
           <summary class="cursor-pointer text-slate-300 font-medium">Which columns does each listing type use?</summary>
           <div class="mt-3 space-y-2 leading-relaxed">
-            <p><b class="text-slate-200">All types:</b> category (rent, commercial, land, short-let), title, location, price, features and images (separate with | ), video, status (available, sold, rented), extraFees (one per | ).</p>
+            <p><b class="text-slate-200">All types:</b> category (rent, commercial, land, short-let), title, location, price, features and images (separate with | ), video, status (available, sold, rented, booked, unavailable — unavailable hides the listing from the public site), extraFees (one per | ).</p>
             <p><b class="text-slate-200">Rent (residential):</b> price is the monthly rent, plus beds, cautionFee, serviceCharge and serviceChargeFreq (yearly or monthly). Agent Fee (10%) and Legal Fee (5%) are worked out for you from the yearly rent, exactly like the form. Fill annualRent only if the yearly rent is not monthly x 12.</p>
             <p><b class="text-slate-200">Commercial:</b> category commercial (or rent with usage = commercial). price is the annual rent. Uses commercialType (Shop, Office, Warehouse, Event Hall), sqm, parking, power (Public grid, Grid + generator, Grid + inverter/solar, Generator only), cautionFee, serviceCharge.</p>
             <p><b class="text-slate-200">Land &amp; Property:</b> price is the outright price. propertyType (Land (Plot), Duplex, Bungalow, Detached House, Semi-Detached Duplex, Terrace, Block of Flats, Mansion). Houses also use beds, bathrooms, toilets, parking. Installments: installmentPrice, installmentMonths (3, 6, 9, 12, 18, 24), initialDeposit. Sold in parts: soldInParts (yes/no), halfPlot (yes/no), partSize, plotsAvailable, halfPlotPrice and halfPlotInstallment (left empty they default to half). Costs: legalFeePercent (5 or 10, worked out for you), surveyPlan, redCopy. Also plotSize, titleDocument (C of O, Governor's Consent, Excision, Gazette, Registered Survey, Deed of Assignment) and landUse (Residential, Commercial, Mixed-Use, Agricultural).</p>
@@ -469,7 +469,12 @@
           <option value="available">Available</option>
           <option value="sold">Sold</option>
           <option value="rented">Rented</option>
+          <option value="booked">Booked</option>
+          <option value="unavailable">Unavailable (hidden from public site)</option>
+          <option value="pending">Pending review (not public)</option>
+          <option value="closed">Closed / declined (not public)</option>
         </select>
+        <p class="text-[11px] text-slate-500 mt-1">Sold / Rented / Booked keep the listing visible with a label. Unavailable, Pending and Closed remove it from the public live feed completely. Prototype submissions start as Pending until you approve them.</p>
       </div>
 
       <div class="field">
@@ -1205,9 +1210,9 @@
         exitEditMode();
       } else {
         progressEl.textContent = 'Saving listing...';
-        const { error } = await sb.from('listings').insert(payload);
+        const { error } = await sb.from('listings').insert({ ...payload, source: 'web_manual' });
         if (error) throw error;
-        showToast('Listing published! It\'s live on your site now.');
+        showToast(payload.status === 'unavailable' ? 'Listing saved but hidden from the public site.' : 'Listing published! It\'s live on your site now.');
         resetForm();
       }
       loadExistingListings();
@@ -1252,45 +1257,168 @@
   let editingExistingImages = [];
   let editingExistingVideo = null;
 
+  // ---- Listing source + media helpers ----
+  // `source` is stamped at creation time and never changed afterwards:
+  //   web_manual    -> created from this admin panel (single form or bulk import)
+  //   app_prototype -> submitted from the mobile prototype app
+  // Rows created before the `source` column existed default to web_manual.
+  const SOURCE_META = {
+    web_manual:    { label: 'Web Manual',    cls: 'text-sky-300 bg-sky-500/10 border-sky-500/30' },
+    app_prototype: { label: 'App Prototype', cls: 'text-fuchsia-300 bg-fuchsia-500/10 border-fuchsia-500/30' }
+  };
+  const STATUS_META = {
+    sold:        { label: 'Sold',               cls: 'text-red-400 bg-red-500/10 border-red-500/30' },
+    rented:      { label: 'Rented',             cls: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
+    booked:      { label: 'Booked',             cls: 'text-violet-300 bg-violet-500/10 border-violet-500/30' },
+    unavailable: { label: 'Hidden from site',   cls: 'text-slate-300 bg-slate-500/20 border-slate-500/40' },
+    pending:     { label: 'Pending review',     cls: 'text-yellow-300 bg-yellow-500/10 border-yellow-500/40' },
+    closed:      { label: 'Closed (declined)',  cls: 'text-rose-300 bg-rose-500/10 border-rose-500/40' }
+  };
+  let listingSourceFilter = 'all';
+  const sourceOf = l => (l && l.source === 'app_prototype') ? 'app_prototype' : 'web_manual';
+  const escHtml = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Only real, public http(s) URLs can ever render on the live site. blob:/data:/file: URLs are
+  // device-local and are the reason media looked "uploaded" here but never showed on the feed.
+  const isRenderableUrl = u => typeof u === 'string' && /^https?:\/\//i.test(u);
+  const renderableImages = l => (Array.isArray(l && l.images) ? l.images : []).filter(isRenderableUrl);
+
   async function loadExistingListings() {
     const listEl = document.getElementById('existingList');
     listEl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
     const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false });
     if (error) {
-      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load listings: ${error.message}</p>`;
+      listEl.innerHTML = `<p class="text-sm text-red-400">Could not load listings: ${escHtml(error.message)}</p>`;
       return;
     }
     listingsCache = data || [];
-    document.getElementById('listingsCount').textContent = data.length;
-    if (!data.length) {
+    renderExistingListings();
+  }
+
+  function renderExistingListings() {
+    const listEl = document.getElementById('existingList');
+    const all = listingsCache;
+    document.getElementById('listingsCount').textContent = all.length;
+    if (!all.length) {
       listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet — add your first one above.</p>';
       return;
     }
-    listEl.innerHTML = data.map(l => {
+    const counts = { all: all.length, web_manual: 0, app_prototype: 0, pending: 0 };
+    all.forEach(l => { counts[sourceOf(l)]++; if (l.status === 'pending') counts.pending++; });
+    const filterBtn = (key, label) => `<button type="button" data-source-filter="${key}" class="source-filter-btn text-xs px-3 py-1.5 rounded-lg border ${listingSourceFilter === key ? 'bg-brand-500/20 border-brand-500/50 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'}">${label} <span class="font-mono opacity-70">${counts[key]}</span></button>`;
+    const filterBar = `<div class="flex flex-wrap gap-2 mb-1">${filterBtn('all', 'All')}${filterBtn('web_manual', 'Web Manual')}${filterBtn('app_prototype', 'App Prototype')}${filterBtn('pending', 'Needs review')}</div>`;
+    const rows = all.filter(l => listingSourceFilter === 'all' || (listingSourceFilter === 'pending' ? l.status === 'pending' : sourceOf(l) === listingSourceFilter));
+
+    const rowsHtml = rows.map(l => {
       const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' };
       let categoryLabel = categoryLabels[l.category] || categoryLabels.rent;
       // Commercial space is stored as a rent listing flagged "Usage: Commercial" — show it as Commercial.
       if ((!l.category || l.category === 'rent') && (l.fees || []).some(f => String(f).trim() === 'Usage: Commercial')) categoryLabel = 'Commercial';
-      return `
-      <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-white truncate">
-            ${l.title}
-            <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${categoryLabel}</span>
-            ${l.status && l.status !== 'available' ? `<span class="ml-2 text-[10px] font-mono font-bold uppercase ${l.status === 'sold' ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-amber-400 bg-amber-500/10 border-amber-500/30'} border px-1.5 py-0.5 rounded">${l.status}</span>` : ''}
-          </p>
-          <p class="text-xs text-slate-500 truncate">${l.location} · ${l.rent}</p>
-        </div>
+      const src = SOURCE_META[sourceOf(l)];
+      const st = STATUS_META[l.status];
+      const imgs = renderableImages(l);
+      const badImgs = (Array.isArray(l.images) ? l.images.length : 0) - imgs.length;
+      const hasVideo = isRenderableUrl(l.video);
+      const mediaNote = (!imgs.length && !hasVideo)
+        ? `<span class="text-amber-400">No renderable media${badImgs ? ' (' + badImgs + ' device-only file' + (badImgs > 1 ? 's' : '') + ' skipped)' : ''}</span>`
+        : `<span>${imgs.length} photo${imgs.length === 1 ? '' : 's'}${hasVideo ? ' · video' : ''}${badImgs ? ' · <span class="text-amber-400">' + badImgs + ' broken</span>' : ''}</span>`;
+      const thumb = imgs.length
+        ? `<img src="${escHtml(imgs[0])}" alt="" loading="lazy" class="w-12 h-12 rounded-lg object-cover shrink-0 bg-slate-800" onerror="this.style.visibility='hidden'">`
+        : `<div class="w-12 h-12 rounded-lg shrink-0 bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-500">No img</div>`;
+      const hidden = ['unavailable', 'closed'].includes(l.status);
+      const isPending = l.status === 'pending', isClosed = l.status === 'closed';
+      const isProto = sourceOf(l) === 'app_prototype';
+      const reviewBtn = isProto ? `<button class="review-docs-btn btn-secondary shrink-0" data-id="${l.id}">Host &amp; docs</button>` : '';
+      let controls;
+      if (isPending) {
+        controls = `${reviewBtn}
+          <button class="approve-listing-btn shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/30" data-id="${l.id}">Approve</button>
+          <button class="decline-listing-btn shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/50 text-rose-300 hover:bg-rose-500/30" data-id="${l.id}" data-title="${escHtml(l.title)}">Decline</button>`;
+      } else if (isClosed) {
+        controls = `${reviewBtn}
+          <button class="reopen-listing-btn btn-secondary shrink-0" data-id="${l.id}">Re-review</button>
+          <button class="delete-listing-btn btn-secondary shrink-0" data-id="${l.id}" data-title="${escHtml(l.title)}">Delete</button>`;
+      } else {
+        controls = `${reviewBtn}
         <select class="status-select shrink-0 !w-auto !py-1.5 !text-xs" data-id="${l.id}">
           <option value="available" ${(!l.status || l.status === 'available') ? 'selected' : ''}>Available</option>
           <option value="sold" ${l.status === 'sold' ? 'selected' : ''}>Sold</option>
           <option value="rented" ${l.status === 'rented' ? 'selected' : ''}>Rented</option>
+          <option value="booked" ${l.status === 'booked' ? 'selected' : ''}>Booked</option>
+          <option value="unavailable" ${l.status === 'unavailable' ? 'selected' : ''}>Unavailable (hide)</option>
         </select>
         <button class="edit-listing-btn btn-secondary shrink-0" data-id="${l.id}">Edit</button>
-        <button class="delete-listing-btn btn-secondary shrink-0" data-id="${l.id}" data-title="${l.title}">Delete</button>
+        <button class="delete-listing-btn btn-secondary shrink-0" data-id="${l.id}" data-title="${escHtml(l.title)}">Delete</button>`;
+      }
+      return `
+      <div class="listing-row bg-slate-900 border border-slate-800 rounded-xl ${hidden ? 'opacity-70' : ''} ${isPending ? 'ring-1 ring-yellow-500/40' : ''}" data-row-id="${l.id}">
+      <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+        ${thumb}
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-white truncate">
+            ${escHtml(l.title)}
+            <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${categoryLabel}</span>
+            <span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded ${src.cls}" title="Where this listing was created">${src.label}</span>
+            ${st ? `<span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded ${st.cls}">${st.label}</span>` : ''}
+          </p>
+          <p class="text-xs text-slate-500 truncate">${escHtml(l.location)} · ${escHtml(l.rent)}</p>
+          <p class="text-[11px] text-slate-500 truncate">${mediaNote}</p>
+          ${l.review_note ? `<p class="text-[11px] text-rose-300 truncate">Reason: ${escHtml(l.review_note)}</p>` : ''}
+        </div>
+        ${controls}
+      </div>
+      <div class="review-panel hidden border-t border-slate-800 px-4 py-3 text-xs text-slate-400" data-panel-id="${l.id}"></div>
       </div>
     `;
     }).join('');
+    listEl.innerHTML = filterBar + (rowsHtml || '<p class="text-sm text-slate-500">No listings from this source yet.</p>');
+  }
+
+
+  // ---- Review workflow: prototype submissions arrive as "pending". Approve = goes live
+  // (status available). Decline = "closed" (hidden from everyone, can then be deleted). ----
+  async function reviewListing(id, action, note) {
+    const patch = action === 'approve' ? { status: 'available', review_note: null, reviewed_at: new Date().toISOString() }
+                : action === 'decline' ? { status: 'closed', review_note: note || null, reviewed_at: new Date().toISOString() }
+                : { status: 'pending', review_note: null, reviewed_at: null };
+    const { data: rows, error } = await sb.from('listings').update(patch).eq('id', id).select();
+    if (error) { showToast('Could not update review: ' + error.message, true); return; }
+    if (!rows || !rows.length) { showToast('Not saved — check the UPDATE permission (RLS policy) on "listings".', true); return; }
+    showToast(action === 'approve' ? 'Approved — the listing is now live.' : action === 'decline' ? 'Declined — marked Closed. You can delete it now.' : 'Moved back to pending review.');
+    loadExistingListings();
+  }
+
+  async function toggleReviewPanel(id) {
+    const panel = document.querySelector(`.review-panel[data-panel-id="${id}"]`);
+    if (!panel) return;
+    if (!panel.classList.contains('hidden')) { panel.classList.add('hidden'); return; }
+    panel.classList.remove('hidden');
+    panel.innerHTML = 'Loading host and documents...';
+    const { data, error } = await sb.from('listing_submissions').select('*').eq('listing_id', id).maybeSingle();
+    if (error) { panel.innerHTML = `<span class="text-red-400">Could not load: ${escHtml(error.message)}</span>`; return; }
+    if (!data) { panel.innerHTML = 'No host details were submitted with this listing.'; return; }
+    const h = data.host || {};
+    const line = (k, v) => v ? `<p><span class="text-slate-500">${k}:</span> <span class="text-slate-200">${escHtml(v)}</span></p>` : '';
+    const docs = Array.isArray(data.documents) ? data.documents : [];
+    const docLinks = [];
+    for (const d of docs) {
+      let url = null;
+      if (d.path) {
+        const r = await sb.storage.from('listing-docs').createSignedUrl(d.path, 3600);
+        url = r && r.data && r.data.signedUrl;
+      }
+      docLinks.push(url
+        ? `<a href="${escHtml(url)}" target="_blank" rel="noopener" class="text-brand-300 underline">${escHtml(d.label || d.name || 'Document')}</a> <span class="text-slate-500">(${escHtml(d.name || '')})</span>`
+        : `<span class="text-amber-400">${escHtml(d.label || d.name || 'Document')} — file not available (not uploaded)</span>`);
+    }
+    panel.innerHTML = `
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div><p class="text-slate-300 font-semibold mb-1">Host</p>
+          ${line('Name', h.name)}${line('Role', h.role)}${line('Phone', h.phone)}${line('Email', h.email)}${line('Agent', h.agentName)}${line('Submitted', data.created_at ? new Date(data.created_at).toLocaleString() : '')}
+        </div>
+        <div><p class="text-slate-300 font-semibold mb-1">Title / ownership documents</p>
+          ${docLinks.length ? docLinks.map(x => `<p>${x}</p>`).join('') : '<p class="text-amber-400">No documents attached — review before approving.</p>'}
+        </div>
+      </div>`;
   }
 
   document.getElementById('listingsToggle').addEventListener('click', () => {
@@ -1309,11 +1437,26 @@
     select.disabled = false;
     if (error) { showToast('Could not update status: ' + error.message, true); return; }
     if (!updatedRows || !updatedRows.length) { showToast('Status was not saved — check the UPDATE permission (RLS policy) on "listings" in Supabase.', true); return; }
-    showToast('Status updated.');
+    showToast(select.value === 'unavailable' ? 'Listing hidden — it no longer appears on the public site.' : 'Status updated.');
     loadExistingListings();
   });
 
   document.getElementById('existingList').addEventListener('click', async (e) => {
+    const filterBtn = e.target.closest('.source-filter-btn');
+    if (filterBtn) { listingSourceFilter = filterBtn.dataset.sourceFilter; renderExistingListings(); return; }
+    const approveBtn = e.target.closest('.approve-listing-btn');
+    if (approveBtn) { await reviewListing(approveBtn.dataset.id, 'approve'); return; }
+    const declineBtn = e.target.closest('.decline-listing-btn');
+    if (declineBtn) {
+      const reason = prompt(`Decline "${declineBtn.dataset.title}"?\n\nOptional reason (the host will see this):`, '');
+      if (reason === null) return;
+      await reviewListing(declineBtn.dataset.id, 'decline', reason.trim());
+      return;
+    }
+    const reopenBtn = e.target.closest('.reopen-listing-btn');
+    if (reopenBtn) { await reviewListing(reopenBtn.dataset.id, 'reopen'); return; }
+    const docsBtn = e.target.closest('.review-docs-btn');
+    if (docsBtn) { await toggleReviewPanel(docsBtn.dataset.id); return; }
     const editBtn = e.target.closest('.edit-listing-btn');
     if (editBtn) {
       const listing = listingsCache.find(l => String(l.id) === String(editBtn.dataset.id));
@@ -1339,7 +1482,7 @@
   // ---------- Edit an existing listing ----------
   function startEdit(listing) {
     editingId = listing.id;
-    editingExistingImages = Array.isArray(listing.images) ? listing.images : [];
+    editingExistingImages = (Array.isArray(listing.images) ? listing.images : []).filter(isRenderableUrl); // drop device-only blob:/data: links so a re-save can't re-publish dead media
     editingExistingVideo = listing.video || null;
 
     const category = listing.category || 'rent';
@@ -1969,7 +2112,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       let price = N(it.price); if (com && !price) price = N(it.annualRent);
       if (!title || !location || !price) throw new Error('title, location and price are required' + (com ? ' (for commercial, price is the annual rent)' : category === 'short-let' ? ' (for short-let, price is the nightly rate)' : ''));
       const status = String(it.status || 'available').toLowerCase();
-      if (!['available', 'sold', 'rented'].includes(status)) throw new Error('status must be available, sold or rented');
+      if (!['available', 'sold', 'rented', 'booked', 'unavailable'].includes(status)) throw new Error('status must be available, sold, rented, booked or unavailable');
       let beds = N(it.beds), rent = '', annual = null, fees = [];
       const extras = (Array.isArray(it.extraFees) ? it.extraFees : []).map(f => String(f).trim()).filter(Boolean);
       if (category === 'land') {
@@ -2060,7 +2203,8 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
         features: cleanFeatures(it.features, category),
         images: Array.isArray(it.images) ? it.images : [],
         video: it.video || null,
-        status
+        status,
+        source: 'web_manual'
       };
     }
     // ----- CSV support: turns spreadsheet rows into the same listing objects the JSON option uses -----
