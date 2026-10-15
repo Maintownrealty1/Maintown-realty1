@@ -1408,11 +1408,11 @@
       const imgs = renderableImages(l);
       const badImgs = (Array.isArray(l.images) ? l.images.length : 0) - imgs.length;
       const hasVideo = isRenderableUrl(l.video);
+      const firstSrc = imgs.length ? resolveImg(imgs[0]) : null;
+      const siteFiles = imgs.length && imgs.every(isRelativeUrl);
       const mediaNote = (!imgs.length && !hasVideo)
         ? `<span class="text-amber-400">No renderable media${badImgs ? ' (' + badImgs + ' device-only file' + (badImgs > 1 ? 's' : '') + ' skipped)' : ''}</span>`
         : `<span>${imgs.length} photo${imgs.length === 1 ? '' : 's'}${siteFiles ? ' (site files, shown on your website)' : ''}${hasVideo ? ' · video' : ''}${badImgs ? ' · <span class="text-amber-400">' + badImgs + ' broken</span>' : ''}</span>`;
-      const firstSrc = imgs.length ? resolveImg(imgs[0]) : null;
-      const siteFiles = imgs.length && imgs.every(isRelativeUrl);
       const thumb = firstSrc
         ? `<img src="${escHtml(firstSrc)}" alt="" loading="lazy" class="w-12 h-12 rounded-lg object-cover shrink-0 bg-slate-800" onerror="this.style.visibility='hidden'">`
         : `<div class="w-12 h-12 rounded-lg shrink-0 bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-500 text-center leading-tight">${siteFiles ? 'Site file' : 'No img'}</div>`;
