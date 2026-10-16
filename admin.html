@@ -622,6 +622,15 @@
       <p class="text-sm text-slate-500 mb-1">Everyone who completes sign up on the site — KYC details, the signed legal agreement (PDF), and account status.</p>
       <p class="text-xs text-slate-600 mb-5">Login is handled securely by Supabase Auth at the moment of sign up — there's nothing to "activate" here. As soon as someone finishes onboarding, their email + password already work on the live site. This panel is for reviewing who they are (KYC) and their signed agreement, not for storing or viewing passwords.</p>
 
+      <div id="signupStats" class="mb-5"></div>
+
+      <div class="flex flex-wrap items-center gap-2 mb-4" id="signupSourceChips">
+        <button type="button" class="chip active" data-src="web">Website sign-ups</button>
+        <button type="button" class="chip" data-src="app">App accounts</button>
+        <label class="ml-auto text-xs text-slate-500 flex items-center gap-1.5"><input type="checkbox" id="signupIncludeTest" class="!w-auto" /> Include test accounts</label>
+      </div>
+
+      <div id="signupsWebPane">
       <div id="signupRoleChips" class="flex flex-wrap gap-2 mb-5">
         <span class="chip active" data-role="all">All</span>
         <span class="chip" data-role="tenant">Tenant</span>
@@ -632,6 +641,23 @@
       </div>
 
       <div id="signupsList" class="space-y-3"></div>
+      </div>
+
+      <div id="signupsAppPane" class="hidden">
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <select id="appAcctRole" class="!w-auto !py-1.5 !text-xs">
+            <option value="">All roles</option><option value="tenant">Tenant</option><option value="landlord">Landlord</option>
+            <option value="agent">Agent</option><option value="enterprise_staff">Enterprise staff</option>
+          </select>
+          <select id="appAcctSource" class="!w-auto !py-1.5 !text-xs">
+            <option value="">All sources</option><option value="app_signup">Signed up in the app</option>
+            <option value="agent_onboarded">Onboarded by an agent</option><option value="enterprise_invite">Staff invite</option>
+          </select>
+          <input type="search" id="appAcctSearch" placeholder="Search name, email or phone" class="!w-auto !py-1.5 !text-xs min-w-[12rem]" />
+          <button type="button" id="refreshAppAcctBtn" class="btn-secondary !py-1.5 !text-xs">Refresh</button>
+        </div>
+        <div id="appAcctList" class="space-y-3"></div>
+      </div>
     </section>
 
     <!-- ---- Quick Fix service requests ---- -->
@@ -644,6 +670,50 @@
         <button type="button" id="refreshQuickFixBtn" class="btn-secondary">Refresh</button>
       </div>
       <div id="quickFixList" class="space-y-3"></div>
+    </section>
+
+    <!-- ---- Support Dashboard (Customer Service landing page) ----
+         Read-mostly overview for the support team: what needs a reply today.
+         Customer Service sees this, Quick Fix Requests and Inspections only. -->
+    <section data-view="support">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-4">
+        <div>
+          <h2 class="font-display font-semibold text-lg text-white mb-1">Support Dashboard</h2>
+          <p class="text-sm text-slate-500">What needs attention today: customer requests, host responses and the day's schedule (Lagos time).</p>
+        </div>
+        <button type="button" id="refreshSupportBtn" class="btn-secondary">Refresh</button>
+      </div>
+      <div id="supportBody" class="space-y-6"></div>
+    </section>
+
+    <!-- ---- Inspections & Schedules (Super Admin / Developer) ----
+         Read-only monitoring of every inspection, shortlet booking, land allocation and
+         move-in reported by the app (table: inspection_events, see inspection_events_migration.sql). -->
+    <section data-view="inspections">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-4">
+        <div>
+          <h2 class="font-display font-semibold text-lg text-white mb-1">Inspections &amp; Schedules</h2>
+          <p class="text-sm text-slate-500">Every host and guest booking, with the date and the exact time each step happened (Lagos time).</p>
+        </div>
+        <button type="button" id="refreshInspBtn" class="btn-secondary">Refresh</button>
+      </div>
+
+      <div id="inspSummary" class="grid grid-cols-3 gap-3 mb-5"></div>
+
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <button type="button" class="chip active" data-insp-tab="schedule">Schedule</button>
+        <button type="button" class="chip" data-insp-tab="log">Activity log</button>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <select id="inspFlow" class="!w-auto !py-1.5 !text-xs"></select>
+        <select id="inspStatus" class="!w-auto !py-1.5 !text-xs"></select>
+        <input type="search" id="inspSearch" placeholder="Search property, guest or host" class="!w-auto !py-1.5 !text-xs min-w-[12rem]" />
+        <label class="text-xs text-slate-500 flex items-center gap-1">From <input type="date" id="inspFrom" class="!w-auto !py-1.5 !text-xs" /></label>
+        <label class="text-xs text-slate-500 flex items-center gap-1">To <input type="date" id="inspTo" class="!w-auto !py-1.5 !text-xs" /></label>
+      </div>
+
+      <div id="inspList" class="space-y-3"></div>
     </section>
 
     <!-- ---- Finance ----
@@ -687,6 +757,7 @@
               <option value="developer">Developer</option>
               <option value="finance">Finance</option>
               <option value="legal">Legal</option>
+              <option value="customer_service">Customer Service</option>
               <option value="super_admin">Super Admin</option>
             </select>
           </div>
@@ -726,13 +797,16 @@
   // Which dashboard tabs each role gets. Edit these arrays to change who
   // sees what — the tab bar and every data load below all key off this.
   const ROLE_VIEWS = {
-    super_admin: ['listings', 'partners', 'signups', 'quickfix', 'finance', 'staff'],
-    developer:   ['listings', 'partners', 'signups', 'quickfix', 'finance'],
+    super_admin: ['support', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance', 'staff'],
+    developer:   ['support', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance'],
     finance:     ['finance'],
     legal:       ['signups'],
+    // Least privilege: support sees customer requests and the inspection/booking schedule,
+    // never finance, sign-up (KYC) documents, listings admin or staff access.
+    customer_service: ['support', 'quickfix', 'inspections'],
   };
-  const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal' };
-  const VIEW_LABELS = { listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', finance: 'Finance', staff: 'Staff Access' };
+  const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal', customer_service: 'Customer Service' };
+  const VIEW_LABELS = { support: 'Support Dashboard', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspections', finance: 'Finance', staff: 'Staff Access' };
   let currentStaffRole = null;
   let currentView = null;
 
@@ -742,15 +816,21 @@
   // writing the auth_user_id back — same pattern as the app's own Landlord
   // claim flow. Returns null if this account has no staff role at all.
   async function resolveStaffRole(user) {
+    // Re-link this login to its staff row first. If the Supabase login was deleted and recreated, the
+    // staff row still holds the OLD id and every permission check fails (tabs show, lists stay empty).
+    // claim_staff_access() (staff_access_repair.sql) only ever re-links the caller's own email.
+    try { await sb.rpc('claim_staff_access'); } catch (e) {}
     const byId = await sb.from('staff_users').select('*').eq('auth_user_id', user.id).maybeSingle();
     if (byId.data) return byId.data;
 
-    const byEmail = await sb.from('staff_users').select('*').eq('email', user.email).maybeSingle();
+    const byEmail = await sb.from('staff_users').select('*').ilike('email', user.email).maybeSingle();
     if (byEmail.data) {
       if (!byEmail.data.auth_user_id) {
         await sb.from('staff_users').update({ auth_user_id: user.id }).eq('id', byEmail.data.id);
+        return byEmail.data;
       }
-      return byEmail.data;
+      // Role found by email but not linked to this login: data will come back empty until repaired.
+      return Object.assign({}, byEmail.data, { _unlinked: true });
     }
     return null;
   }
@@ -773,7 +853,9 @@
     if (view === 'listings') loadExistingListings();
     if (view === 'partners') loadPartners();
     if (view === 'signups') loadSignups();
+    if (view === 'support') loadSupport();
     if (view === 'quickfix') loadQuickFixRequests();
+    if (view === 'inspections') loadInspections();
     if (view === 'finance') loadFinanceList();
     if (view === 'staff') loadStaffUsers();
   }
@@ -843,6 +925,7 @@
       return;
     }
     currentStaffRole = staffRow.role;
+    if (staffRow._unlinked) setTimeout(() => showToast('Your login is not linked to your staff record, so lists will look empty. Ask a Super Admin to run staff_access_repair.sql in Supabase.', true), 600);
     loginScreen.classList.add('hidden');
     adminScreen.classList.remove('hidden');
     document.getElementById('loggedInAs').textContent = `${session.user.email} · ${ROLE_LABELS_STAFF[currentStaffRole] || currentStaffRole}`;
@@ -1893,6 +1976,8 @@
     if (sel.error) console.warn('Could not read selected_listings:', sel.error.message);
     (sel.data || []).forEach(r => { (selectedByUser[r.user_id] = selectedByUser[r.user_id] || []).push(r); });
     renderSignups();
+    renderSignupStats();
+    loadAppAccounts();
   }
   let selectedByUser = {};
   function selectedHtml(userId) {
@@ -2185,6 +2270,385 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   }
 
   document.getElementById('refreshQuickFixBtn').addEventListener('click', loadQuickFixRequests);
+
+  // ---------- Inspections & Schedules (read-only monitoring) ----------
+  // Source: public.inspection_events, an append-only log the app writes on every
+  // inspection / shortlet / allocation / move-in step. created_at is the server
+  // timestamp; "Schedule" shows each item's latest state, "Activity log" every step.
+  const INSP_FLOWS = {
+    rent_inspection: 'Rent inspection', flex_rent_inspection: 'Flex Rent inspection',
+    land_inspection: 'Land / property inspection', shortlet_booking: 'Shortlet booking',
+    land_allocation: 'Land allocation / handover', move_in: 'Move-in'
+  };
+  const INSP_KINDS = {
+    requested: 'Requested', confirmed: 'Confirmed', declined: 'Declined', cancelled: 'Cancelled', completed: 'Completed',
+    rescheduled: 'Rescheduled', booked: 'Booked', scheduled: 'Scheduled', checked_in: 'Checked in'
+  };
+  const INSP_CLOSED = ['declined', 'cancelled', 'completed'];
+  let inspCache = [];
+  let inspTab = 'schedule';
+
+  function inspTs(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso); if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function inspDay(v) {
+    if (!v) return null;
+    const m = String(v).match(/^(\d{4}-\d{2}-\d{2})/); if (m) return m[1];
+    const d = new Date(v); if (isNaN(d.getTime())) return null;
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function inspToday() { return new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }); }
+  function inspPlusDays(day, n) { const d = new Date(day + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function inspChip(kind) {
+    const cls = kind === 'requested' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+      : (kind === 'confirmed' || kind === 'booked' || kind === 'scheduled' || kind === 'checked_in') ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+      : (kind === 'declined' || kind === 'cancelled') ? 'bg-red-500/15 text-red-300 border-red-500/30'
+      : kind === 'completed' ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+      : 'bg-slate-700/40 text-slate-300 border-slate-600/50';
+    return `<span class="inline-block text-[11px] px-2 py-0.5 rounded-full border ${cls}">${escapeQuickFix(INSP_KINDS[kind] || kind)}</span>`;
+  }
+  function inspWhen(e) {
+    const day = e.scheduled_date ? (inspDay(e.scheduled_date) || e.scheduled_date) : null;
+    if (!day) return 'Date not set';
+    let label = day;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+      const d = new Date(day + 'T00:00:00Z');
+      label = d.toLocaleDateString('en-NG', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    if (e.flow === 'shortlet_booking' && e.details && e.details.check_out) label += ' to ' + e.details.check_out;
+    return label + (e.scheduled_time ? ' · ' + e.scheduled_time : '');
+  }
+  function inspParties(e) {
+    const guest = e.guest_name || 'Guest';
+    const host = (e.host_name || 'Host') + (e.host_role ? ` (${String(e.host_role).replace('_', ' ')})` : '');
+    return `Guest: <span class="text-slate-200">${escapeQuickFix(guest)}</span> &nbsp;|&nbsp; Host: <span class="text-slate-200">${escapeQuickFix(host)}</span>`;
+  }
+  function inspActor(e) {
+    if (e.backfill) return 'Existing record, first synced';
+    const a = e.actor_name || e.actor_id;
+    return a ? `By ${escapeQuickFix(a)}${e.actor_role ? ' (' + escapeQuickFix(e.actor_role) + ')' : ''}` : '';
+  }
+
+  async function loadInspections() {
+    const listEl = document.getElementById('inspList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading inspections...</p>';
+    const { data, error } = await sb.from('inspection_events').select('*').order('created_at', { ascending: false }).limit(2000);
+    if (error) {
+      listEl.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load inspections: ${escapeQuickFix(error.message)}<p class="text-xs mt-2 text-red-200/80">If the table or permission is missing, run inspection_events_migration.sql once in Supabase (SQL Editor). Only Super Admin and Developer staff can read this table.</p></div>`;
+      return;
+    }
+    inspCache = data || [];
+    const flows = Array.from(new Set(inspCache.map(e => e.flow))).sort();
+    const flowSel = document.getElementById('inspFlow'), keepFlow = flowSel.value;
+    flowSel.innerHTML = '<option value="">All flows</option>' + flows.map(f => `<option value="${escapeQuickFix(f)}">${escapeQuickFix(INSP_FLOWS[f] || f)}</option>`).join('');
+    flowSel.value = flows.includes(keepFlow) ? keepFlow : '';
+    const kinds = Array.from(new Set(inspCache.map(e => e.kind))).sort();
+    const stSel = document.getElementById('inspStatus'), keepSt = stSel.value;
+    stSel.innerHTML = '<option value="">Any status</option>' + kinds.map(k => `<option value="${escapeQuickFix(k)}">${escapeQuickFix(INSP_KINDS[k] || k)}</option>`).join('');
+    stSel.value = kinds.includes(keepSt) ? keepSt : '';
+    renderInspections();
+  }
+
+  function inspLatestByEntity() {
+    const latest = new Map(), history = new Map();
+    inspCache.forEach(e => { // newest first
+      if (!latest.has(e.entity_key)) latest.set(e.entity_key, e);
+      if (!history.has(e.entity_key)) history.set(e.entity_key, []);
+      history.get(e.entity_key).push(e);
+    });
+    return { latest, history };
+  }
+
+  function inspMatches(e) {
+    const flow = document.getElementById('inspFlow').value;
+    const kind = document.getElementById('inspStatus').value;
+    const q = document.getElementById('inspSearch').value.trim().toLowerCase();
+    const from = document.getElementById('inspFrom').value, to = document.getElementById('inspTo').value;
+    if (flow && e.flow !== flow) return false;
+    if (kind && e.kind !== kind) return false;
+    if (q && ![e.listing_title, e.guest_name, e.host_name, e.location].some(v => String(v || '').toLowerCase().includes(q))) return false;
+    const day = inspDay(e.scheduled_date);
+    if ((from || to) && !day) return false;
+    if (from && day < from) return false;
+    if (to && day > to) return false;
+    return true;
+  }
+
+  function renderInspSummary(latest) {
+    const today = inspToday(), week = inspPlusDays(today, 7);
+    let upcoming = 0, moves = 0, waiting = 0;
+    latest.forEach(e => {
+      const day = inspDay(e.scheduled_date), open = !INSP_CLOSED.includes(e.kind);
+      if (!open) return;
+      if (e.kind === 'requested') waiting++;
+      if (day && day >= today && day <= week && e.flow !== 'move_in') upcoming++;
+      if (day && day >= today && e.flow === 'move_in') moves++;
+    });
+    const card = (n, label) => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3"><p class="text-2xl font-semibold text-white">${n}</p><p class="text-xs text-slate-400 mt-0.5">${label}</p></div>`;
+    document.getElementById('inspSummary').innerHTML =
+      card(upcoming, 'Inspections and bookings in the next 7 days') + card(moves, 'Upcoming move-ins') + card(waiting, 'Waiting for the host to respond');
+  }
+
+  function renderInspections() {
+    const listEl = document.getElementById('inspList');
+    const { latest, history } = inspLatestByEntity();
+    renderInspSummary(latest);
+    document.querySelectorAll('[data-insp-tab]').forEach(b => b.classList.toggle('active', b.dataset.inspTab === inspTab));
+    const empty = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">No inspections reported yet. They appear here as soon as a guest books through the app.</div>';
+    if (!inspCache.length) { listEl.innerHTML = empty; return; }
+
+    if (inspTab === 'log') {
+      const rows = inspCache.filter(inspMatches);
+      listEl.innerHTML = rows.length ? rows.map(e => `
+        <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <div class="flex items-center gap-2 flex-wrap">${inspChip(e.kind)}<span class="text-sm text-white font-medium">${escapeQuickFix(e.listing_title || 'Property')}</span></div>
+            <span class="text-xs text-slate-400">${inspTs(e.created_at)}</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(INSP_FLOWS[e.flow] || e.flow)} · ${escapeQuickFix(inspWhen(e))}</p>
+          <p class="text-xs text-slate-500 mt-1">${inspParties(e)}</p>
+          <p class="text-xs text-slate-500 mt-1">${inspActor(e)}</p>
+        </div>`).join('') : '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">Nothing matches these filters.</div>';
+      return;
+    }
+
+    const today = inspToday();
+    const rows = Array.from(latest.values()).filter(inspMatches);
+    const key = e => { const d = inspDay(e.scheduled_date); return d || '9999-12-31'; };
+    const upcoming = rows.filter(e => key(e) >= today).sort((a, b) => key(a).localeCompare(key(b)));
+    const past = rows.filter(e => key(e) < today).sort((a, b) => key(b).localeCompare(key(a)));
+    const card = e => {
+      const steps = (history.get(e.entity_key) || []).slice().reverse();
+      return `
+        <details class="bg-slate-900 border border-slate-800 rounded-xl">
+          <summary class="px-4 py-3 cursor-pointer select-none list-none">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-2 flex-wrap">${inspChip(e.kind)}<span class="text-sm text-white font-medium">${escapeQuickFix(e.listing_title || 'Property')}</span></div>
+              <span class="text-xs text-slate-300">${escapeQuickFix(inspWhen(e))}</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(INSP_FLOWS[e.flow] || e.flow)}${e.location ? ' · ' + escapeQuickFix(e.location) : ''}</p>
+            <p class="text-xs text-slate-500 mt-1">${inspParties(e)}</p>
+            <p class="text-xs text-slate-500 mt-1">Last update ${inspTs(e.created_at)}</p>
+          </summary>
+          <div class="border-t border-slate-800 px-4 py-3 space-y-2">
+            ${steps.map(s => `<div class="flex items-start justify-between gap-3 text-xs"><div class="flex items-center gap-2 flex-wrap">${inspChip(s.kind)}<span class="text-slate-400">${escapeQuickFix(inspWhen(s))}</span><span class="text-slate-500">${inspActor(s)}</span></div><span class="text-slate-400 shrink-0">${inspTs(s.created_at)}</span></div>`).join('')}
+          </div>
+        </details>`;
+    };
+    if (!rows.length) { listEl.innerHTML = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">Nothing matches these filters.</div>'; return; }
+    listEl.innerHTML =
+      (upcoming.length ? `<p class="text-xs text-slate-500">Upcoming and undated (${upcoming.length})</p>` + upcoming.map(card).join('') : '') +
+      (past.length ? `<p class="text-xs text-slate-500 pt-2">Past (${past.length})</p>` + past.map(card).join('') : '');
+  }
+
+  document.getElementById('refreshInspBtn').addEventListener('click', loadInspections);
+  ['inspFlow', 'inspStatus', 'inspFrom', 'inspTo'].forEach(id => document.getElementById(id).addEventListener('change', renderInspections));
+  document.getElementById('inspSearch').addEventListener('input', renderInspections);
+  document.querySelectorAll('[data-insp-tab]').forEach(b => b.addEventListener('click', () => { inspTab = b.dataset.inspTab; renderInspections(); }));
+
+  // ---------- Support Dashboard (Customer Service landing page) ----------
+  // Pulls Quick Fix requests and the inspection log and shows only what needs action.
+  // No finance, sign-up (KYC) or staff data is read here.
+  function supAgo(iso) {
+    const t = new Date(iso).getTime(); if (isNaN(t)) return '';
+    const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+    if (m < 60) return m + ' min';
+    const h = Math.round(m / 60); if (h < 48) return h + ' h';
+    return Math.round(h / 24) + ' days';
+  }
+  function supQfStatus(r) {
+    const s = String(r.status || '').toLowerCase();
+    return ['new', 'in progress', 'completed', 'cancelled'].includes(s) ? s : 'new';
+  }
+  function supSection(title, hint, goto, gotoLabel, bodyHtml) {
+    return `<div>
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <div><h3 class="text-sm font-semibold text-white">${title}</h3><p class="text-xs text-slate-500">${hint}</p></div>
+        <button type="button" class="btn-secondary !py-1.5 !text-xs" data-goto="${goto}">${gotoLabel}</button>
+      </div>
+      <div class="space-y-2">${bodyHtml}</div>
+    </div>`;
+  }
+  const supEmpty = msg => `<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-sm text-slate-400">${msg}</div>`;
+  const supError = (what, msg) => `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load ${what}: ${escapeQuickFix(msg)}</div>`;
+
+  async function loadSupport() {
+    const el = document.getElementById('supportBody');
+    el.innerHTML = '<p class="text-sm text-slate-500">Loading support dashboard...</p>';
+    const [qf, ev] = await Promise.all([
+      sb.from('service_requests').select('*').order('created_at', { ascending: false }).limit(500),
+      sb.from('inspection_events').select('*').order('created_at', { ascending: false }).limit(2000)
+    ]);
+    const requests = qf.error ? [] : (qf.data || []);
+    const events = ev.error ? [] : (ev.data || []);
+
+    const latest = new Map();
+    events.forEach(e => { if (!latest.has(e.entity_key)) latest.set(e.entity_key, e); }); // newest first
+    const items = Array.from(latest.values());
+    const open = items.filter(e => !INSP_CLOSED.includes(e.kind));
+    const today = inspToday(), tomorrow = inspPlusDays(today, 1);
+
+    const newReqs = requests.filter(r => supQfStatus(r) === 'new').sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const inProgress = requests.filter(r => supQfStatus(r) === 'in progress');
+    const waiting = open.filter(e => e.kind === 'requested').sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const soon = open.filter(e => { const d = inspDay(e.scheduled_date); return d === today || d === tomorrow; })
+      .sort((a, b) => (inspDay(a.scheduled_date) + (a.scheduled_time || '')).localeCompare(inspDay(b.scheduled_date) + (b.scheduled_time || '')));
+    const todayCount = open.filter(e => inspDay(e.scheduled_date) === today).length;
+
+    const stat = (n, label, tone) => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3"><p class="text-2xl font-semibold ${tone || 'text-white'}">${n}</p><p class="text-xs text-slate-400 mt-0.5">${label}</p></div>`;
+    const stats = `<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      ${stat(qf.error ? '—' : newReqs.length, 'New Quick Fix requests', newReqs.length ? 'text-amber-300' : 'text-white')}
+      ${stat(qf.error ? '—' : inProgress.length, 'Quick Fix in progress')}
+      ${stat(ev.error ? '—' : waiting.length, 'Waiting on a host to respond', waiting.length ? 'text-amber-300' : 'text-white')}
+      ${stat(ev.error ? '—' : todayCount, 'Scheduled for today')}
+    </div>`;
+
+    const qfRows = qf.error ? supError('Quick Fix requests', qf.error.message)
+      : newReqs.length ? newReqs.slice(0, 8).map(r => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+          <div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-sm text-white font-medium">${escapeQuickFix(r.service || 'Service request')}</span><span class="text-xs ${Date.now() - new Date(r.created_at).getTime() > 86400000 ? 'text-red-300' : 'text-slate-400'}">Waiting ${supAgo(r.created_at)}</span></div>
+          <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(r.name || 'Customer')}${r.phone ? ' · <a class="text-brand-300 hover:underline" href="tel:' + escapeQuickFix(r.phone) + '">' + escapeQuickFix(r.phone) + '</a>' : ''}${r.address ? ' · ' + escapeQuickFix(r.address) : ''}</p></div>`).join('')
+      : supEmpty('No new Quick Fix requests. Everything has been picked up.');
+
+    const row = e => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+      <div class="flex items-center justify-between gap-2 flex-wrap"><div class="flex items-center gap-2 flex-wrap">${inspChip(e.kind)}<span class="text-sm text-white font-medium">${escapeQuickFix(e.listing_title || 'Property')}</span></div><span class="text-xs text-slate-300">${escapeQuickFix(inspWhen(e))}</span></div>
+      <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(INSP_FLOWS[e.flow] || e.flow)}</p>
+      <p class="text-xs text-slate-500 mt-1">${inspParties(e)}</p></div>`;
+
+    const waitRows = ev.error ? supError('inspections', ev.error.message)
+      : waiting.length ? waiting.slice(0, 8).map(e => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+          <div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-sm text-white font-medium">${escapeQuickFix(e.listing_title || 'Property')}</span><span class="text-xs ${Date.now() - new Date(e.created_at).getTime() > 86400000 ? 'text-red-300' : 'text-slate-400'}">Waiting ${supAgo(e.created_at)}</span></div>
+          <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(INSP_FLOWS[e.flow] || e.flow)} · ${escapeQuickFix(inspWhen(e))}</p>
+          <p class="text-xs text-slate-500 mt-1">${inspParties(e)}</p></div>`).join('')
+      : supEmpty('No requests are waiting on a host.');
+    const soonRows = ev.error ? supError('inspections', ev.error.message)
+      : soon.length ? soon.slice(0, 12).map(row).join('') : supEmpty('Nothing scheduled for today or tomorrow.');
+
+    el.innerHTML = stats
+      + supSection('New Quick Fix requests', 'Oldest first. Open the full list to update a status.', 'quickfix', 'Open Quick Fix', qfRows)
+      + supSection('Waiting on a host', 'Inspection and booking requests the host has not answered yet, oldest first. Red means over 24 hours.', 'inspections', 'Open Inspections', waitRows)
+      + supSection('Today and tomorrow', 'Inspections, bookings, handovers and move-ins that are coming up.', 'inspections', 'Open Inspections', soonRows);
+  }
+
+
+  // ---------- Sign-up totals (website + app) and App accounts ----------
+  // Website sign-ups come from the `signups` table; app accounts from `app_signup_events`
+  // (see app_signup_events_migration.sql). Totals count each person once.
+  let appAcctEvents = [], appAcctError = null, signupSource = 'web';
+  const APP_SOURCES = { app_signup: 'Signed up in the app', agent_onboarded: 'Onboarded by an agent', enterprise_invite: 'Staff invite' };
+  const SIGNUP_ROWS = [['tenant', 'Tenant'], ['landlord', 'Landlord'], ['agent', 'Agent'], ['diaspora', 'Diaspora / Canada'], ['staff', 'Enterprise staff'], ['other', 'Other']];
+
+  function sgDay(iso) { const d = new Date(iso); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }); }
+  function sgWebRole(r) { const v = String(r || '').toLowerCase(); return ['tenant', 'landlord', 'agent', 'diaspora'].includes(v) ? v : 'other'; }
+  function sgAppRole(r) { const v = String(r || '').toLowerCase(); return v === 'enterprise_staff' ? 'staff' : (['tenant', 'landlord', 'agent'].includes(v) ? v : 'other'); }
+
+  function appAccountsLatest() {
+    const incl = document.getElementById('signupIncludeTest').checked;
+    const latest = new Map(), first = new Map();
+    appAcctEvents.forEach(e => { // newest first
+      if (!latest.has(e.account_id)) latest.set(e.account_id, e);
+      first.set(e.account_id, e); // ends as the oldest event
+    });
+    return Array.from(latest.values()).filter(e => incl || !e.is_demo).map(e => {
+      const f = first.get(e.account_id);
+      return Object.assign({}, e, { _joined: f.account_created_at || f.created_at, _src: f.source || e.source, _firstBackfill: !!f.backfill });
+    });
+  }
+
+  function renderSignupStats() {
+    const el = document.getElementById('signupStats');
+    const web = signupsCache || [], app = appAccountsLatest();
+    const today = inspToday(), week = inspPlusDays(today, -6);
+    const days = []; for (let i = 13; i >= 0; i--) days.push(inspPlusDays(today, -i));
+    const perDay = {}; days.forEach(d => { perDay[d] = { web: 0, app: 0 }; });
+    const rows = {}; SIGNUP_ROWS.forEach(([k]) => { rows[k] = { web: 0, app: 0 }; });
+    let todayN = 0, weekN = 0;
+    const tally = (iso, src) => { const d = sgDay(iso); if (!d) return; if (d === today) todayN++; if (d >= week && d <= today) weekN++; if (perDay[d]) perDay[d][src]++; };
+    web.forEach(s => { rows[sgWebRole(s.role)].web++; tally(s.created_at, 'web'); });
+    app.forEach(a => { rows[sgAppRole(a.role)].app++; tally(a._joined, 'app'); });
+    const awaiting = app.filter(a => String(a.status).toUpperCase() === 'PENDING_CLAIM').length;
+    const card = (n, label, tone) => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3"><p class="text-2xl font-semibold ${tone || 'text-white'}">${n}</p><p class="text-xs text-slate-400 mt-0.5">${label}</p></div>`;
+    const appNote = appAcctError ? `<p class="text-xs text-amber-300 mt-2">App accounts are not reporting yet: ${escapeQuickFix(appAcctError)}. Run app_signup_events_migration.sql in Supabase.</p>` : '';
+    const max = Math.max(1, ...days.map(d => perDay[d].web + perDay[d].app));
+    const bars = days.map(d => {
+      const t = perDay[d], h = Math.round(((t.web + t.app) / max) * 64), wH = t.web + t.app ? Math.round(h * t.web / (t.web + t.app)) : 0;
+      return `<div class="flex-1 flex flex-col items-center gap-1" title="${d}: ${t.web} website, ${t.app} app"><div class="w-full flex flex-col justify-end" style="height:64px">${t.web + t.app ? `<div style="height:${h - wH}px;background:#34d399" class="rounded-t-sm"></div><div style="height:${wH}px;background:#8b5cf6" class="${t.app ? '' : 'rounded-t-sm'}"></div>` : '<div style="height:2px;background:#334155"></div>'}</div><span class="text-[10px] text-slate-500">${d.slice(8)}</span></div>`;
+    }).join('');
+    el.innerHTML = `
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        ${card(web.length + app.length, 'Total sign-ups (website + app)')}
+        ${card(web.length, 'Website sign-ups')}
+        ${card(appAcctError ? '—' : app.length, 'App accounts')}
+        ${card(todayN, 'Joined today')}
+        ${card(weekN, 'Joined in the last 7 days')}
+        ${card(appAcctError ? '—' : awaiting, 'Agent-onboarded, not yet claimed', awaiting ? 'text-amber-300' : 'text-white')}
+      </div>
+      <div class="grid lg:grid-cols-2 gap-3 mt-3">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <p class="text-sm font-semibold text-white mb-2">By role</p>
+          <table class="w-full text-xs"><thead><tr class="text-slate-500 text-left"><th class="font-normal pb-1">Role</th><th class="font-normal pb-1 text-right">Website</th><th class="font-normal pb-1 text-right">App</th><th class="font-normal pb-1 text-right">Total</th></tr></thead><tbody>
+          ${SIGNUP_ROWS.filter(([k]) => rows[k].web + rows[k].app > 0 || ['tenant', 'landlord', 'agent'].includes(k)).map(([k, label]) => `<tr class="border-t border-slate-800"><td class="py-1.5 text-slate-300">${label}</td><td class="py-1.5 text-right text-slate-300">${rows[k].web}</td><td class="py-1.5 text-right text-slate-300">${rows[k].app}</td><td class="py-1.5 text-right text-white font-medium">${rows[k].web + rows[k].app}</td></tr>`).join('')}
+          </tbody></table>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-2"><p class="text-sm font-semibold text-white">Last 14 days</p><p class="text-[11px] text-slate-500"><span style="color:#8b5cf6">Website</span> · <span style="color:#34d399">App</span> (Lagos days)</p></div>
+          <div class="flex items-end gap-1">${bars}</div>
+        </div>
+      </div>${appNote}`;
+  }
+
+  async function loadAppAccounts() {
+    const { data, error } = await sb.from('app_signup_events').select('*').order('created_at', { ascending: false }).limit(3000);
+    appAcctError = error ? error.message : null;
+    appAcctEvents = error ? [] : (data || []);
+    renderSignupStats();
+    renderAppAccounts();
+  }
+
+  function renderAppAccounts() {
+    const listEl = document.getElementById('appAcctList');
+    if (appAcctError) { listEl.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load app accounts: ${escapeQuickFix(appAcctError)}<p class="text-xs mt-2 text-red-200/80">Run app_signup_events_migration.sql once in Supabase (SQL Editor). Only Super Admin, Developer and Legal staff can read it.</p></div>`; return; }
+    const role = document.getElementById('appAcctRole').value, src = document.getElementById('appAcctSource').value;
+    const q = document.getElementById('appAcctSearch').value.trim().toLowerCase();
+    const rows = appAccountsLatest().filter(a => (!role || a.role === role) && (!src || a._src === src)
+      && (!q || [a.full_name, a.email, a.phone].some(v => String(v || '').toLowerCase().includes(q))))
+      .sort((x, y) => new Date(y._joined) - new Date(x._joined));
+    if (!rows.length) { listEl.innerHTML = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">No app accounts reported yet. They appear here as soon as someone signs up in the app or an agent onboards a landlord.</div>'; return; }
+    listEl.innerHTML = rows.map(a => {
+      const st = String(a.status || '').toUpperCase();
+      const tone = st === 'ACTIVE' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : st === 'PENDING_CLAIM' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30';
+      const by = a._src === 'agent_onboarded' && !a._firstBackfill && a.actor_name ? ` · added by ${escapeQuickFix(a.actor_name)}` : '';
+      return `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white font-medium">${escapeQuickFix(a.full_name || 'Unnamed')}</span>
+            <span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">${escapeQuickFix(String(a.role || '').replace('_', ' '))}</span>
+            <span class="text-[11px] px-2 py-0.5 rounded-full border ${tone}">${escapeQuickFix(st === 'PENDING_CLAIM' ? 'Not yet claimed' : st.charAt(0) + st.slice(1).toLowerCase())}</span>
+            ${a.is_demo ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-400">Test account</span>' : ''}</div>
+          <span class="text-xs text-slate-400">${inspTs(a._joined)}</span>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(APP_SOURCES[a._src] || a._src || '')}${by}${a._firstBackfill && !a.account_created_at ? ' · existing account, date is when it was first synced' : ''}</p>
+        <p class="text-xs text-slate-500 mt-1">${a.email ? `<a class="text-brand-300 hover:underline break-all" href="mailto:${escapeQuickFix(a.email)}">${escapeQuickFix(a.email)}</a>` : 'No email'}${a.phone ? ` · <a class="text-brand-300 hover:underline" href="tel:${escapeQuickFix(a.phone)}">${escapeQuickFix(a.phone)}</a>` : ''}</p>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('signupSourceChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-src]'); if (!chip) return;
+    signupSource = chip.dataset.src;
+    document.querySelectorAll('#signupSourceChips [data-src]').forEach(c => c.classList.toggle('active', c === chip));
+    document.getElementById('signupsWebPane').classList.toggle('hidden', signupSource !== 'web');
+    document.getElementById('signupsAppPane').classList.toggle('hidden', signupSource !== 'app');
+  });
+  document.getElementById('signupIncludeTest').addEventListener('change', () => { renderSignupStats(); renderAppAccounts(); });
+  ['appAcctRole', 'appAcctSource'].forEach(id => document.getElementById(id).addEventListener('change', renderAppAccounts));
+  document.getElementById('appAcctSearch').addEventListener('input', renderAppAccounts);
+  document.getElementById('refreshAppAcctBtn').addEventListener('click', loadAppAccounts);
+
+  document.getElementById('refreshSupportBtn').addEventListener('click', loadSupport);
+  document.getElementById('supportBody').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-goto]'); if (b) switchView(b.dataset.goto);
+  });
   document.getElementById('quickFixList').addEventListener('change', async (e) => {
     const select = e.target.closest('.quickfix-status');
     if (!select) return;
@@ -2231,6 +2695,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
           <option value="developer" ${s.role === 'developer' ? 'selected' : ''}>Developer</option>
           <option value="finance" ${s.role === 'finance' ? 'selected' : ''}>Finance</option>
           <option value="legal" ${s.role === 'legal' ? 'selected' : ''}>Legal</option>
+          <option value="customer_service" ${s.role === 'customer_service' ? 'selected' : ''}>Customer Service</option>
           <option value="super_admin" ${s.role === 'super_admin' ? 'selected' : ''}>Super Admin</option>
         </select>
         <button class="reset-staff-btn btn-secondary shrink-0" data-email="${s.email}" title="Email this person a link to set a new password and log back in">Send Reset Link</button>
