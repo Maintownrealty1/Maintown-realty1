@@ -6,6 +6,7 @@
 <title>Quick Fix — MainTown Realty</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="canonical" href="https://maintownrealty.com/quick-fix">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="shortcut icon" href="/favicon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -153,6 +154,48 @@
 </div>
 
 <div id="toast" class="toast"></div>
+
+<!-- ================= FIX GALLERY CARD ================= -->
+<section class="py-10 sm:py-14">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6">
+    <div class="relative overflow-hidden rounded-2xl h-52 sm:h-64 shadow-xl shadow-black/30 border border-white/10 bg-slate-900">
+      <img src="https://images.unsplash.com/photo-1676210134188-4c05dd172f89?auto=format&fit=crop&w=1200&q=80" alt="Plumber fixing a pipe in a wall" loading="lazy" onerror="this.style.display='none'"
+        class="qf-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" style="opacity:1">
+      <img src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80" alt="Electrician installing wiring" loading="lazy" onerror="this.style.display='none'"
+        class="qf-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" style="opacity:0">
+      <img src="https://images.unsplash.com/photo-1643509867448-57001e0c333d?auto=format&fit=crop&w=1200&q=80" alt="Carpenter drilling a piece of wood" loading="lazy" onerror="this.style.display='none'"
+        class="qf-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" style="opacity:0">
+      <img src="https://images.unsplash.com/photo-1676210134190-3f2c0d5cf58d?auto=format&fit=crop&w=1200&q=80" alt="Technician fixing a water heater" loading="lazy" onerror="this.style.display='none'"
+        class="qf-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" style="opacity:0">
+      <img src="https://images.unsplash.com/photo-1749532125405-70950966b0e5?auto=format&fit=crop&w=1200&q=80" alt="Plumber repairing plumbing in a bathroom" loading="lazy" onerror="this.style.display='none'"
+        class="qf-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" style="opacity:0">
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-slate-950/10"></div>
+      <div class="relative z-10 h-full flex flex-col items-start justify-end p-4 sm:p-8">
+        <span id="qfLabel" class="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-brand-300 mb-1.5 sm:mb-2">Plumbing &amp; leaks</span>
+        <h3 class="font-display font-bold text-lg sm:text-2xl text-white max-w-md leading-snug">Whatever needs fixing, our vetted technicians have it covered.</h3>
+        <a href="#serviceGrid" class="mt-3 sm:mt-4 inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full transition">
+          Request a Fix
+          <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+  (function () {
+    const slides = document.querySelectorAll('.qf-slide');
+    const label = document.getElementById('qfLabel');
+    const labels = ["Plumbing &amp; leaks", "Electrical repairs", "Carpentry &amp; fittings", "Water heater &amp; appliances", "Bathroom repairs"];
+    if (slides.length < 2) return;
+    let idx = 0;
+    setInterval(() => {
+      slides[idx].style.opacity = '0';
+      idx = (idx + 1) % slides.length;
+      slides[idx].style.opacity = '1';
+      if (label) label.innerHTML = labels[idx];
+    }, 5000);
+  })();
+</script>
 
 <!-- ================= FOOTER ================= -->
 <div aria-hidden="true" class="h-16 sm:h-4"></div>
