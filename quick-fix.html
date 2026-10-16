@@ -173,10 +173,10 @@
       <div class="relative z-10 h-full flex flex-col items-start justify-end p-4 sm:p-8">
         <span id="qfLabel" class="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-brand-300 mb-1.5 sm:mb-2">Plumbing &amp; leaks</span>
         <h3 class="font-display font-bold text-lg sm:text-2xl text-white max-w-md leading-snug">Whatever needs fixing, our vetted technicians have it covered.</h3>
-        <a href="#serviceGrid" class="mt-3 sm:mt-4 inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full transition">
+        <button type="button" id="qfRequestBtn" class="mt-3 sm:mt-4 inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full transition">
           Request a Fix
           <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-        </a>
+        </button>
       </div>
     </div>
   </div>
@@ -188,9 +188,11 @@
     const labels = ["Plumbing &amp; leaks", "Electrical repairs", "Carpentry &amp; fittings", "Water heater &amp; appliances", "Bathroom repairs"];
     if (slides.length < 2) return;
     let idx = 0;
+    window.qfSlideIdx = 0;
     setInterval(() => {
       slides[idx].style.opacity = '0';
       idx = (idx + 1) % slides.length;
+      window.qfSlideIdx = idx;
       slides[idx].style.opacity = '1';
       if (label) label.innerHTML = labels[idx];
     }, 5000);
@@ -363,6 +365,14 @@
     const card = e.target.closest('.service-card');
     if (!card) return;
     currentService = card.dataset.service;
+    modalServiceTitle.textContent = `Request: ${currentService}`;
+    requestModal.classList.remove('hidden');
+    requestModal.classList.add('flex');
+  });
+
+  const QF_SLIDE_SERVICES = ['Plumbing', 'Electrical', 'Furniture Fixing', 'Plumbing', 'Plumbing'];
+  document.getElementById('qfRequestBtn').addEventListener('click', () => {
+    currentService = QF_SLIDE_SERVICES[window.qfSlideIdx || 0] || 'Plumbing';
     modalServiceTitle.textContent = `Request: ${currentService}`;
     requestModal.classList.remove('hidden');
     requestModal.classList.add('flex');
