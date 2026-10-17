@@ -81,7 +81,7 @@
 }
 </script>
 <script>if (/[?&]p=/.test(location.search)) document.documentElement.classList.add("hu-dyn");</script>
-<style>html.hu-dyn:not(.hu-ready) #hu-eyebrow, html.hu-dyn:not(.hu-ready) #hu-title, html.hu-dyn:not(.hu-ready) #hu-meta, html.hu-dyn:not(.hu-ready) #hu-body, html.hu-dyn:not(.hu-ready) #takeaways-wrap { visibility: hidden; } .hu-car{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;border-radius:14px;margin:0 0 .6rem;-webkit-overflow-scrolling:touch;scrollbar-width:none}.hu-car::-webkit-scrollbar{display:none}.hu-car img{flex:0 0 100%;width:100%;height:auto;max-height:420px;object-fit:cover;scroll-snap-align:center;border-radius:14px}.hu-dots{display:flex;justify-content:center;gap:6px;margin:0 0 1.25rem}.hu-dots i{width:7px;height:7px;border-radius:99px;background:#64748b;display:block}.hu-dots i.on{background:#C4B5FD}</style>
+<style>html.hu-dyn:not(.hu-ready) #hu-eyebrow, html.hu-dyn:not(.hu-ready) #hu-title, html.hu-dyn:not(.hu-ready) #hu-meta, html.hu-dyn:not(.hu-ready) #hu-body, html.hu-dyn:not(.hu-ready) #takeaways-wrap { visibility: hidden; } html[data-theme="light"] .hu-seeall{color:#6D28D9 !important;border-color:#6D28D9 !important}.hu-car{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;border-radius:14px;margin:0 0 .6rem;-webkit-overflow-scrolling:touch;scrollbar-width:none}.hu-car::-webkit-scrollbar{display:none}.hu-car img{flex:0 0 100%;width:100%;height:auto;max-height:420px;object-fit:cover;scroll-snap-align:center;border-radius:14px}.hu-dots{display:flex;justify-content:center;gap:6px;margin:0 0 1.25rem}.hu-dots i{width:7px;height:7px;border-radius:99px;background:#64748b;display:block}.hu-dots i.on{background:#C4B5FD}</style>
 <style>
   html[data-theme="light"] .hu-card { background:#ffffff; border-color:#e2e8f0; }
   html[data-theme="light"] .hu-card-title { color:#0F172A; }
@@ -217,12 +217,13 @@
     </div>
 
     <!-- More Housing Updates (from the MainTown admin; same posts as the app's Explore tab) -->
-    <section id="hu-more-wrap" class="mt-12" style="display:none" aria-labelledby="hu-more-title">
+    <section id="hu-more-wrap" class="mt-12 max-w-3xl mx-auto px-4 sm:px-6" style="display:none" aria-labelledby="hu-more-title">
       <div class="flex items-center justify-between gap-3 mb-4">
         <h2 id="hu-more-title" class="font-display font-bold text-white text-xl">More Housing Updates</h2>
-        <a href="./housing-updates.html" class="text-sm font-semibold" style="color:#C4B5FD;">See all</a>
+        <a href="./housing-updates.html" class="hu-seeall inline-flex items-center gap-1 shrink-0 h-9 px-4 rounded-full text-sm font-semibold whitespace-nowrap" style="color:#C4B5FD;border:1px solid rgba(196,181,253,.45);">See all <span aria-hidden="true">&rarr;</span></a>
       </div>
       <div id="hu-more-grid" class="grid sm:grid-cols-2 gap-4"></div>
+      <a href="./housing-updates.html" class="hu-seeall mt-5 flex items-center justify-center h-11 rounded-xl text-sm font-semibold" style="color:#C4B5FD;border:1px solid rgba(196,181,253,.45);">See all Housing Updates &rarr;</a>
     </section>
   </article>
 </main>
