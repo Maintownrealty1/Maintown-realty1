@@ -80,6 +80,19 @@
   "publisher": { "@type": "Organization", "name": "MainTown Realty", "url": "https://maintownrealty.com" }
 }
 </script>
+<script>if (/[?&]p=/.test(location.search)) document.documentElement.classList.add("hu-dyn");</script>
+<style>html.hu-dyn:not(.hu-ready) #hu-eyebrow, html.hu-dyn:not(.hu-ready) #hu-title, html.hu-dyn:not(.hu-ready) #hu-meta, html.hu-dyn:not(.hu-ready) #hu-body, html.hu-dyn:not(.hu-ready) #takeaways-wrap { visibility: hidden; } .hu-card-title{} </style>
+<style>
+  html[data-theme="light"] .hu-card { background:#ffffff; border-color:#e2e8f0; }
+  html[data-theme="light"] .hu-card-title { color:#0F172A; }
+  html[data-theme="light"] .hu-card-sum { color:#475569; }
+  html[data-theme="light"] .hu-eyebrow { color:#6D28D9 !important; }
+  html[data-theme="light"] .hu-chip { background:#ffffff; color:#334155; border-color:#cbd5e1; }
+  html[data-theme="light"] .hu-chip.active { background:#6D28D9; color:#fff; border-color:#6D28D9; }
+  html[data-theme="light"] .hu-muted { color:#475569; }
+  .hu-chip { border:1px solid rgba(255,255,255,.18); color:#CBD5E1; background:rgba(255,255,255,.04); border-radius:999px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer; }
+  .hu-chip.active { background:#7C3AED; border-color:#7C3AED; color:#fff; }
+</style>
 <script src="./theme.js?v=3"></script>
 </head>
 <body class="text-slate-100 antialiased">
@@ -119,9 +132,9 @@
           <span style="color:#FFFFFF;">Housing Updates</span>
         </nav>
 
-        <p class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:#C4B5FD;text-shadow:0 1px 3px rgba(0,0,0,.6);">Housing Updates · Land and Title</p>
-        <h1 class="font-display font-bold text-white text-[1.9rem] sm:text-4xl md:text-5xl leading-tight tracking-tight" style="text-shadow:0 2px 20px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.6);">5 Documents to Check Before Buying Land in Lagos (Ajah, Ikorodu, Badagry and Beyond)</h1>
-        <p class="mt-4 text-sm" style="color:#E2E8F0;text-shadow:0 1px 3px rgba(0,0,0,.7);">By MainTown Realty · October 11, 2026 · 4 min read</p>
+        <p id="hu-eyebrow" class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:#C4B5FD;text-shadow:0 1px 3px rgba(0,0,0,.6);">Housing Updates · Land and Title</p>
+        <h1 id="hu-title" class="font-display font-bold text-white text-[1.9rem] sm:text-4xl md:text-5xl leading-tight tracking-tight" style="text-shadow:0 2px 20px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.6);">5 Documents to Check Before Buying Land in Lagos (Ajah, Ikorodu, Badagry and Beyond)</h1>
+        <p id="hu-meta" class="mt-4 text-sm" style="color:#E2E8F0;text-shadow:0 1px 3px rgba(0,0,0,.7);">By MainTown Realty · October 11, 2026 · 4 min read</p>
 
         <a href="https://whatsapp.com/channel/0029VbDy4yeJpe8XeziNiw12" target="_blank" rel="noopener noreferrer" class="mt-5 inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-2" style="color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);">
       <span class="text-[#25D366]"><svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.3zM12 21.8c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8s9.8 4.4 9.8 9.8-4.4 9.8-9.8 9.8zm5.4-7.3c-.3-.1-1.8-.9-2-1s-.5-.1-.7.1-.8 1-.9 1.1-.3.2-.6.1c-1.7-.9-2.8-1.5-3.9-3.4-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.5l-.9-2.1c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1.1 1.1-1.1 2.6s1.1 3 1.3 3.2c.2.2 2.2 3.4 5.3 4.7 2 .8 2.7.9 3.7.8.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4z"/></svg></span> Get property alerts: Join MainTown Realty Channel
@@ -131,7 +144,7 @@
 
     <div class="max-w-3xl mx-auto px-4 sm:px-6">
 
-    <div class="prose-mt mt-8">
+    <div id="hu-body" class="prose-mt mt-8">
       <p>Land in Lagos can be a smart investment, and it can also be an expensive lesson. Double-sold plots, family disputes and land caught up in government acquisition are the stories buyers hear most, and they usually trace back to the same mistake: paying before checking the paperwork. Whether you are eyeing a plot in Ajah, a growing area like Ikorodu or Badagry, or a home in Lekki, Ikeja or Alimosho, five documents decide whether you are buying real title or just a good story.</p>
 
       <h2>What you are really paying for</h2>
@@ -178,7 +191,7 @@
       <p>Renting instead? The same discipline applies. MainTown offers flexible 12-month interest-free rent payments and a Make an Offer option, so you can negotiate before you commit.</p>
     </div>
 
-    <section aria-labelledby="takeaways" class="mt-8 rounded-2xl border border-white/10 bg-slate-850 p-5 sm:p-6">
+    <section id="takeaways-wrap" aria-labelledby="takeaways" class="mt-8 rounded-2xl border border-white/10 bg-slate-850 p-5 sm:p-6">
       <h2 id="takeaways" class="font-display font-bold text-white text-lg mb-3">Key takeaways</h2>
       <ul class="prose-mt" style="margin:0;">
         <li>Check the title, the deed, the survey, consent and the receipts before any money moves.</li>
@@ -202,6 +215,15 @@
     <p class="mt-8 text-xs text-slate-500 leading-relaxed">This article is general information for readers in Nigeria and is not legal advice. Land rules and procedures can change and differ by state and by title type, so confirm the details for your specific plot with a qualified Nigerian lawyer before you pay.</p>
 
     </div>
+
+    <!-- More Housing Updates (from the MainTown admin; same posts as the app's Explore tab) -->
+    <section id="hu-more-wrap" class="mt-12" style="display:none" aria-labelledby="hu-more-title">
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <h2 id="hu-more-title" class="font-display font-bold text-white text-xl">More Housing Updates</h2>
+        <a href="./housing-updates.html" class="text-sm font-semibold" style="color:#C4B5FD;">See all</a>
+      </div>
+      <div id="hu-more-grid" class="grid sm:grid-cols-2 gap-4"></div>
+    </section>
   </article>
 </main>
 
@@ -293,6 +315,113 @@
   </div>
 </footer>
 
+<script>
+  // ---- Housing Updates: shared posts (same posts as the MainTown app "Explore" tab) ----
+  // Posts are written once in the MainTown admin (Explore Content). Published posts appear here and in the app.
+  var HU = (function () {
+    var API = 'https://obtggomfwvravjcnypid.supabase.co', KEY = 'sb_publishable_GaTnU4FmPc2slbn8BisXXg_DmxH1vl8';
+    var CATS = { learn: 'Learn', neighbourhoods: 'Neighbourhoods', news: 'News', stories: 'Stories', design: 'Design' };
+    var GRAD = { learn: 'linear-gradient(135deg,#6d28d9,#a855f7)', neighbourhoods: 'linear-gradient(135deg,#0f766e,#14b8a6)', news: 'linear-gradient(135deg,#1d4ed8,#38bdf8)', stories: 'linear-gradient(135deg,#b45309,#f59e0b)', design: 'linear-gradient(135deg,#be185d,#f472b6)' };
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function api(path) { return fetch(API + '/rest/v1/' + path, { headers: { apikey: KEY } }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }); }
+    function track(id, ev) {
+      try {
+        var u = localStorage.getItem('mtr_web_id'); if (!u) { u = 'web-' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('mtr_web_id', u); }
+        fetch(API + '/rest/v1/rpc/explore_track', { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_post: id, p_event: ev, p_user: u }) }).catch(function () {});
+      } catch (e) {}
+    }
+    function dateOf(p) { var d = new Date(p.published_at || p.publish_at || p.created_at); return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' }); }
+    function minutes(body) { return Math.max(1, Math.round(String(body || '').split(/\s+/).length / 200)); }
+    function inline(t) {
+      return t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+              .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    }
+    // Plain text -> safe HTML: blank line = paragraph, "## " heading, "### " sub-heading, "- " bullet, **bold**, [text](https://link)
+    function md(src) {
+      var out = [], list = false;
+      String(src || '').replace(/\r/g, '').split('\n').forEach(function (raw) {
+        var line = esc(raw.trim());
+        if (/^- /.test(line)) { if (!list) { out.push('<ul>'); list = true; } out.push('<li>' + inline(line.slice(2)) + '</li>'); return; }
+        if (list) { out.push('</ul>'); list = false; }
+        if (!line) return;
+        if (/^### /.test(line)) out.push('<h3>' + inline(line.slice(4)) + '</h3>');
+        else if (/^## /.test(line)) out.push('<h2>' + inline(line.slice(3)) + '</h2>');
+        else out.push('<p>' + inline(line) + '</p>');
+      });
+      if (list) out.push('</ul>');
+      return out.join('');
+    }
+    function card(p, base) {
+      var cover = p.cover_url
+        ? '<img src="' + esc(p.cover_url) + '" alt="" loading="lazy" class="w-full h-40 object-cover">'
+        : '<div class="w-full h-40" style="background:' + (GRAD[p.category] || GRAD.learn) + '"></div>';
+      var badge = p.kind === 'video' ? '<span class="absolute top-3 left-3 text-[11px] font-semibold rounded-full px-2.5 py-1 bg-black/60 text-white">Video</span>' : '';
+      return '<a href="' + (base || '') + 'housingupdates.html?p=' + encodeURIComponent(p.slug) + '" class="hu-card block rounded-2xl overflow-hidden border border-white/10 bg-slate-850 hover:border-brand-500/60 transition">' +
+        '<div class="relative">' + cover + badge + '</div><div class="p-4"><p class="hu-eyebrow text-[11px] font-semibold uppercase tracking-wider" style="color:#C4B5FD">' + esc(CATS[p.category] || 'Update') + ' · ' + esc(dateOf(p)) + '</p>' +
+        '<h3 class="hu-card-title font-display font-semibold text-white text-lg leading-snug mt-1">' + esc(p.title) + '</h3>' +
+        '<p class="hu-card-sum text-sm text-slate-400 mt-2" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">' + esc(p.summary) + '</p></div></a>';
+    }
+    function list(limit, offset) {
+      return api('explore_posts?select=id,slug,kind,category,title,summary,cover_url,audiences,published_at,publish_at,created_at&order=published_at.desc&limit=' + limit + '&offset=' + (offset || 0))
+        .then(function (rows) { return rows.filter(function (p) { return !p.audiences || p.audiences.indexOf('all') > -1; }); });
+    }
+    return { api: api, esc: esc, md: md, card: card, list: list, track: track, dateOf: dateOf, minutes: minutes, CATS: CATS, GRAD: GRAD };
+  })();
+
+  (function () {
+    var slug = new URLSearchParams(location.search).get('p');
+    function setMeta(sel, attr, val) { var el = document.querySelector(sel); if (el) el.setAttribute(attr, val); }
+    function ready() { document.documentElement.classList.add('hu-ready'); }
+    function notFound() {
+      document.getElementById('hu-eyebrow').textContent = 'Housing Updates';
+      document.getElementById('hu-title').textContent = 'This update is not available';
+      document.getElementById('hu-meta').textContent = '';
+      document.getElementById('hu-body').innerHTML = '<p>It may have been moved or removed. <a href="./housing-updates.html">See all Housing Updates</a>.</p>';
+      var t = document.getElementById('takeaways-wrap'); if (t) t.style.display = 'none';
+      ready();
+    }
+    function render(p) {
+      var url = 'https://maintownrealty.com/housingupdates.html?p=' + encodeURIComponent(p.slug);
+      var min = HU.minutes(p.body), author = p.author_name || 'MainTown Realty';
+      document.title = p.title + ' | MainTown Realty Housing Updates';
+      setMeta('meta[name="description"]', 'content', p.summary || p.title);
+      setMeta('link[rel="canonical"]', 'href', url);
+      setMeta('meta[property="og:title"]', 'content', p.title); setMeta('meta[property="og:description"]', 'content', p.summary || p.title);
+      setMeta('meta[property="og:url"]', 'content', url); setMeta('meta[name="twitter:title"]', 'content', p.title); setMeta('meta[name="twitter:description"]', 'content', p.summary || p.title);
+      var ld = document.querySelector('script[type="application/ld+json"]');
+      if (ld) { try { var j = JSON.parse(ld.textContent); j.headline = p.title; j.description = p.summary || p.title; j.datePublished = (p.published_at || '').slice(0, 10); j.dateModified = (p.updated_at || p.published_at || '').slice(0, 10); j.mainEntityOfPage = url; if (p.cover_url) j.image = p.cover_url; ld.textContent = JSON.stringify(j); } catch (e) {} }
+      document.getElementById('hu-eyebrow').textContent = 'Housing Updates · ' + (HU.CATS[p.category] || 'Update');
+      document.getElementById('hu-title').textContent = p.title;
+      document.getElementById('hu-meta').innerHTML = 'By ' + HU.esc(author) + ' · ' + HU.esc(HU.dateOf(p)) + ' · ' + min + ' min ' + (p.kind === 'video' ? 'watch/read' : 'read') +
+        ' · <button type="button" id="hu-share" class="underline" style="color:#E2E8F0">Share</button>';
+      // hero: the post's own cover, or a brand gradient (the land photos belong to the original article)
+      var ss = document.querySelector('#hero .hero-slideshow');
+      if (ss) ss.innerHTML = (p.cover_url ? '<div class="hero-slide active" style="background-image:url(\'' + HU.esc(p.cover_url) + '\');background-position:center;"></div>' : '<div class="hero-slide active" style="background:' + (HU.GRAD[p.category] || HU.GRAD.learn) + ';"></div>') + '<div class="hero-overlay"></div>';
+      var video = (p.kind === 'video' && p.video_url) ? '<video src="' + HU.esc(p.video_url) + '" controls playsinline preload="metadata"' + (p.cover_url ? ' poster="' + HU.esc(p.cover_url) + '"' : '') + ' style="width:100%;border-radius:14px;margin:0 0 1.25rem;background:#000"></video>' : '';
+      document.getElementById('hu-body').innerHTML = video + HU.md(p.body);
+      var t = document.getElementById('takeaways-wrap'); if (t) t.style.display = 'none';
+      ready();
+      HU.track(p.id, 'view');
+      var sb = document.getElementById('hu-share');
+      if (sb) sb.addEventListener('click', function () {
+        HU.track(p.id, 'share');
+        if (navigator.share) { navigator.share({ title: p.title, text: p.summary || '', url: url }).catch(function () {}); }
+        else if (navigator.clipboard) { navigator.clipboard.writeText(url).then(function () { sb.textContent = 'Link copied'; }); }
+      });
+      window.scrollTo(0, 0);
+    }
+    if (slug) {
+      HU.api('explore_posts?select=*&slug=eq.' + encodeURIComponent(slug) + '&limit=1').then(function (rows) { if (rows && rows[0]) render(rows[0]); else notFound(); }).catch(notFound);
+    }
+    // More updates at the bottom (everything except the one being read)
+    HU.list(7, 0).then(function (rows) {
+      rows = rows.filter(function (p) { return p.slug !== slug; }).slice(0, 4);
+      if (!rows.length) return;
+      document.getElementById('hu-more-grid').innerHTML = rows.map(function (p) { return HU.card(p, './'); }).join('');
+      document.getElementById('hu-more-wrap').style.display = 'block';
+    }).catch(function () {});
+  })();
+</script>
 <script>
   (function () {
     var slides = document.querySelectorAll('#hero .hero-slide');

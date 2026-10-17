@@ -672,6 +672,69 @@
       <div id="quickFixList" class="space-y-3"></div>
     </section>
 
+    <!-- ---- Explore Content (Media, Super Admin, Developer) ----
+         Posts written here go live in the app's Explore tab AND on the website's Housing Updates page.
+         Table / storage / functions: explore_migration.sql -->
+    <section data-view="explore">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-4">
+        <div>
+          <h2 class="font-display font-semibold text-lg text-white mb-1">Explore Content</h2>
+          <p class="text-sm text-slate-500">Articles and videos you publish here appear in the app's Explore tab and on the website's Housing Updates page.</p>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" id="exNewBtn" class="btn-primary">New post</button>
+          <button type="button" id="exRefreshBtn" class="btn-secondary">Refresh</button>
+        </div>
+      </div>
+
+      <div id="exSummary" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5"></div>
+
+      <div id="exEditor" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-4 mb-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 id="exEditorTitle" class="text-sm font-semibold text-white">New post</h3>
+          <button type="button" id="exCancelBtn" class="text-xs text-slate-400">Close</button>
+        </div>
+        <div class="grid sm:grid-cols-3 gap-3 mb-3">
+          <div><label class="block text-xs text-slate-400 mb-1">Type</label>
+            <select id="exKind"><option value="article">Article</option><option value="video">Video</option></select></div>
+          <div><label class="block text-xs text-slate-400 mb-1">Category</label>
+            <select id="exCategory"><option value="learn">Learn</option><option value="neighbourhoods">Neighbourhoods</option><option value="news">News</option><option value="stories">Stories</option><option value="design">Design</option></select></div>
+          <div><label class="block text-xs text-slate-400 mb-1">Who sees it in the app</label>
+            <select id="exAudience"><option value="all">Everyone</option><option value="tenant">Tenants only</option><option value="landlord">Landlords only</option><option value="agent">Agents only</option></select></div>
+        </div>
+        <div class="mb-3"><label class="block text-xs text-slate-400 mb-1">Title</label><input type="text" id="exTitle" maxlength="140" placeholder="A clear, honest headline" /></div>
+        <div class="mb-3"><label class="block text-xs text-slate-400 mb-1">Summary (shown on the card, up to 220 characters)</label><textarea id="exSummary2" rows="2" maxlength="220"></textarea></div>
+        <div class="mb-3"><label class="block text-xs text-slate-400 mb-1">Body</label>
+          <textarea id="exBody" rows="10" placeholder="Write in plain text. Leave a blank line for a new paragraph."></textarea>
+          <p class="text-[11px] text-slate-500 mt-1">Formatting: <b>## Heading</b>, <b>- bullet</b>, <b>**bold**</b>, <b>[link text](https://...)</b></p></div>
+        <div class="grid sm:grid-cols-2 gap-3 mb-3">
+          <div><label class="block text-xs text-slate-400 mb-1">Cover image (optional, JPG/PNG/WebP, up to 8 MB)</label>
+            <input type="file" id="exCoverFile" accept="image/jpeg,image/png,image/webp,image/gif" />
+            <input type="text" id="exCoverUrl" placeholder="or paste an image link" class="mt-2" />
+            <img id="exCoverPreview" alt="" class="hidden mt-2 rounded-lg max-h-32" /></div>
+          <div id="exVideoWrap" class="hidden"><label class="block text-xs text-slate-400 mb-1">Video (MP4, MOV or WebM, up to 50 MB)</label>
+            <input type="file" id="exVideoFile" accept="video/mp4,video/quicktime,video/webm" />
+            <input type="text" id="exVideoUrl" placeholder="or paste a video link" class="mt-2" /></div>
+        </div>
+        <div class="grid sm:grid-cols-3 gap-3 mb-3">
+          <div><label class="block text-xs text-slate-400 mb-1">Tags (comma separated)</label><input type="text" id="exTags" placeholder="rent, safety" /></div>
+          <div><label class="block text-xs text-slate-400 mb-1">Author shown</label><input type="text" id="exAuthor" /></div>
+          <div><label class="block text-xs text-slate-400 mb-1">Publishing</label><select id="exPublish"></select></div>
+        </div>
+        <div id="exWhenWrap" class="hidden mb-3"><label class="block text-xs text-slate-400 mb-1">Go live on (your device time)</label><input type="datetime-local" id="exWhen" class="!w-auto" /></div>
+        <p id="exMsg" class="text-xs mb-3 hidden"></p>
+        <div class="flex gap-2"><button type="button" id="exSaveBtn" class="btn-primary">Save</button><button type="button" id="exCancel2Btn" class="btn-secondary">Cancel</button></div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <select id="exFState" class="!w-auto !py-1.5 !text-xs"><option value="">All posts</option><option value="live">Live</option><option value="scheduled">Scheduled</option><option value="draft">Drafts</option><option value="archived">Archived</option></select>
+        <select id="exFCat" class="!w-auto !py-1.5 !text-xs"><option value="">All categories</option><option value="learn">Learn</option><option value="neighbourhoods">Neighbourhoods</option><option value="news">News</option><option value="stories">Stories</option><option value="design">Design</option></select>
+        <input type="search" id="exFSearch" placeholder="Search title" class="!w-auto !py-1.5 !text-xs min-w-[10rem]" />
+        <button type="button" id="exDelSamples" class="btn-secondary !py-1.5 !text-xs hidden">Delete sample posts</button>
+      </div>
+      <div id="exList" class="space-y-3"></div>
+    </section>
+
     <!-- ---- Support Dashboard (Customer Service landing page) ----
          Read-mostly overview for the support team: what needs a reply today.
          Customer Service sees this, Quick Fix Requests and Inspections only. -->
@@ -789,6 +852,7 @@
               <option value="finance">Finance</option>
               <option value="legal">Legal</option>
               <option value="customer_service">Customer Service</option>
+              <option value="media_editor">Media</option>
               <option value="super_admin">Super Admin</option>
             </select>
           </div>
@@ -828,17 +892,20 @@
   // Which dashboard tabs each role gets. Edit these arrays to change who
   // sees what — the tab bar and every data load below all key off this.
   const ROLE_VIEWS = {
-    super_admin: ['support', 'supportchat', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance', 'staff'],
-    developer:   ['support', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance'],
+    super_admin: ['support', 'supportchat', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance', 'staff'],
+    developer:   ['support', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance'],
     finance:     ['finance'],
     legal:       ['signups'],
     // Least privilege: support sees customer requests and the inspection/booking schedule,
     // never finance, sign-up (KYC) documents, listings admin or staff access.
     customer_service: ['support', 'supportchat', 'quickfix', 'inspections'],
+    // Content team: writes Explore / Housing Updates posts and nothing else.
+    media_editor: ['explore'],
   };
-  const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal', customer_service: 'Customer Service' };
-  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspections', finance: 'Finance', staff: 'Staff Access' };
+  const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal', customer_service: 'Customer Service', media_editor: 'Media' };
+  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspections', finance: 'Finance', staff: 'Staff Access' };
   let currentStaffRole = null;
+  let currentStaffName = null;
   let currentView = null;
 
   // Looks up this signed-in user's staff role. Matches by auth_user_id
@@ -886,6 +953,7 @@
     if (view === 'signups') loadSignups();
     if (view === 'support') loadSupport();
     if (view === 'supportchat') loadSupportChat();
+    if (view === 'explore') loadExplore();
     if (view === 'quickfix') loadQuickFixRequests();
     if (view === 'inspections') loadInspections();
     if (view === 'finance') loadFinanceList();
@@ -957,6 +1025,7 @@
       return;
     }
     currentStaffRole = staffRow.role;
+    currentStaffName = staffRow.full_name || staffRow.email || null;
     if (staffRow._unlinked) setTimeout(() => showToast('Your login is not linked to your staff record, so lists will look empty. Ask a Super Admin to run staff_access_repair.sql in Supabase.', true), 600);
     loginScreen.classList.add('hidden');
     adminScreen.classList.remove('hidden');
@@ -2932,6 +3001,174 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     }
   }, 5000);
 
+
+  // ---------- Explore Content (Media / Super Admin / Developer) ----------
+  // One set of posts feeds the app's Explore tab and the website's Housing Updates page.
+  const EX_CATS = { learn: 'Learn', neighbourhoods: 'Neighbourhoods', news: 'News', stories: 'Stories', design: 'Design' };
+  const EX_GRAD = { learn: 'linear-gradient(135deg,#6d28d9,#a855f7)', neighbourhoods: 'linear-gradient(135deg,#0f766e,#14b8a6)', news: 'linear-gradient(135deg,#1d4ed8,#38bdf8)', stories: 'linear-gradient(135deg,#b45309,#f59e0b)', design: 'linear-gradient(135deg,#be185d,#f472b6)' };
+  const EX_SITE = 'https://maintownrealty.com/housingupdates.html';
+  let exPosts = [], exStats = new Map(), exEditing = null, exUploading = false;
+  const exEl = id => document.getElementById(id);
+
+  function exState(p) {
+    if (p.status === 'archived') return 'archived';
+    if (p.status === 'draft') return 'draft';
+    return new Date(p.publish_at || p.published_at || 0).getTime() > Date.now() ? 'scheduled' : 'live';
+  }
+  function exChip(state) {
+    const cls = state === 'live' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : state === 'scheduled' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+      : state === 'draft' ? 'bg-slate-700/40 text-slate-300 border-slate-600/50' : 'bg-red-500/10 text-red-300 border-red-500/30';
+    return `<span class="inline-block text-[11px] px-2 py-0.5 rounded-full border ${cls}">${{ live: 'Live', scheduled: 'Scheduled', draft: 'Draft', archived: 'Archived' }[state]}</span>`;
+  }
+  function exSlug(title) {
+    const base = String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'post';
+    const a = new Uint8Array(3); crypto.getRandomValues(a);
+    return base + '-' + Array.from(a, b => b.toString(16).padStart(2, '0')).join('');
+  }
+  function exMsg(text, bad) { const m = exEl('exMsg'); m.textContent = text || ''; m.className = 'text-xs mb-3 ' + (text ? (bad ? 'text-red-300' : 'text-emerald-300') : 'hidden'); }
+
+  async function loadExplore() {
+    exEl('exList').innerHTML = '<p class="text-sm text-slate-500">Loading posts...</p>';
+    const [p, st] = await Promise.all([sbFetchAll('explore_posts', 'created_at', false), sb.rpc('explore_stats')]);
+    if (p.error) {
+      exEl('exList').innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load posts: ${escapeQuickFix(p.error.message)}<p class="text-xs mt-2 text-red-200/80">If this is new, run explore_migration.sql once in Supabase (SQL Editor). Only Media, Super Admin and Developer staff can open this tab.</p></div>`;
+      return;
+    }
+    exPosts = p.data || [];
+    exStats = new Map(((st && st.data) || []).map(r => [r.post_id, r]));
+    exRenderSummary(); exRenderList();
+  }
+
+  function exRenderSummary() {
+    const n = s => exPosts.filter(p => exState(p) === s).length;
+    let views = 0; exStats.forEach(r => { views += Number(r.views) || 0; });
+    const card = (v, l) => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3"><p class="text-2xl font-semibold text-white">${v}</p><p class="text-xs text-slate-400 mt-0.5">${l}</p></div>`;
+    exEl('exSummary').innerHTML = card(n('live'), 'Live now') + card(n('scheduled'), 'Scheduled') + card(n('draft'), 'Drafts') + card(views, 'Total views (app + website)');
+    exEl('exDelSamples').classList.toggle('hidden', !exPosts.some(p => p.is_sample));
+  }
+
+  function exRenderList() {
+    const st = exEl('exFState').value, cat = exEl('exFCat').value, q = exEl('exFSearch').value.trim().toLowerCase();
+    const rows = exPosts.filter(p => (!st || exState(p) === st) && (!cat || p.category === cat) && (!q || String(p.title).toLowerCase().includes(q)));
+    if (!rows.length) { exEl('exList').innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">${exPosts.length ? 'No posts match these filters.' : 'No posts yet. Tap New post to publish your first article or video.'}</div>`; return; }
+    exEl('exList').innerHTML = rows.map(p => {
+      const state = exState(p), s = exStats.get(p.id) || {};
+      const thumb = p.cover_url ? `<img src="${escapeQuickFix(p.cover_url)}" alt="" class="w-20 h-20 rounded-lg object-cover shrink-0">` : `<div class="w-20 h-20 rounded-lg shrink-0" style="background:${EX_GRAD[p.category] || EX_GRAD.learn}"></div>`;
+      const when = state === 'scheduled' ? 'Goes live ' + inspTs(p.publish_at) : (state === 'live' ? 'Live since ' + inspTs(p.published_at) : 'Updated ' + inspTs(p.updated_at));
+      return `<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex gap-3">${thumb}
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2 flex-wrap">${exChip(state)}<span class="text-[11px] text-slate-400">${p.kind === 'video' ? 'Video' : 'Article'} · ${escapeQuickFix(EX_CATS[p.category] || p.category)}</span>${p.is_sample ? '<span class="text-[11px] text-slate-500">Sample</span>' : ''}</div>
+          <p class="text-sm text-white font-medium mt-1">${escapeQuickFix(p.title)}</p>
+          <p class="text-xs text-slate-500 mt-0.5">${escapeQuickFix(when)} · ${escapeQuickFix(p.created_by_name || p.author_name || '')}</p>
+          <p class="text-xs text-slate-400 mt-1">${Number(s.views) || 0} views · ${Number(s.saves) || 0} saves · ${Number(s.shares) || 0} shares</p>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <button type="button" class="btn-secondary !py-1 !text-xs" data-ex-act="edit" data-id="${p.id}">Edit</button>
+            ${state === 'live' ? `<a class="btn-secondary !py-1 !text-xs" href="${EX_SITE}?p=${encodeURIComponent(p.slug)}" target="_blank" rel="noopener noreferrer">View on website</a>` : ''}
+            <button type="button" class="btn-secondary !py-1 !text-xs" data-ex-act="${state === 'archived' ? 'restore' : 'archive'}" data-id="${p.id}">${state === 'archived' ? 'Restore' : 'Archive'}</button>
+            <button type="button" class="btn-secondary !py-1 !text-xs" data-ex-act="delete" data-id="${p.id}">Delete</button>
+          </div></div></div>`;
+    }).join('');
+  }
+
+  function exPublishOptions(editing) {
+    exEl('exPublish').innerHTML = (editing ? '<option value="keep">Keep as it is</option>' : '') + '<option value="draft">Save as draft</option><option value="now">Publish now</option><option value="schedule">Schedule for later</option>';
+  }
+  function exToggleKind() { exEl('exVideoWrap').classList.toggle('hidden', exEl('exKind').value !== 'video'); }
+  function exCoverPrev() { const u = exEl('exCoverUrl').value.trim(), im = exEl('exCoverPreview'); if (u) { im.src = u; im.classList.remove('hidden'); } else im.classList.add('hidden'); }
+  function exOpen(p) {
+    exEditing = p || null; exMsg('');
+    exEl('exEditorTitle').textContent = p ? 'Edit post' : 'New post';
+    exPublishOptions(!!p);
+    exEl('exKind').value = p ? p.kind : 'article'; exEl('exCategory').value = p ? p.category : 'learn';
+    exEl('exAudience').value = p ? ((p.audiences || ['all'])[0] || 'all') : 'all';
+    exEl('exTitle').value = p ? p.title : ''; exEl('exSummary2').value = p ? p.summary : ''; exEl('exBody').value = p ? p.body : '';
+    exEl('exCoverUrl').value = p ? (p.cover_url || '') : ''; exEl('exVideoUrl').value = p ? (p.video_url || '') : '';
+    exEl('exCoverFile').value = ''; exEl('exVideoFile').value = '';
+    exEl('exTags').value = p ? (p.tags || []).join(', ') : ''; exEl('exAuthor').value = p ? (p.author_name || '') : (currentStaffName || 'MainTown Editorial');
+    exEl('exPublish').value = p ? 'keep' : 'draft'; exEl('exWhenWrap').classList.add('hidden'); exEl('exWhen').value = '';
+    exToggleKind(); exCoverPrev();
+    exEl('exEditor').classList.remove('hidden'); exEl('exEditor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function exClose() { exEditing = null; exEl('exEditor').classList.add('hidden'); }
+
+  async function exUpload(file, folder, maxMb, kinds) {
+    if (!kinds.some(k => file.type.indexOf(k) === 0)) throw new Error('That file type is not allowed here.');
+    if (file.size > maxMb * 1048576) throw new Error('That file is larger than ' + maxMb + ' MB.');
+    const a = new Uint8Array(12); crypto.getRandomValues(a);
+    const safe = String(file.name || 'file').replace(/[^A-Za-z0-9._-]+/g, '_').slice(-60) || 'file';
+    const path = folder + '/' + Array.from(a, b => b.toString(16).padStart(2, '0')).join('') + '/' + safe;
+    const { error } = await sb.storage.from('explore-media').upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw error;
+    return sb.storage.from('explore-media').getPublicUrl(path).data.publicUrl;
+  }
+  async function exPick(inputId, urlId, folder, maxMb, kinds, label) {
+    const f = exEl(inputId).files[0]; if (!f) return;
+    exUploading = true; exEl('exSaveBtn').disabled = true; exMsg('Uploading ' + label + '... please wait', false);
+    try { exEl(urlId).value = await exUpload(f, folder, maxMb, kinds); exMsg(label.charAt(0).toUpperCase() + label.slice(1) + ' uploaded.', false); if (urlId === 'exCoverUrl') exCoverPrev(); }
+    catch (e) { exMsg('Upload failed: ' + (e.message || e), true); exEl(inputId).value = ''; }
+    finally { exUploading = false; exEl('exSaveBtn').disabled = false; }
+  }
+
+  async function exSave() {
+    if (exUploading) return;
+    const kind = exEl('exKind').value, title = exEl('exTitle').value.trim(), summary = exEl('exSummary2').value.trim(), body = exEl('exBody').value.trim();
+    const video = exEl('exVideoUrl').value.trim(), cover = exEl('exCoverUrl').value.trim(), mode = exEl('exPublish').value;
+    if (!title) return exMsg('Add a title.', true);
+    if (!summary) return exMsg('Add a short summary for the card.', true);
+    if (kind === 'article' && !body) return exMsg('An article needs body text.', true);
+    if (kind === 'video' && !video) return exMsg('Upload a video or paste a video link.', true);
+    if ((video && !/^https?:\/\//i.test(video)) || (cover && !/^https?:\/\//i.test(cover))) return exMsg('Links must start with https://', true);
+    const payload = { kind, category: exEl('exCategory').value, title, summary, body, cover_url: cover || null, video_url: kind === 'video' ? video : null,
+      tags: exEl('exTags').value.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10), audiences: [exEl('exAudience').value], author_name: exEl('exAuthor').value.trim() || 'MainTown Editorial' };
+    if (mode === 'draft') payload.status = 'draft';
+    if (mode === 'now') { payload.status = 'published'; payload.publish_at = new Date().toISOString(); payload.published_at = payload.publish_at; }
+    if (mode === 'schedule') {
+      const w = exEl('exWhen').value; if (!w) return exMsg('Pick the date and time to go live.', true);
+      const d = new Date(w); if (isNaN(d.getTime()) || d.getTime() < Date.now() - 60000) return exMsg('Pick a time in the future.', true);
+      payload.status = 'published'; payload.publish_at = d.toISOString(); payload.published_at = d.toISOString();
+    }
+    exEl('exSaveBtn').disabled = true; exMsg('Saving...', false);
+    let res;
+    if (exEditing) res = await sb.from('explore_posts').update(payload).eq('id', exEditing.id);
+    else {
+      let uid = null; try { const { data } = await sb.auth.getSession(); uid = data && data.session ? data.session.user.id : null; } catch (e) {}
+      res = await sb.from('explore_posts').insert(Object.assign({ slug: exSlug(title), created_by: uid, created_by_name: currentStaffName || null, status: 'draft' }, payload));
+    }
+    exEl('exSaveBtn').disabled = false;
+    if (res.error) return exMsg('Could not save: ' + res.error.message, true);
+    showToast(mode === 'now' ? 'Published. It is live in the app and on the website.' : (mode === 'schedule' ? 'Scheduled.' : 'Saved.'));
+    exClose(); loadExplore();
+  }
+
+  async function exAct(act, id) {
+    const p = exPosts.find(x => x.id === id); if (!p) return;
+    if (act === 'edit') return exOpen(p);
+    let res;
+    if (act === 'archive') res = await sb.from('explore_posts').update({ status: 'archived' }).eq('id', id);
+    if (act === 'restore') res = await sb.from('explore_posts').update({ status: 'draft' }).eq('id', id);
+    if (act === 'delete') { if (!confirm('Delete "' + p.title + '" for good? It will disappear from the app and the website.')) return; res = await sb.from('explore_posts').delete().eq('id', id); }
+    if (res && res.error) return showToast('Could not update: ' + res.error.message, true);
+    loadExplore();
+  }
+
+  exEl('exNewBtn').addEventListener('click', () => exOpen(null));
+  exEl('exRefreshBtn').addEventListener('click', loadExplore);
+  exEl('exCancelBtn').addEventListener('click', exClose); exEl('exCancel2Btn').addEventListener('click', exClose);
+  exEl('exSaveBtn').addEventListener('click', exSave);
+  exEl('exKind').addEventListener('change', exToggleKind);
+  exEl('exPublish').addEventListener('change', () => exEl('exWhenWrap').classList.toggle('hidden', exEl('exPublish').value !== 'schedule'));
+  exEl('exCoverUrl').addEventListener('input', exCoverPrev);
+  exEl('exCoverFile').addEventListener('change', () => exPick('exCoverFile', 'exCoverUrl', 'covers', 8, ['image/'], 'cover image'));
+  exEl('exVideoFile').addEventListener('change', () => exPick('exVideoFile', 'exVideoUrl', 'videos', 50, ['video/'], 'video'));
+  exEl('exList').addEventListener('click', e => { const b = e.target.closest('[data-ex-act]'); if (b) exAct(b.dataset.exAct, b.dataset.id); });
+  ['exFState', 'exFCat'].forEach(id => exEl(id).addEventListener('change', exRenderList)); exEl('exFSearch').addEventListener('input', exRenderList);
+  exEl('exDelSamples').addEventListener('click', async () => {
+    if (!confirm('Delete all sample posts? Your own posts are not touched.')) return;
+    const { error } = await sb.from('explore_posts').delete().eq('is_sample', true);
+    if (error) return showToast('Could not delete: ' + error.message, true);
+    showToast('Sample posts deleted.'); loadExplore();
+  });
+
   document.getElementById('refreshSupportBtn').addEventListener('click', loadSupport);
   document.getElementById('supportBody').addEventListener('click', (e) => {
     const b = e.target.closest('[data-goto]'); if (b) switchView(b.dataset.goto);
@@ -2983,6 +3220,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
           <option value="finance" ${s.role === 'finance' ? 'selected' : ''}>Finance</option>
           <option value="legal" ${s.role === 'legal' ? 'selected' : ''}>Legal</option>
           <option value="customer_service" ${s.role === 'customer_service' ? 'selected' : ''}>Customer Service</option>
+          <option value="media_editor" ${s.role === 'media_editor' ? 'selected' : ''}>Media</option>
           <option value="super_admin" ${s.role === 'super_admin' ? 'selected' : ''}>Super Admin</option>
         </select>
         <button class="reset-staff-btn btn-secondary shrink-0" data-email="${s.email}" title="Email this person a link to set a new password and log back in">Send Reset Link</button>
