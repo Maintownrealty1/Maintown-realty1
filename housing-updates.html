@@ -241,17 +241,19 @@
       return out.join('');
     }
     function card(p, base) {
-      var cover = p.cover_url
-        ? '<img src="' + esc(p.cover_url) + '" alt="" loading="lazy" class="w-full h-40 object-cover">'
+      var first = p.cover_url || (p.gallery && p.gallery[0]);
+      var cover = first
+        ? '<img src="' + esc(first) + '" alt="" loading="lazy" class="w-full h-40 object-cover">'
         : '<div class="w-full h-40" style="background:' + (GRAD[p.category] || GRAD.learn) + '"></div>';
-      var badge = p.kind === 'video' ? '<span class="absolute top-3 left-3 text-[11px] font-semibold rounded-full px-2.5 py-1 bg-black/60 text-white">Video</span>' : '';
+      var nImg = (p.cover_url ? 1 : 0) + (p.gallery ? p.gallery.length : 0);
+      var badge = p.kind === 'video' ? '<span class="absolute top-3 left-3 text-[11px] font-semibold rounded-full px-2.5 py-1 bg-black/60 text-white">Video</span>' : (nImg > 1 ? '<span class="absolute top-3 left-3 text-[11px] font-semibold rounded-full px-2.5 py-1 bg-black/60 text-white">' + nImg + ' photos</span>' : '');
       return '<a href="' + (base || '') + 'housingupdates.html?p=' + encodeURIComponent(p.slug) + '" class="hu-card block rounded-2xl overflow-hidden border border-white/10 bg-slate-850 hover:border-brand-500/60 transition">' +
         '<div class="relative">' + cover + badge + '</div><div class="p-4"><p class="hu-eyebrow text-[11px] font-semibold uppercase tracking-wider" style="color:#C4B5FD">' + esc(CATS[p.category] || 'Update') + ' · ' + esc(dateOf(p)) + '</p>' +
         '<h3 class="hu-card-title font-display font-semibold text-white text-lg leading-snug mt-1">' + esc(p.title) + '</h3>' +
         '<p class="hu-card-sum text-sm text-slate-400 mt-2" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">' + esc(p.summary) + '</p></div></a>';
     }
     function list(limit, offset) {
-      return api('explore_posts?select=id,slug,kind,category,title,summary,cover_url,audiences,published_at,publish_at,created_at&order=published_at.desc&limit=' + limit + '&offset=' + (offset || 0))
+      return api('explore_posts?select=id,slug,kind,category,title,summary,cover_url,gallery,audiences,published_at,publish_at,created_at&order=published_at.desc&limit=' + limit + '&offset=' + (offset || 0))
         .then(function (rows) { return rows.filter(function (p) { return !p.audiences || p.audiences.indexOf('all') > -1; }); });
     }
     return { api: api, esc: esc, md: md, card: card, list: list, track: track, dateOf: dateOf, minutes: minutes, CATS: CATS, GRAD: GRAD };

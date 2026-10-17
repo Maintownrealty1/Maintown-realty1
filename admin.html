@@ -712,6 +712,10 @@
             <input type="file" id="exCoverFile" accept="image/jpeg,image/png,image/webp,image/gif" />
             <input type="text" id="exCoverUrl" placeholder="or paste an image link" class="mt-2" />
             <img id="exCoverPreview" alt="" class="hidden mt-2 rounded-lg max-h-32" /></div>
+          <div><label class="block text-xs text-slate-400 mb-1">More photos for a carousel (up to 10, 8 MB each)</label>
+            <input type="file" id="exGalleryFile" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+            <div id="exGalleryList" class="flex flex-wrap gap-2 mt-2"></div>
+            <p class="text-[11px] text-slate-500 mt-1">Readers swipe through the cover and these photos. Order: cover first, then the list.</p></div>
           <div id="exVideoWrap" class="hidden"><label class="block text-xs text-slate-400 mb-1">Video (MP4, MOV or WebM, up to 50 MB)</label>
             <input type="file" id="exVideoFile" accept="video/mp4,video/quicktime,video/webm" />
             <input type="text" id="exVideoUrl" placeholder="or paste a video link" class="mt-2" /></div>
@@ -3007,7 +3011,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   const EX_CATS = { learn: 'Learn', neighbourhoods: 'Neighbourhoods', news: 'News', stories: 'Stories', design: 'Design' };
   const EX_GRAD = { learn: 'linear-gradient(135deg,#6d28d9,#a855f7)', neighbourhoods: 'linear-gradient(135deg,#0f766e,#14b8a6)', news: 'linear-gradient(135deg,#1d4ed8,#38bdf8)', stories: 'linear-gradient(135deg,#b45309,#f59e0b)', design: 'linear-gradient(135deg,#be185d,#f472b6)' };
   const EX_SITE = 'https://maintownrealty.com/housingupdates.html';
-  let exPosts = [], exStats = new Map(), exEditing = null, exUploading = false;
+  let exPosts = [], exStats = new Map(), exEditing = null, exUploading = false, exGallery = [];
   const exEl = id => document.getElementById(id);
 
   function exState(p) {
@@ -3053,11 +3057,12 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     if (!rows.length) { exEl('exList').innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">${exPosts.length ? 'No posts match these filters.' : 'No posts yet. Tap New post to publish your first article or video.'}</div>`; return; }
     exEl('exList').innerHTML = rows.map(p => {
       const state = exState(p), s = exStats.get(p.id) || {};
-      const thumb = p.cover_url ? `<img src="${escapeQuickFix(p.cover_url)}" alt="" class="w-20 h-20 rounded-lg object-cover shrink-0">` : `<div class="w-20 h-20 rounded-lg shrink-0" style="background:${EX_GRAD[p.category] || EX_GRAD.learn}"></div>`;
+      const thumbSrc = p.cover_url || (p.gallery && p.gallery[0]);
+      const thumb = thumbSrc ? `<img src="${escapeQuickFix(thumbSrc)}" alt="" class="w-20 h-20 rounded-lg object-cover shrink-0">` : `<div class="w-20 h-20 rounded-lg shrink-0" style="background:${EX_GRAD[p.category] || EX_GRAD.learn}"></div>`;
       const when = state === 'scheduled' ? 'Goes live ' + inspTs(p.publish_at) : (state === 'live' ? 'Live since ' + inspTs(p.published_at) : 'Updated ' + inspTs(p.updated_at));
       return `<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex gap-3">${thumb}
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2 flex-wrap">${exChip(state)}<span class="text-[11px] text-slate-400">${p.kind === 'video' ? 'Video' : 'Article'} · ${escapeQuickFix(EX_CATS[p.category] || p.category)}</span>${p.is_sample ? '<span class="text-[11px] text-slate-500">Sample</span>' : ''}</div>
+          <div class="flex items-center gap-2 flex-wrap">${exChip(state)}<span class="text-[11px] text-slate-400">${p.kind === 'video' ? 'Video' : 'Article'} · ${escapeQuickFix(EX_CATS[p.category] || p.category)}${(p.gallery && p.gallery.length) ? ' · ' + (p.gallery.length + (p.cover_url ? 1 : 0)) + ' photos' : ''}</span>${p.is_sample ? '<span class="text-[11px] text-slate-500">Sample</span>' : ''}</div>
           <p class="text-sm text-white font-medium mt-1">${escapeQuickFix(p.title)}</p>
           <p class="text-xs text-slate-500 mt-0.5">${escapeQuickFix(when)} · ${escapeQuickFix(p.created_by_name || p.author_name || '')}</p>
           <p class="text-xs text-slate-400 mt-1">${Number(s.views) || 0} views · ${Number(s.saves) || 0} saves · ${Number(s.shares) || 0} shares</p>
@@ -3083,7 +3088,8 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     exEl('exAudience').value = p ? ((p.audiences || ['all'])[0] || 'all') : 'all';
     exEl('exTitle').value = p ? p.title : ''; exEl('exSummary2').value = p ? p.summary : ''; exEl('exBody').value = p ? p.body : '';
     exEl('exCoverUrl').value = p ? (p.cover_url || '') : ''; exEl('exVideoUrl').value = p ? (p.video_url || '') : '';
-    exEl('exCoverFile').value = ''; exEl('exVideoFile').value = '';
+    exEl('exCoverFile').value = ''; exEl('exVideoFile').value = ''; exEl('exGalleryFile').value = '';
+    exGallery = p ? (p.gallery || []).slice() : []; exRenderGallery();
     exEl('exTags').value = p ? (p.tags || []).join(', ') : ''; exEl('exAuthor').value = p ? (p.author_name || '') : (currentStaffName || 'MainTown Editorial');
     exEl('exPublish').value = p ? 'keep' : 'draft'; exEl('exWhenWrap').classList.add('hidden'); exEl('exWhen').value = '';
     exToggleKind(); exCoverPrev();
@@ -3109,6 +3115,24 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     finally { exUploading = false; exEl('exSaveBtn').disabled = false; }
   }
 
+  function exRenderGallery() {
+    exEl('exGalleryList').innerHTML = exGallery.map((u, i) => `<div class="relative"><img src="${escapeQuickFix(u)}" alt="" class="w-16 h-16 rounded-lg object-cover">
+      <div class="flex justify-between mt-1 text-[11px] text-slate-300"><button type="button" data-g="left" data-i="${i}" ${i === 0 ? 'disabled' : ''}>&larr;</button><button type="button" data-g="del" data-i="${i}" class="text-red-300">&times;</button><button type="button" data-g="right" data-i="${i}" ${i === exGallery.length - 1 ? 'disabled' : ''}>&rarr;</button></div></div>`).join('');
+  }
+  async function exPickGallery() {
+    const files = Array.from(exEl('exGalleryFile').files || []); if (!files.length) return;
+    const room = 10 - exGallery.length; if (files.length > room) exMsg('Only ' + Math.max(room, 0) + ' more photo(s) fit. The rest were skipped.', true);
+    exUploading = true; exEl('exSaveBtn').disabled = true;
+    try {
+      for (let i = 0; i < Math.min(files.length, Math.max(room, 0)); i++) {
+        exMsg('Uploading photo ' + (i + 1) + ' of ' + Math.min(files.length, room) + '... please wait', false);
+        exGallery.push(await exUpload(files[i], 'gallery', 8, ['image/'])); exRenderGallery();
+      }
+      exMsg('Photos uploaded.', false);
+    } catch (e) { exMsg('Upload failed: ' + (e.message || e), true); }
+    finally { exUploading = false; exEl('exSaveBtn').disabled = false; exEl('exGalleryFile').value = ''; }
+  }
+
   async function exSave() {
     if (exUploading) return;
     const kind = exEl('exKind').value, title = exEl('exTitle').value.trim(), summary = exEl('exSummary2').value.trim(), body = exEl('exBody').value.trim();
@@ -3119,7 +3143,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     if (kind === 'video' && !video) return exMsg('Upload a video or paste a video link.', true);
     if ((video && !/^https?:\/\//i.test(video)) || (cover && !/^https?:\/\//i.test(cover))) return exMsg('Links must start with https://', true);
     const payload = { kind, category: exEl('exCategory').value, title, summary, body, cover_url: cover || null, video_url: kind === 'video' ? video : null,
-      tags: exEl('exTags').value.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10), audiences: [exEl('exAudience').value], author_name: exEl('exAuthor').value.trim() || 'MainTown Editorial' };
+      gallery: exGallery.slice(0, 10), tags: exEl('exTags').value.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10), audiences: [exEl('exAudience').value], author_name: exEl('exAuthor').value.trim() || 'MainTown Editorial' };
     if (mode === 'draft') payload.status = 'draft';
     if (mode === 'now') { payload.status = 'published'; payload.publish_at = new Date().toISOString(); payload.published_at = payload.publish_at; }
     if (mode === 'schedule') {
@@ -3160,6 +3184,14 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   exEl('exCoverUrl').addEventListener('input', exCoverPrev);
   exEl('exCoverFile').addEventListener('change', () => exPick('exCoverFile', 'exCoverUrl', 'covers', 8, ['image/'], 'cover image'));
   exEl('exVideoFile').addEventListener('change', () => exPick('exVideoFile', 'exVideoUrl', 'videos', 50, ['video/'], 'video'));
+  exEl('exGalleryFile').addEventListener('change', exPickGallery);
+  exEl('exGalleryList').addEventListener('click', e => {
+    const b = e.target.closest('[data-g]'); if (!b) return; const i = parseInt(b.dataset.i, 10);
+    if (b.dataset.g === 'del') exGallery.splice(i, 1);
+    if (b.dataset.g === 'left' && i > 0) { const t = exGallery[i - 1]; exGallery[i - 1] = exGallery[i]; exGallery[i] = t; }
+    if (b.dataset.g === 'right' && i < exGallery.length - 1) { const t = exGallery[i + 1]; exGallery[i + 1] = exGallery[i]; exGallery[i] = t; }
+    exRenderGallery();
+  });
   exEl('exList').addEventListener('click', e => { const b = e.target.closest('[data-ex-act]'); if (b) exAct(b.dataset.exAct, b.dataset.id); });
   ['exFState', 'exFCat'].forEach(id => exEl(id).addEventListener('change', exRenderList)); exEl('exFSearch').addEventListener('input', exRenderList);
   exEl('exDelSamples').addEventListener('click', async () => {

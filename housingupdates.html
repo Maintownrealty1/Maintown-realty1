@@ -81,7 +81,7 @@
 }
 </script>
 <script>if (/[?&]p=/.test(location.search)) document.documentElement.classList.add("hu-dyn");</script>
-<style>html.hu-dyn:not(.hu-ready) #hu-eyebrow, html.hu-dyn:not(.hu-ready) #hu-title, html.hu-dyn:not(.hu-ready) #hu-meta, html.hu-dyn:not(.hu-ready) #hu-body, html.hu-dyn:not(.hu-ready) #takeaways-wrap { visibility: hidden; } .hu-card-title{} </style>
+<style>html.hu-dyn:not(.hu-ready) #hu-eyebrow, html.hu-dyn:not(.hu-ready) #hu-title, html.hu-dyn:not(.hu-ready) #hu-meta, html.hu-dyn:not(.hu-ready) #hu-body, html.hu-dyn:not(.hu-ready) #takeaways-wrap { visibility: hidden; } .hu-car{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;border-radius:14px;margin:0 0 .6rem;-webkit-overflow-scrolling:touch;scrollbar-width:none}.hu-car::-webkit-scrollbar{display:none}.hu-car img{flex:0 0 100%;width:100%;height:auto;max-height:420px;object-fit:cover;scroll-snap-align:center;border-radius:14px}.hu-dots{display:flex;justify-content:center;gap:6px;margin:0 0 1.25rem}.hu-dots i{width:7px;height:7px;border-radius:99px;background:#64748b;display:block}.hu-dots i.on{background:#C4B5FD}</style>
 <style>
   html[data-theme="light"] .hu-card { background:#ffffff; border-color:#e2e8f0; }
   html[data-theme="light"] .hu-card-title { color:#0F172A; }
@@ -352,17 +352,19 @@
       return out.join('');
     }
     function card(p, base) {
-      var cover = p.cover_url
-        ? '<img src="' + esc(p.cover_url) + '" alt="" loading="lazy" class="w-full h-40 object-cover">'
+      var first = p.cover_url || (p.gallery && p.gallery[0]);
+      var cover = first
+        ? '<img src="' + esc(first) + '" alt="" loading="lazy" class="w-full h-40 object-cover">'
         : '<div class="w-full h-40" style="background:' + (GRAD[p.category] || GRAD.learn) + '"></div>';
-      var badge = p.kind === 'video' ? '<span class="absolute top-3 left-3 text-[11px] font-semibold rounded-full px-2.5 py-1 bg-black/60 text-white">Video</span>' : '';
+      var nImg = (p.cover_url ? 1 : 0) + (p.gallery ? p.gallery.length : 0);
+      var badge = p.kind === 'video' ? '<span class="absolute top-3 left-3 text-[11px] font-semibold rounded-full px-2.5 py-1 bg-black/60 text-white">Video</span>' : (nImg > 1 ? '<span class="absolute top-3 left-3 text-[11px] font-semibold rounded-full px-2.5 py-1 bg-black/60 text-white">' + nImg + ' photos</span>' : '');
       return '<a href="' + (base || '') + 'housingupdates.html?p=' + encodeURIComponent(p.slug) + '" class="hu-card block rounded-2xl overflow-hidden border border-white/10 bg-slate-850 hover:border-brand-500/60 transition">' +
         '<div class="relative">' + cover + badge + '</div><div class="p-4"><p class="hu-eyebrow text-[11px] font-semibold uppercase tracking-wider" style="color:#C4B5FD">' + esc(CATS[p.category] || 'Update') + ' · ' + esc(dateOf(p)) + '</p>' +
         '<h3 class="hu-card-title font-display font-semibold text-white text-lg leading-snug mt-1">' + esc(p.title) + '</h3>' +
         '<p class="hu-card-sum text-sm text-slate-400 mt-2" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">' + esc(p.summary) + '</p></div></a>';
     }
     function list(limit, offset) {
-      return api('explore_posts?select=id,slug,kind,category,title,summary,cover_url,audiences,published_at,publish_at,created_at&order=published_at.desc&limit=' + limit + '&offset=' + (offset || 0))
+      return api('explore_posts?select=id,slug,kind,category,title,summary,cover_url,gallery,audiences,published_at,publish_at,created_at&order=published_at.desc&limit=' + limit + '&offset=' + (offset || 0))
         .then(function (rows) { return rows.filter(function (p) { return !p.audiences || p.audiences.indexOf('all') > -1; }); });
     }
     return { api: api, esc: esc, md: md, card: card, list: list, track: track, dateOf: dateOf, minutes: minutes, CATS: CATS, GRAD: GRAD };
@@ -397,8 +399,12 @@
       // hero: the post's own cover, or a brand gradient (the land photos belong to the original article)
       var ss = document.querySelector('#hero .hero-slideshow');
       if (ss) ss.innerHTML = (p.cover_url ? '<div class="hero-slide active" style="background-image:url(\'' + HU.esc(p.cover_url) + '\');background-position:center;"></div>' : '<div class="hero-slide active" style="background:' + (HU.GRAD[p.category] || HU.GRAD.learn) + ';"></div>') + '<div class="hero-overlay"></div>';
+      var imgs = []; if (p.cover_url) imgs.push(p.cover_url); (p.gallery || []).forEach(function (u) { if (u && imgs.indexOf(u) < 0) imgs.push(u); });
+      var car = imgs.length > 1 ? '<div class="hu-car" id="hu-car">' + imgs.map(function (u) { return '<img src="' + HU.esc(u) + '" alt="" loading="lazy">'; }).join('') + '</div><div class="hu-dots" id="hu-dots">' + imgs.map(function (_, i) { return '<i class="' + (i === 0 ? 'on' : '') + '"></i>'; }).join('') + '</div>' : '';
       var video = (p.kind === 'video' && p.video_url) ? '<video src="' + HU.esc(p.video_url) + '" controls playsinline preload="metadata"' + (p.cover_url ? ' poster="' + HU.esc(p.cover_url) + '"' : '') + ' style="width:100%;border-radius:14px;margin:0 0 1.25rem;background:#000"></video>' : '';
-      document.getElementById('hu-body').innerHTML = video + HU.md(p.body);
+      document.getElementById('hu-body').innerHTML = video + car + HU.md(p.body);
+      var carEl = document.getElementById('hu-car'), dotsEl = document.getElementById('hu-dots');
+      if (carEl && dotsEl) carEl.addEventListener('scroll', function () { var i = Math.round(carEl.scrollLeft / Math.max(1, carEl.clientWidth)); Array.prototype.forEach.call(dotsEl.children, function (d, k) { d.classList.toggle('on', k === i); }); });
       var t = document.getElementById('takeaways-wrap'); if (t) t.style.display = 'none';
       ready();
       HU.track(p.id, 'view');
