@@ -552,6 +552,12 @@
         <p class="text-[11px] text-slate-500 mt-1">Choose MainTown Realty for listings that belong to you. For a property someone gave MainTown to list, show the owner's name or their company instead.</p>
       </div>
 
+      <div class="field hidden" id="managedLandlordField">
+        <label>Managed landlord (MainTown manages this property for them)</label>
+        <select id="f-managed-landlord"></select>
+        <p class="text-[11px] text-slate-500 mt-1">Choose the landlord who gets paid out for this listing. Add landlords in the Managed Landlords tab. Leave as None for listings that are not managed for a landlord.</p>
+      </div>
+
       <div class="field">
         <label>Photos (you can select multiple)</label>
         <input type="file" id="f-images" accept="image/*" multiple class="!p-2">
@@ -791,12 +797,12 @@
       <div class="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div>
           <h2 class="font-display font-semibold text-lg text-white mb-1">Inspections &amp; Schedules</h2>
-          <p class="text-sm text-slate-500">Every host and guest booking, with the date and the exact time each step happened (Lagos time).</p>
+          <p class="text-sm text-slate-500">Every host and guest booking, with the date and the exact time each step happened (Lagos time). Open an item to assign it, log your call and set its follow-up status.</p>
         </div>
         <button type="button" id="refreshInspBtn" class="btn-secondary">Refresh</button>
       </div>
 
-      <div id="inspSummary" class="grid grid-cols-3 gap-3 mb-5"></div>
+      <div id="inspSummary" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5"></div>
 
       <div class="flex flex-wrap items-center gap-2 mb-3">
         <button type="button" class="chip active" data-insp-tab="schedule">Schedule</button>
@@ -806,12 +812,55 @@
       <div class="flex flex-wrap items-center gap-2 mb-4">
         <select id="inspFlow" class="!w-auto !py-1.5 !text-xs"></select>
         <select id="inspStatus" class="!w-auto !py-1.5 !text-xs"></select>
+        <select id="inspFollow" class="!w-auto !py-1.5 !text-xs"><option value="">All follow-up</option><option value="needs">Needs follow-up</option><option value="unassigned">Unassigned</option><option value="mine">Assigned to me</option></select>
         <input type="search" id="inspSearch" placeholder="Search property, guest or host" class="!w-auto !py-1.5 !text-xs min-w-[12rem]" />
         <label class="text-xs text-slate-500 flex items-center gap-1">From <input type="date" id="inspFrom" class="!w-auto !py-1.5 !text-xs" /></label>
         <label class="text-xs text-slate-500 flex items-center gap-1">To <input type="date" id="inspTo" class="!w-auto !py-1.5 !text-xs" /></label>
       </div>
 
       <div id="inspList" class="space-y-3"></div>
+    </section>
+
+    <!-- ---- Managed Landlords (Super Admin / Finance) ----
+         Landlords MainTown onboards and manages properties for. Holds payout bank details,
+         so only Super Admin and Finance can see it (table: managed_landlords, see
+         8_managed_landlords_and_followups.sql). -->
+    <section data-view="landlords">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-4">
+        <div>
+          <h2 class="font-display font-semibold text-lg text-white mb-1">Managed Landlords</h2>
+          <p class="text-sm text-slate-500">Verified landlords whose properties MainTown lists for them. Tenants and buyers pay through the app: MainTown keeps 100% of the commission and the landlord's share is credited to the landlord's wallet in the app automatically. Link a landlord to a listing from the Listings tab.</p>
+        </div>
+        <button type="button" id="mlNewBtn" class="btn-primary">Add landlord</button>
+      </div>
+
+      <div id="mlLoginBox" class="hidden bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 mb-5"></div>
+
+      <form id="mlForm" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-4 mb-5 space-y-3">
+        <input type="hidden" id="ml-id">
+        <div class="field"><label>Full legal name (exactly as on their NIN)</label><input type="text" id="ml-name" required></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="field"><label>Phone</label><input type="tel" id="ml-phone" placeholder="0803..."></div>
+          <div class="field"><label>Email (the landlord logs in with this)</label><input type="email" id="ml-email"></div>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" id="ml-nin" class="!w-auto"> NIN checked by MainTown (do not type the NIN number here)</label>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="field"><label>Bank</label><input type="text" id="ml-bank" placeholder="e.g. GTBank"></div>
+          <div class="field"><label>Account number</label><input type="text" id="ml-acct" inputmode="numeric" maxlength="10"></div>
+          <div class="field"><label>Account name</label><input type="text" id="ml-acctname"></div>
+        </div>
+        <div class="field"><label>Status</label>
+          <select id="ml-status"><option value="onboarding">Onboarding</option><option value="active">Active</option><option value="suspended">Suspended</option></select>
+        </div>
+        <div class="field"><label>Notes (optional)</label><textarea id="ml-notes" rows="2"></textarea></div>
+        <div class="flex gap-2">
+          <button type="submit" class="btn-primary" id="mlSaveBtn">Save landlord</button>
+          <button type="button" class="btn-secondary" id="mlCancelBtn">Cancel</button>
+        </div>
+      </form>
+
+      <div id="mlList" class="space-y-3"></div>
+      <p class="text-xs text-slate-600 mt-4">Payments, the automatic split and wallets all happen in the app, not here. Bank details saved here are only a record: the landlord sets their own withdrawal account in the app. Landlord login and balances that work across phones need your backend.</p>
     </section>
 
     <!-- ---- Finance ----
@@ -856,6 +905,7 @@
               <option value="finance">Finance</option>
               <option value="legal">Legal</option>
               <option value="customer_service">Customer Service</option>
+              <option value="sales_staff">Sales Staff</option>
               <option value="media_editor">Media</option>
               <option value="super_admin">Super Admin</option>
             </select>
@@ -896,9 +946,11 @@
   // Which dashboard tabs each role gets. Edit these arrays to change who
   // sees what — the tab bar and every data load below all key off this.
   const ROLE_VIEWS = {
-    super_admin: ['support', 'supportchat', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance', 'staff'],
+    super_admin: ['support', 'supportchat', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'landlords', 'finance', 'staff'],
     developer:   ['support', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance'],
-    finance:     ['finance'],
+    finance:     ['finance', 'landlords'],
+    // Sales staff follow up inspections and bookings; nothing else.
+    sales_staff: ['inspections'],
     legal:       ['signups'],
     // Least privilege: support sees customer requests and the inspection/booking schedule,
     // never finance, sign-up (KYC) documents, listings admin or staff access.
@@ -906,8 +958,8 @@
     // Content team: writes Explore / Housing Updates posts and nothing else.
     media_editor: ['explore'],
   };
-  const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal', customer_service: 'Customer Service', media_editor: 'Media' };
-  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspections', finance: 'Finance', staff: 'Staff Access' };
+  const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal', customer_service: 'Customer Service', media_editor: 'Media', sales_staff: 'Sales Staff' };
+  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspections', landlords: 'Managed Landlords', finance: 'Finance', staff: 'Staff Access' };
   let currentStaffRole = null;
   let currentStaffName = null;
   let currentView = null;
@@ -952,7 +1004,8 @@
       el.classList.toggle('hidden', el.dataset.view !== view);
     });
     renderRoleTabs();
-    if (view === 'listings') loadExistingListings();
+    if (view === 'listings') { loadExistingListings(); refreshLandlordOptions(); }
+    if (view === 'landlords') loadManagedLandlords();
     if (view === 'partners') loadPartners();
     if (view === 'signups') loadSignups();
     if (view === 'support') loadSupport();
@@ -1516,6 +1569,7 @@
         video: videoUrl,
         status: document.getElementById('f-status').value,
         ...(await buildListedByFields()),
+        ...(mlLoaded ? (() => { const id = document.getElementById('f-managed-landlord').value || null; const l = id ? mlCache.find(x => String(x.id) === String(id)) : null; return { managed_landlord_id: id, managed_landlord_name: l ? l.full_name : null }; })() : {}),
       };
 
       if (editingId) {
@@ -1781,6 +1835,7 @@
     document.getElementById('f-listedby-type').value = 'maintown';
     document.getElementById('f-listedby-name').value = '';
     document.getElementById('f-listedby-photo').value = '';
+    mlPendingSelect = ''; fillLandlordSelect();
     showListedByPhoto(null);
     updateListedByFields();
   }
@@ -1789,6 +1844,7 @@
     document.getElementById('f-listedby-type').value = t;
     document.getElementById('f-listedby-name').value = listing.listed_by_name || '';
     document.getElementById('f-listedby-photo').value = '';
+    mlPendingSelect = listing.managed_landlord_id || ''; fillLandlordSelect();
     editingListedByPhoto = isRenderableUrl(listing.listed_by_photo) ? listing.listed_by_photo : null;
     showListedByPhoto(editingListedByPhoto && resolveImg(editingListedByPhoto));
     updateListedByFields();
@@ -2397,6 +2453,148 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
 
   document.getElementById('refreshQuickFixBtn').addEventListener('click', loadQuickFixRequests);
 
+  // ---------- Managed Landlords ----------
+  // Landlords MainTown manages properties for. Table: public.managed_landlords (Super Admin + Finance only).
+  const ML_STATUS = { onboarding: 'Onboarding', active: 'Active', suspended: 'Suspended' };
+  var mlCache = [], mlLoaded = false, mlPendingSelect = '';
+  async function fetchManagedLandlords() {
+    const { data, error } = await sb.from('managed_landlords').select('*').order('created_at', { ascending: false });
+    if (error) { mlLoaded = false; return { error }; }
+    mlCache = data || []; mlLoaded = true; return { data: mlCache };
+  }
+  function fillLandlordSelect() {
+    const sel = document.getElementById('f-managed-landlord'), wrap = document.getElementById('managedLandlordField');
+    if (!sel || !wrap) return;
+    wrap.classList.toggle('hidden', !mlLoaded);
+    sel.innerHTML = '<option value="">None</option>' + mlCache.map(l =>
+      `<option value="${escapeQuickFix(l.id)}">${escapeQuickFix(l.full_name)}${l.status !== 'active' ? ' (' + escapeQuickFix(ML_STATUS[l.status] || l.status) + ')' : ''}</option>`).join('');
+    sel.value = mlPendingSelect || '';
+  }
+  async function refreshLandlordOptions() { await fetchManagedLandlords(); fillLandlordSelect(); }
+  function mlMask(n) { const d = String(n || '').replace(/\D/g, ''); return d.length >= 4 ? '••••••' + d.slice(-4) : (d || '—'); }
+  function genTempCode() { const a = new Uint32Array(1); crypto.getRandomValues(a); return 'MT-' + String(100000 + (a[0] % 900000)); }
+  function mlLoginMessage(l) {
+    return `Welcome to MainTown Realty, ${l.full_name}! MainTown has listed your property and manages it for you. Open the MainTown Realty app, tap "Claim Landlord account", and enter this email: ${l.email} and this temp code: ${l.temp_code}. Then set your password and wallet PIN. Rent and sale payments on your property are credited to your wallet in the app.`;
+  }
+  function mlShowLoginBox(l, heading) {
+    const box = document.getElementById('mlLoginBox');
+    box.innerHTML = `<p class="text-sm font-semibold text-emerald-300 mb-1">${escapeQuickFix(heading)}</p>
+      <p class="text-sm text-slate-200">Send ${escapeQuickFix(l.full_name)} their login:</p>
+      <p class="text-sm text-white mt-1">Email: <span class="font-mono">${escapeQuickFix(l.email || '')}</span></p>
+      <p class="text-sm text-white">Temp code: <span class="font-mono">${escapeQuickFix(l.temp_code || '')}</span></p>
+      <div class="flex gap-2 flex-wrap mt-3">
+        <button type="button" class="btn-primary !py-1.5 !text-xs" data-ml-copy="${escapeQuickFix(l.id)}">Copy message</button>
+        ${l.phone ? `<button type="button" class="btn-secondary !py-1.5 !text-xs" data-ml-wa="${escapeQuickFix(l.id)}">Send on WhatsApp</button>` : ''}
+      </div>`;
+    box.classList.remove('hidden');
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  async function mlAction(e) {
+    const btn = e.target.closest('[data-ml-copy],[data-ml-wa],[data-ml-newcode]'); if (!btn) return;
+    const id = btn.dataset.mlCopy || btn.dataset.mlWa || btn.dataset.mlNewcode;
+    let l = mlCache.find(x => String(x.id) === String(id)); if (!l) return;
+    if (btn.dataset.mlNewcode !== undefined) {
+      if (!l.email) { showToast('Add the landlord\'s email first (Edit), they log in with it.', true); return; }
+      const code = genTempCode();
+      const { data, error } = await sb.from('managed_landlords').update({ temp_code: code, claim_attempts: 0, updated_at: new Date().toISOString() }).eq('id', id).select();
+      if (error || !data || !data.length) { showToast('Could not create a code: ' + (error ? error.message : 'no permission') + '. Make sure file 10 was run.', true); return; }
+      l = data[0];
+      const i = mlCache.findIndex(x => String(x.id) === String(id)); if (i >= 0) mlCache[i] = l;
+      showToast('New login code created.');
+      mlShowLoginBox(l, 'New login code');
+      loadManagedLandlords();
+      return;
+    }
+    const msg = mlLoginMessage(l);
+    if (btn.dataset.mlWa !== undefined) { window.open('https://wa.me/' + waNumber(l.phone) + '?text=' + encodeURIComponent(msg), '_blank', 'noopener'); return; }
+    try { await navigator.clipboard.writeText(msg); showToast('Login message copied.'); }
+    catch (err) { prompt('Copy this message:', msg); }
+  }
+  function mlShowForm(l) {
+    const f = document.getElementById('mlForm'); f.classList.remove('hidden');
+    document.getElementById('ml-id').value = l ? l.id : '';
+    document.getElementById('ml-name').value = l ? l.full_name || '' : '';
+    document.getElementById('ml-phone').value = l ? l.phone || '' : '';
+    document.getElementById('ml-email').value = l ? l.email || '' : '';
+    document.getElementById('ml-nin').checked = !!(l && l.nin_verified);
+    document.getElementById('ml-bank').value = l ? l.bank_name || '' : '';
+    document.getElementById('ml-acct').value = l ? l.account_number || '' : '';
+    document.getElementById('ml-acctname').value = l ? l.account_name || '' : '';
+    document.getElementById('ml-status').value = l ? l.status || 'onboarding' : 'onboarding';
+    document.getElementById('ml-notes').value = l ? l.notes || '' : '';
+    f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  async function loadManagedLandlords() {
+    const listEl = document.getElementById('mlList');
+    listEl.innerHTML = '<p class="text-sm text-slate-500">Loading landlords...</p>';
+    const r = await fetchManagedLandlords();
+    if (r.error) {
+      listEl.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load landlords: ${escapeQuickFix(r.error.message)}<p class="text-xs mt-2 text-red-200/80">If the table is missing, run 8_managed_landlords_and_followups.sql in Supabase SQL Editor. Only Super Admin and Finance can open this tab.</p></div>`;
+      return;
+    }
+    let linked = {};
+    const lr = await sb.from('listings').select('id,title,managed_landlord_id').not('managed_landlord_id', 'is', null);
+    if (!lr.error) (lr.data || []).forEach(x => { (linked[x.managed_landlord_id] = linked[x.managed_landlord_id] || []).push(x.title); });
+    if (!mlCache.length) { listEl.innerHTML = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">No managed landlords yet. Tap Add landlord to onboard the first one.</div>'; return; }
+    const chip = st => `<span class="inline-block text-[11px] px-2 py-0.5 rounded-full border ${st === 'active' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : st === 'suspended' ? 'bg-red-500/15 text-red-300 border-red-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'}">${escapeQuickFix(ML_STATUS[st] || st)}</span>`;
+    listEl.innerHTML = mlCache.map(l => {
+      const props = linked[l.id] || [];
+      return `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white font-medium">${escapeQuickFix(l.full_name)}</span>${chip(l.status)}
+            ${l.nin_verified ? '<span class="text-[11px] px-2 py-0.5 rounded-full border bg-sky-500/15 text-sky-300 border-sky-500/30">NIN checked</span>' : '<span class="text-[11px] px-2 py-0.5 rounded-full border bg-slate-700/40 text-slate-300 border-slate-600/50">NIN not checked</span>'}</div>
+          <button type="button" class="btn-secondary !py-1 !text-xs" data-ml-edit="${escapeQuickFix(l.id)}">Edit</button>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(l.phone || 'No phone')} · ${escapeQuickFix(l.email || 'No email')}</p>
+        <p class="text-xs text-slate-500 mt-1">Payout: ${escapeQuickFix(l.bank_name || 'No bank')} · ${escapeQuickFix(mlMask(l.account_number))}${l.account_name ? ' · ' + escapeQuickFix(l.account_name) : ''}</p>
+        <p class="text-xs text-slate-500 mt-1">Properties: ${props.length ? props.map(escapeQuickFix).join(', ') : 'none linked yet'}</p>
+        <div class="mt-2 pt-2 border-t border-slate-800">
+          ${l.temp_code
+            ? `<p class="text-xs text-slate-300">App login: <span class="font-mono">${escapeQuickFix(l.email || 'no email')}</span> · code <span class="font-mono">${escapeQuickFix(l.temp_code)}</span> · ${l.last_claim_at ? 'code used ' + inspTs(l.last_claim_at) : 'not claimed yet'}</p>
+               <div class="flex gap-2 flex-wrap mt-2"><button type="button" class="btn-secondary !py-1 !text-xs" data-ml-copy="${escapeQuickFix(l.id)}">Copy login message</button>${l.phone ? `<button type="button" class="btn-secondary !py-1 !text-xs" data-ml-wa="${escapeQuickFix(l.id)}">WhatsApp</button>` : ''}<button type="button" class="btn-secondary !py-1 !text-xs" data-ml-newcode="${escapeQuickFix(l.id)}">New code</button></div>`
+            : `<p class="text-xs text-amber-300">No app login yet.</p><div class="mt-2"><button type="button" class="btn-primary !py-1 !text-xs" data-ml-newcode="${escapeQuickFix(l.id)}">Create login code</button></div>`}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('mlNewBtn').addEventListener('click', () => mlShowForm(null));
+  document.getElementById('mlCancelBtn').addEventListener('click', () => document.getElementById('mlForm').classList.add('hidden'));
+  document.getElementById('mlList').addEventListener('click', mlAction);
+  document.getElementById('mlLoginBox').addEventListener('click', mlAction);
+  document.getElementById('mlList').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ml-edit]'); if (!b) return;
+    const l = mlCache.find(x => String(x.id) === b.dataset.mlEdit); if (l) mlShowForm(l);
+  });
+  document.getElementById('mlForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('ml-id').value;
+    const name = document.getElementById('ml-name').value.trim();
+    if (!name) { showToast('Enter the landlord\'s full legal name.', true); return; }
+    if (!id && !document.getElementById('ml-email').value.trim()) { showToast('Enter the landlord\'s email. They log in to the app with it.', true); return; }
+    const acct = document.getElementById('ml-acct').value.replace(/\D/g, '');
+    if (acct && acct.length !== 10) { showToast('A Nigerian account number has 10 digits.', true); return; }
+    const row = {
+      full_name: name, phone: document.getElementById('ml-phone').value.trim() || null, email: document.getElementById('ml-email').value.trim() || null,
+      nin_verified: document.getElementById('ml-nin').checked, bank_name: document.getElementById('ml-bank').value.trim() || null,
+      account_number: acct || null, account_name: document.getElementById('ml-acctname').value.trim() || null,
+      status: document.getElementById('ml-status').value, notes: document.getElementById('ml-notes').value.trim() || null,
+      updated_at: new Date().toISOString()
+    };
+    const btn = document.getElementById('mlSaveBtn'); btn.disabled = true;
+    try {
+      let res;
+      if (id) res = await sb.from('managed_landlords').update(row).eq('id', id).select();
+      else { const me = await sb.auth.getUser(); res = await sb.from('managed_landlords').insert({ ...row, temp_code: genTempCode(), claim_attempts: 0, created_by: (me.data && me.data.user && me.data.user.email) || null }).select(); }
+      if (res.error) throw res.error;
+      if (!res.data || !res.data.length) throw new Error('Nothing was saved. Check the permissions on managed_landlords (run file 8 again).');
+      showToast(id ? 'Landlord updated.' : 'Landlord added.');
+      document.getElementById('mlForm').classList.add('hidden');
+      await loadManagedLandlords();
+      if (!id && res.data[0].temp_code) mlShowLoginBox(res.data[0], 'Landlord added. Send them their login.');
+    } catch (err) { showToast('Could not save: ' + err.message + (/temp_code|claim_attempts/.test(err.message || '') ? ' Run 10_managed_landlord_login.sql first.' : ''), true); }
+    btn.disabled = false;
+  });
+
   // ---------- Inspections & Schedules (read-only monitoring) ----------
   // Source: public.inspection_events, an append-only log the app writes on every
   // inspection / shortlet / allocation / move-in step. created_at is the server
@@ -2413,6 +2611,61 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   const INSP_CLOSED = ['declined', 'cancelled', 'completed'];
   let inspCache = [];
   let inspTab = 'schedule';
+
+  // ---------- Inspection follow-up desk ----------
+  // Who is following up each inspection, its follow-up status and notes (table: public.inspection_followups).
+  // Super Admin can do this until a Sales Staff member is hired; Sales Staff and Customer Service can too.
+  const FU_STATUS = { new: 'New', contacted: 'Contacted', confirmed: 'Confirmed', rescheduled: 'Rescheduled', done: 'Done', no_show: 'No-show' };
+  const FU_SETTLED = ['confirmed', 'done'];
+  let followCache = new Map(), followErr = null, inspMe = '', inspStaff = [], inspPhones = new Map(), inspLatestMap = new Map(), inspOpenKey = null;
+  function waNumber(p) {
+    const d = String(p || '').replace(/\D/g, '');
+    if (d.startsWith('234')) return d;
+    if (d.startsWith('0')) return '234' + d.slice(1);
+    return d;
+  }
+  function followNeeded(e) {
+    const fu = followCache.get(e.entity_key);
+    return !INSP_CLOSED.includes(e.kind) && !FU_SETTLED.includes(fu ? fu.follow_status : 'new');
+  }
+  function followChip(e) {
+    if (followErr) return '';
+    const fu = followCache.get(e.entity_key), st = fu ? fu.follow_status : 'new';
+    const who = fu && fu.assigned_to ? ' · ' + escapeQuickFix(String(fu.assigned_to).split('@')[0]) : ' · unassigned';
+    return `<p class="text-xs mt-1 ${followNeeded(e) ? 'text-amber-300' : 'text-emerald-300'}">Follow-up: ${escapeQuickFix(FU_STATUS[st] || st)}${who}</p>`;
+  }
+  function inspFollowBlock(e) {
+    if (followErr) return '<div class="border-t border-slate-800 px-4 py-3 text-xs text-amber-300">Follow-up is not set up yet. Run 8_managed_landlords_and_followups.sql in Supabase SQL Editor.</div>';
+    const fu = followCache.get(e.entity_key) || {}, st = fu.follow_status || 'new';
+    const people = Array.from(new Set([inspMe].concat(inspStaff).filter(Boolean)));
+    if (fu.assigned_to && !people.includes(fu.assigned_to)) people.push(fu.assigned_to);
+    const phone = inspPhones.get(String(e.guest_id || ''));
+    return `<div class="border-t border-slate-800 px-4 py-3 space-y-2" data-fu="${escapeQuickFix(e.entity_key)}">
+      <p class="text-xs font-semibold text-slate-300">Follow-up</p>
+      <div class="grid grid-cols-2 gap-2">
+        <select class="fu-status !py-1.5 !text-xs">${Object.keys(FU_STATUS).map(k => `<option value="${k}" ${k === st ? 'selected' : ''}>${FU_STATUS[k]}</option>`).join('')}</select>
+        <select class="fu-assign !py-1.5 !text-xs"><option value="">Unassigned</option>${people.map(a => `<option value="${escapeQuickFix(a)}" ${a === fu.assigned_to ? 'selected' : ''}>${a === inspMe ? 'Me (' + escapeQuickFix(a) + ')' : escapeQuickFix(a)}</option>`).join('')}</select>
+      </div>
+      <textarea class="fu-note !text-xs" rows="2" placeholder="Notes: who you called and what was agreed">${escapeQuickFix(fu.note || '')}</textarea>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button type="button" class="btn-primary !py-1.5 !text-xs fu-save">Save follow-up</button>
+        ${phone ? `<a class="btn-secondary !py-1.5 !text-xs" href="tel:${escapeQuickFix(phone)}">Call guest</a><a class="btn-secondary !py-1.5 !text-xs" target="_blank" rel="noopener" href="https://wa.me/${waNumber(phone)}">WhatsApp guest</a>` : '<span class="text-[11px] text-slate-500">Guest phone is not shown here: look it up under Sign-Ups.</span>'}
+      </div>
+      ${fu.updated_by ? `<p class="text-[11px] text-slate-500">Last updated by ${escapeQuickFix(fu.updated_by)} · ${inspTs(fu.updated_at)}</p>` : ''}
+    </div>`;
+  }
+  async function loadInspFollowData() {
+    try { const me = await sb.auth.getUser(); inspMe = (me.data && me.data.user && me.data.user.email) || ''; } catch (e) {}
+    const fr = await sb.from('inspection_followups').select('*');
+    followErr = fr.error || null;
+    followCache = new Map((fr.data || []).map(r => [r.entity_key, r]));
+    const sr = await sb.from('staff_users').select('email,role');
+    inspStaff = sr.error ? [] : (sr.data || []).filter(x => ['super_admin', 'developer', 'customer_service', 'sales_staff'].includes(x.role)).map(x => x.email).filter(Boolean);
+    inspPhones = new Map();
+    const pr = await sb.from('app_signup_events').select('account_id,phone,created_at').not('phone', 'is', null).order('created_at', { ascending: false }).limit(3000);
+    if (!pr.error) (pr.data || []).forEach(r => { if (!inspPhones.has(String(r.account_id))) inspPhones.set(String(r.account_id), r.phone); });
+  }
+
 
   function inspTs(iso) {
     if (!iso) return '—';
@@ -2466,6 +2719,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       return;
     }
     inspCache = data || [];
+    await loadInspFollowData();
     const flows = Array.from(new Set(inspCache.map(e => e.flow))).sort();
     const flowSel = document.getElementById('inspFlow'), keepFlow = flowSel.value;
     flowSel.innerHTML = '<option value="">All flows</option>' + flows.map(f => `<option value="${escapeQuickFix(f)}">${escapeQuickFix(INSP_FLOWS[f] || f)}</option>`).join('');
@@ -2494,6 +2748,14 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const from = document.getElementById('inspFrom').value, to = document.getElementById('inspTo').value;
     if (flow && e.flow !== flow) return false;
     if (kind && e.kind !== kind) return false;
+    const ff = document.getElementById('inspFollow').value;
+    if (ff) {
+      const cur = inspLatestMap.get(e.entity_key) || e, fu = followCache.get(e.entity_key);
+      const open = !INSP_CLOSED.includes(cur.kind);
+      if (ff === 'needs' && !followNeeded(cur)) return false;
+      if (ff === 'mine' && !(fu && fu.assigned_to && fu.assigned_to === inspMe)) return false;
+      if (ff === 'unassigned' && !(open && !(fu && fu.assigned_to))) return false;
+    }
     if (q && ![e.listing_title, e.guest_name, e.host_name, e.location].some(v => String(v || '').toLowerCase().includes(q))) return false;
     const day = inspDay(e.scheduled_date);
     if ((from || to) && !day) return false;
@@ -2504,8 +2766,9 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
 
   function renderInspSummary(latest) {
     const today = inspToday(), week = inspPlusDays(today, 7);
-    let upcoming = 0, moves = 0, waiting = 0;
+    let upcoming = 0, moves = 0, waiting = 0, needs = 0;
     latest.forEach(e => {
+      if (!followErr && followNeeded(e)) needs++;
       const day = inspDay(e.scheduled_date), open = !INSP_CLOSED.includes(e.kind);
       if (!open) return;
       if (e.kind === 'requested') waiting++;
@@ -2514,12 +2777,13 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     });
     const card = (n, label) => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3"><p class="text-2xl font-semibold text-white">${n}</p><p class="text-xs text-slate-400 mt-0.5">${label}</p></div>`;
     document.getElementById('inspSummary').innerHTML =
-      card(upcoming, 'Inspections and bookings in the next 7 days') + card(moves, 'Upcoming move-ins') + card(waiting, 'Waiting for the host to respond');
+      card(upcoming, 'Inspections and bookings in the next 7 days') + card(moves, 'Upcoming move-ins') + card(waiting, 'Waiting for the host to respond') + card(followErr ? '-' : needs, 'Need your follow-up');
   }
 
   function renderInspections() {
     const listEl = document.getElementById('inspList');
     const { latest, history } = inspLatestByEntity();
+    inspLatestMap = latest;
     renderInspSummary(latest);
     document.querySelectorAll('[data-insp-tab]').forEach(b => b.classList.toggle('active', b.dataset.inspTab === inspTab));
     const empty = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">No inspections reported yet. They appear here as soon as a guest books through the app.</div>';
@@ -2548,7 +2812,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const card = e => {
       const steps = (history.get(e.entity_key) || []).slice().reverse();
       return `
-        <details class="bg-slate-900 border border-slate-800 rounded-xl">
+        <details class="bg-slate-900 border border-slate-800 rounded-xl" ${inspOpenKey === e.entity_key ? 'open' : ''}>
           <summary class="px-4 py-3 cursor-pointer select-none list-none">
             <div class="flex items-center justify-between gap-2 flex-wrap">
               <div class="flex items-center gap-2 flex-wrap">${inspChip(e.kind)}<span class="text-sm text-white font-medium">${escapeQuickFix(e.listing_title || 'Property')}</span></div>
@@ -2557,10 +2821,12 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
             <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(INSP_FLOWS[e.flow] || e.flow)}${e.location ? ' · ' + escapeQuickFix(e.location) : ''}</p>
             <p class="text-xs text-slate-500 mt-1">${inspParties(e)}</p>
             <p class="text-xs text-slate-500 mt-1">Last update ${inspTs(e.created_at)}</p>
+            ${followChip(e)}
           </summary>
           <div class="border-t border-slate-800 px-4 py-3 space-y-2">
             ${steps.map(s => `<div class="flex items-start justify-between gap-3 text-xs"><div class="flex items-center gap-2 flex-wrap">${inspChip(s.kind)}<span class="text-slate-400">${escapeQuickFix(inspWhen(s))}</span><span class="text-slate-500">${inspActor(s)}</span></div><span class="text-slate-400 shrink-0">${inspTs(s.created_at)}</span></div>`).join('')}
           </div>
+          ${inspFollowBlock(e)}
         </details>`;
     };
     if (!rows.length) { listEl.innerHTML = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">Nothing matches these filters.</div>'; return; }
@@ -2569,8 +2835,25 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       (past.length ? `<p class="text-xs text-slate-500 pt-2">Past (${past.length})</p>` + past.map(card).join('') : '');
   }
 
+  document.getElementById('inspList').addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('.fu-save'); if (!btn) return;
+    const box = btn.closest('[data-fu]'); const key = box.dataset.fu;
+    const row = {
+      entity_key: key, follow_status: box.querySelector('.fu-status').value,
+      assigned_to: box.querySelector('.fu-assign').value || null, note: box.querySelector('.fu-note').value.trim() || null,
+      updated_by: inspMe || null, updated_at: new Date().toISOString()
+    };
+    btn.disabled = true;
+    const { data, error } = await sb.from('inspection_followups').upsert(row, { onConflict: 'entity_key' }).select();
+    btn.disabled = false;
+    if (error) { showToast('Could not save follow-up: ' + error.message, true); return; }
+    followCache.set(key, (data && data[0]) || row);
+    inspOpenKey = key;
+    showToast('Follow-up saved.');
+    renderInspections();
+  });
   document.getElementById('refreshInspBtn').addEventListener('click', loadInspections);
-  ['inspFlow', 'inspStatus', 'inspFrom', 'inspTo'].forEach(id => document.getElementById(id).addEventListener('change', renderInspections));
+  ['inspFlow', 'inspStatus', 'inspFollow', 'inspFrom', 'inspTo'].forEach(id => document.getElementById(id).addEventListener('change', renderInspections));
   document.getElementById('inspSearch').addEventListener('input', renderInspections);
   document.querySelectorAll('[data-insp-tab]').forEach(b => b.addEventListener('click', () => { inspTab = b.dataset.inspTab; renderInspections(); }));
 
@@ -3252,6 +3535,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
           <option value="finance" ${s.role === 'finance' ? 'selected' : ''}>Finance</option>
           <option value="legal" ${s.role === 'legal' ? 'selected' : ''}>Legal</option>
           <option value="customer_service" ${s.role === 'customer_service' ? 'selected' : ''}>Customer Service</option>
+          <option value="sales_staff" ${s.role === 'sales_staff' ? 'selected' : ''}>Sales Staff</option>
           <option value="media_editor" ${s.role === 'media_editor' ? 'selected' : ''}>Media</option>
           <option value="super_admin" ${s.role === 'super_admin' ? 'selected' : ''}>Super Admin</option>
         </select>
