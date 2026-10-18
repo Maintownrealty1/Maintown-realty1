@@ -832,6 +832,25 @@
       <div id="inspList" class="space-y-3"></div>
     </section>
 
+    <!-- ---- Legal Review (Legal + Super Admin) ----
+         Property documents hosts/landlords submit in the app, and the app KYC report.
+         Tables/bucket: legal_reviews, app_kyc_submissions, legal-docs (see 12_legal_review_and_kyc.sql). -->
+    <section data-view="legalreview">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">Legal Review</h2>
+      <p class="text-sm text-slate-500 mb-1">Property documents submitted by hosts and landlords in the app, and ID verification from app accounts. Nothing goes live until you approve it, and a decline must carry a reason that is sent back to the host.</p>
+      <p class="text-xs text-slate-600 mb-4">Documents open in a private link that expires after 5 minutes. Every document you open and every decision you make is logged.</p>
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <button type="button" class="chip active" data-lrtab="docs">Property documents</button>
+        <button type="button" class="chip" data-lrtab="kyc">ID verification (app)</button>
+        <select id="lrFilter" class="!w-auto !py-1.5 !text-xs ml-auto">
+          <option value="open">Waiting for review</option><option value="closed">Approved / verified</option><option value="rejected">Declined / needs more</option><option value="all">All</option>
+        </select>
+        <button type="button" id="lrRefresh" class="btn-secondary !py-1.5 !text-xs">Refresh</button>
+      </div>
+      <div id="lrList" class="space-y-3"></div>
+      <div id="kycList" class="space-y-3 hidden"></div>
+    </section>
+
     <!-- ---- Managed Landlords (Super Admin / Finance) ----
          Landlords MainTown onboards and manages properties for. Holds payout bank details,
          so only Super Admin and Finance can see it (table: managed_landlords, see
@@ -957,12 +976,12 @@
   // Which dashboard tabs each role gets. Edit these arrays to change who
   // sees what — the tab bar and every data load below all key off this.
   const ROLE_VIEWS = {
-    super_admin: ['support', 'supportchat', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'landlords', 'finance', 'staff'],
+    super_admin: ['support', 'supportchat', 'explore', 'listings', 'partners', 'signups', 'legalreview', 'quickfix', 'inspections', 'landlords', 'finance', 'staff'],
     developer:   ['support', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance'],
     finance:     ['finance', 'landlords'],
     // Sales staff follow up inspections and bookings; nothing else.
     sales_staff: ['inspections'],
-    legal:       ['signups'],
+    legal:       ['signups', 'legalreview'],
     // Least privilege: support sees customer requests and the inspection/booking schedule,
     // never finance, sign-up (KYC) documents, listings admin or staff access.
     customer_service: ['support', 'supportchat', 'quickfix', 'inspections'],
@@ -970,7 +989,7 @@
     media_editor: ['explore'],
   };
   const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal', customer_service: 'Customer Service', media_editor: 'Media', sales_staff: 'Sales Staff' };
-  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspections', landlords: 'Managed Landlords', finance: 'Finance', staff: 'Staff Access' };
+  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspections', legalreview: 'Legal Review', landlords: 'Managed Landlords', finance: 'Finance', staff: 'Staff Access' };
   let currentStaffRole = null;
   let currentStaffName = null;
   let currentView = null;
@@ -1017,6 +1036,7 @@
     renderRoleTabs();
     if (view === 'listings') { loadExistingListings(); refreshLandlordOptions(); }
     if (view === 'landlords') loadManagedLandlords();
+    if (view === 'legalreview') loadLegalReview();
     if (view === 'partners') loadPartners();
     if (view === 'signups') loadSignups();
     if (view === 'support') loadSupport();
@@ -2467,6 +2487,148 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
 
   document.getElementById('refreshQuickFixBtn').addEventListener('click', loadQuickFixRequests);
 
+  // ---------- Legal Review ----------
+  // Property documents (legal_reviews) and the app KYC report (app_kyc_submissions). Files live in the private
+  // `legal-docs` bucket and are opened through 5-minute signed links; every open and decision goes to legal_access_log.
+  const LR_DOC_REASONS = ['Document is unclear or unreadable', 'Name on the document does not match the owner', 'Document appears incomplete or altered', 'Wrong type of document for this property', 'Document has expired or is out of date', 'Other (explain below)'];
+  const LR_KYC_REASONS = ['ID photo is blurry or cut off', 'Name on the ID does not match the account', 'Selfie does not match the ID photo', 'ID appears altered or is not a valid ID', 'Address does not match the ID', 'Other (explain below)'];
+  let lrTab = 'docs', lrDocs = [], lrKyc = [], lrOpenForm = null;
+
+  async function lrWho() { try { const me = await sb.auth.getUser(); return (me.data && me.data.user && me.data.user.email) || null; } catch (e) { return null; } }
+  async function lrLog(action, target) {
+    try { await sb.from('legal_access_log').insert({ staff_email: await lrWho(), staff_role: currentStaffRole, action, target: String(target || '').slice(0, 300) }); } catch (e) {}
+  }
+  async function lrOpenDocument(path) {
+    const w = window.open('about:blank', '_blank'); // opened first so phone browsers do not block it
+    const { data, error } = await sb.storage.from('legal-docs').createSignedUrl(path, 300);
+    if (error || !data) { if (w) w.close(); showToast('Could not open the document: ' + (error ? error.message : 'not found'), true); return; }
+    lrLog('open_document', path);
+    if (w) w.location.href = data.signedUrl; else window.location.href = data.signedUrl;
+  }
+  function lrStatusChip(st) {
+    const map = { pending: ['Waiting for review', 'amber'], submitted: ['Waiting for review', 'amber'], approved: ['Approved', 'emerald'], verified: ['Verified', 'emerald'], declined: ['Declined', 'red'], needs_more: ['Needs more info', 'red'] };
+    const [label, c] = map[st] || [st, 'slate'];
+    return `<span class="text-[11px] px-2 py-0.5 rounded-full border bg-${c}-500/15 text-${c}-300 border-${c}-500/30">${escapeQuickFix(label)}</span>`;
+  }
+  function lrDocButtons(docs) {
+    if (!Array.isArray(docs) || !docs.length) return '<p class="text-xs text-amber-300 mt-2">No files were attached.</p>';
+    return '<div class="flex flex-wrap gap-2 mt-2">' + docs.map(d => `<button type="button" class="btn-secondary !py-1 !text-xs" data-lr-open="${escapeQuickFix(d.path)}">Open: ${escapeQuickFix(d.label || (d.kind === 'selfie' ? 'Selfie' : d.kind === 'id' ? 'ID / BVN slip' : 'Document'))}</button>`).join('') + '</div>';
+  }
+  function lrDecideBox(kind, id, reasons, declineLabel) {
+    const key = kind + ':' + id;
+    if (lrOpenForm !== key) return '';
+    return `<div class="mt-3 p-3 rounded-lg border border-red-500/30 bg-red-500/5" data-lr-form="${escapeQuickFix(key)}">
+      <p class="text-xs text-red-300 font-semibold mb-2">${escapeQuickFix(declineLabel)}: the reason is sent to the host</p>
+      <select class="lr-reason !py-1.5 !text-xs mb-2">${reasons.map(r => `<option>${escapeQuickFix(r)}</option>`).join('')}</select>
+      <textarea class="lr-note !text-xs" rows="2" placeholder="Add detail the host needs to fix this (required if you chose Other)"></textarea>
+      <div class="flex gap-2 mt-2"><button type="button" class="btn-primary !py-1.5 !text-xs" data-lr-act="confirm" data-kind="${kind}" data-id="${escapeQuickFix(id)}">Confirm</button><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="cancel">Cancel</button></div>
+    </div>`;
+  }
+  function lrFilterRows(rows, openSt, closedSt, rejectedSt) {
+    const f = document.getElementById('lrFilter').value;
+    return rows.filter(r => f === 'all' || (f === 'open' && openSt.includes(r._st)) || (f === 'closed' && closedSt.includes(r._st)) || (f === 'rejected' && rejectedSt.includes(r._st)));
+  }
+  function renderLrDocs() {
+    const el = document.getElementById('lrList');
+    const rows = lrFilterRows(lrDocs.map(r => Object.assign({ _st: r.status }, r)), ['pending'], ['approved'], ['declined']);
+    if (!rows.length) { el.innerHTML = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">Nothing here. Documents appear as soon as a host or landlord submits them in the app.</div>'; return; }
+    el.innerHTML = rows.map(r => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white font-medium">${escapeQuickFix(r.listing_title || 'Property')}</span>${lrStatusChip(r.status)}${r.attempt > 1 ? `<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">Resubmission ${r.attempt}</span>` : ''}</div>
+        <span class="text-xs text-slate-400">${inspTs(r.created_at)}</span>
+      </div>
+      <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(r.listing_type || '')} · Owner: ${escapeQuickFix(r.owner_name || 'unknown')} · Sent by ${escapeQuickFix(r.submitted_by_name || 'unknown')} (${escapeQuickFix(r.submitted_by_role || 'host')})${r.agent_name ? ' · Agent: ' + escapeQuickFix(r.agent_name) : ''}</p>
+      ${lrDocButtons(r.documents)}
+      ${r.status === 'pending' ? `<div class="flex gap-2 mt-3"><button type="button" class="btn-primary !py-1.5 !text-xs" data-lr-act="approve" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Approve</button><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Decline</button></div>` : ''}
+      ${r.status === 'pending' ? lrDecideBox('doc', r.id, LR_DOC_REASONS, 'Decline these documents') : ''}
+      ${r.status === 'declined' ? `<p class="text-xs text-red-300 mt-2">Reason sent to the host: ${escapeQuickFix(r.decline_reason || '')}</p>` : ''}
+      ${r.reviewed_by ? `<p class="text-[11px] text-slate-500 mt-1">Decided by ${escapeQuickFix(r.reviewed_by)} · ${inspTs(r.reviewed_at)}</p>` : ''}
+    </div>`).join('');
+  }
+  function renderLrKyc() {
+    const el = document.getElementById('kycList');
+    const rows = lrFilterRows(lrKyc.map(r => Object.assign({ _st: r.review_status }, r)), ['submitted'], ['verified'], ['declined', 'needs_more']);
+    if (!rows.length) { el.innerHTML = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">Nothing here. App KYC reports appear when a landlord or agent finishes Vendor Activation in the app.</div>'; return; }
+    el.innerHTML = rows.map(r => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white font-medium">${escapeQuickFix(r.full_name || 'Unnamed')}</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">${escapeQuickFix(String(r.role || '').replace('_', ' '))}</span>${lrStatusChip(r.review_status)}
+          ${r.verify_status ? `<span class="text-[11px] px-2 py-0.5 rounded-full border border-sky-500/30 text-sky-300 bg-sky-500/10">ID check: ${escapeQuickFix(r.verify_status)}</span>` : ''}
+          ${r.is_demo ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-400">Test account</span>' : ''}</div>
+        <span class="text-xs text-slate-400">${inspTs(r.created_at)}</span>
+      </div>
+      <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(r.email || 'No email')} · ${escapeQuickFix(r.phone || 'No phone')}</p>
+      <p class="text-xs text-slate-500 mt-1">Address: ${escapeQuickFix(r.address || 'not given')} · BVN ••••${escapeQuickFix(r.bvn_last4 || '----')}${r.nin_last4 ? ' · NIN ••••' + escapeQuickFix(r.nin_last4) : ''} · Bank: ${escapeQuickFix(r.bank_name || '—')}${r.account_last4 ? ' ••••' + escapeQuickFix(r.account_last4) : ''}</p>
+      <p class="text-[11px] text-slate-600 mt-1">User agreed to MainTown storing their ID details ${inspTs(r.consent_at)}</p>
+      ${lrDocButtons(r.documents)}
+      ${['submitted', 'needs_more'].includes(r.review_status) ? `<div class="flex gap-2 flex-wrap mt-3"><button type="button" class="btn-primary !py-1.5 !text-xs" data-lr-act="approve" data-kind="kyc" data-id="${escapeQuickFix(r.id)}">Mark verified</button><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="kyc" data-id="${escapeQuickFix(r.id)}">Needs more info / decline</button></div>` : ''}
+      ${['submitted', 'needs_more'].includes(r.review_status) ? lrDecideBox('kyc', r.id, LR_KYC_REASONS, 'Ask for more info or decline') : ''}
+      ${r.review_note ? `<p class="text-xs text-red-300 mt-2">Note: ${escapeQuickFix(r.review_note)}</p>` : ''}
+      ${r.reviewed_by ? `<p class="text-[11px] text-slate-500 mt-1">Reviewed by ${escapeQuickFix(r.reviewed_by)} · ${inspTs(r.reviewed_at)}</p>` : ''}
+    </div>`).join('');
+  }
+  function renderLegalReview() {
+    document.getElementById('lrList').classList.toggle('hidden', lrTab !== 'docs');
+    document.getElementById('kycList').classList.toggle('hidden', lrTab !== 'kyc');
+    document.querySelectorAll('[data-lrtab]').forEach(b => b.classList.toggle('active', b.dataset.lrtab === lrTab));
+    if (lrTab === 'docs') renderLrDocs(); else renderLrKyc();
+  }
+  async function loadLegalReview() {
+    const dl = document.getElementById('lrList'), kl = document.getElementById('kycList');
+    dl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
+    const d = await sb.from('legal_reviews').select('*').order('created_at', { ascending: false }).limit(300);
+    const k = await sb.from('app_kyc_submissions').select('*').order('created_at', { ascending: false }).limit(300);
+    const hint = '<p class="text-xs mt-2 text-red-200/80">Run 12_legal_review_and_kyc.sql in Supabase SQL Editor if the tables are missing. Only Legal and Super Admin can open this tab.</p>';
+    if (d.error) { dl.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load documents: ${escapeQuickFix(d.error.message)}${hint}</div>`; lrDocs = []; } else lrDocs = d.data || [];
+    if (k.error) { kl.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load KYC: ${escapeQuickFix(k.error.message)}${hint}</div>`; lrKyc = []; } else lrKyc = k.data || [];
+    if (!d.error && !k.error) renderLegalReview();
+    else if (!d.error) renderLrDocs();
+  }
+  async function lrDecide(kind, id, approve, reason) {
+    const now = new Date().toISOString(), who = await lrWho();
+    const table = kind === 'doc' ? 'legal_reviews' : 'app_kyc_submissions';
+    const patch = kind === 'doc'
+      ? { status: approve ? 'approved' : 'declined', decline_reason: approve ? null : reason, reviewed_by: who, reviewed_at: now }
+      : { review_status: approve ? 'verified' : (reason.startsWith('MORE:') ? 'needs_more' : 'declined'), review_note: approve ? null : reason.replace(/^MORE:/, ''), reviewed_by: who, reviewed_at: now };
+    let q = sb.from(table).update(patch).eq('id', id);
+    q = kind === 'doc' ? q.eq('status', 'pending') : q.in('review_status', ['submitted', 'needs_more']);
+    const { data, error } = await q.select();
+    if (error) { showToast('Could not save: ' + error.message, true); return false; }
+    if (!data || !data.length) { showToast('This item was already decided by someone else. Refresh the list.', true); return false; }
+    lrLog(kind === 'doc' ? (approve ? 'approve' : 'decline') : (approve ? 'kyc_verified' : 'kyc_declined'), id);
+    return true;
+  }
+  document.getElementById('lrRefresh').addEventListener('click', loadLegalReview);
+  document.getElementById('lrFilter').addEventListener('change', renderLegalReview);
+  document.querySelectorAll('[data-lrtab]').forEach(b => b.addEventListener('click', () => { lrTab = b.dataset.lrtab; lrOpenForm = null; renderLegalReview(); }));
+  async function lrClick(e) {
+    const open = e.target.closest('[data-lr-open]');
+    if (open) { lrOpenDocument(open.dataset.lrOpen); return; }
+    const btn = e.target.closest('[data-lr-act]'); if (!btn) return;
+    const act = btn.dataset.lrAct, kind = btn.dataset.kind, id = btn.dataset.id;
+    if (act === 'cancel') { lrOpenForm = null; renderLegalReview(); return; }
+    if (act === 'decline') { lrOpenForm = kind + ':' + id; renderLegalReview(); return; }
+    if (act === 'approve') {
+      if (!confirm(kind === 'doc' ? 'Approve these documents? The listing will go live.' : 'Mark this person\'s ID as verified?')) return;
+      btn.disabled = true;
+      if (await lrDecide(kind, id, true, null)) { showToast(kind === 'doc' ? 'Approved. The listing goes live in the app.' : 'Marked as verified.'); lrOpenForm = null; await loadLegalReview(); } else btn.disabled = false;
+      return;
+    }
+    if (act === 'confirm') {
+      const box = btn.closest('[data-lr-form]');
+      const choice = box.querySelector('.lr-reason').value, note = box.querySelector('.lr-note').value.trim();
+      const other = /^Other/.test(choice);
+      if (other && note.length < 10) { showToast('Please explain the reason (at least 10 characters).', true); return; }
+      let reason = other ? note : (choice + (note ? '. ' + note : '') + '.');
+      if (reason.length < 10) { showToast('The reason is too short.', true); return; }
+      if (kind === 'kyc') reason = 'MORE:' + reason; // KYC "needs more info": the person can resubmit
+      btn.disabled = true;
+      if (await lrDecide(kind, id, false, reason)) { showToast(kind === 'doc' ? 'Declined. The host will see your reason in the app.' : 'Saved.'); lrOpenForm = null; await loadLegalReview(); } else btn.disabled = false;
+    }
+  }
+  document.getElementById('lrList').addEventListener('click', lrClick);
+  document.getElementById('kycList').addEventListener('click', lrClick);
+
   // ---------- Managed Landlords ----------
   // Landlords MainTown manages properties for. Table: public.managed_landlords (Super Admin + Finance only).
   const ML_STATUS = { onboarding: 'Onboarding', active: 'Active', suspended: 'Suspended' };
@@ -2963,7 +3125,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   // ---------- Sign-up totals (website + app) and App accounts ----------
   // Website sign-ups come from the `signups` table; app accounts from `app_signup_events`
   // (see app_signup_events_migration.sql). Totals count each person once.
-  let appAcctEvents = [], appAcctError = null, signupSource = 'web';
+  let appAcctEvents = [], appAcctError = null, signupSource = 'web', sgRange = 14;
   const APP_SOURCES = { app_signup: 'Signed up in the app', agent_onboarded: 'Onboarded by an agent', enterprise_invite: 'Staff invite' };
   const SIGNUP_ROWS = [['tenant', 'Tenant'], ['landlord', 'Landlord'], ['agent', 'Agent'], ['diaspora', 'Diaspora / Canada'], ['staff', 'Enterprise staff'], ['other', 'Other']];
 
@@ -2988,7 +3150,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const el = document.getElementById('signupStats');
     const web = signupsCache || [], app = appAccountsLatest();
     const today = inspToday(), week = inspPlusDays(today, -6);
-    const days = []; for (let i = 13; i >= 0; i--) days.push(inspPlusDays(today, -i));
+    const days = []; for (let i = sgRange - 1; i >= 0; i--) days.push(inspPlusDays(today, -i));
     const perDay = {}; days.forEach(d => { perDay[d] = { web: 0, app: 0 }; });
     const rows = {}; SIGNUP_ROWS.forEach(([k]) => { rows[k] = { web: 0, app: 0 }; });
     let todayN = 0, weekN = 0;
@@ -2996,6 +3158,20 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     web.forEach(s => { rows[sgWebRole(s.role)].web++; tally(s.created_at, 'web'); });
     app.forEach(a => { rows[sgAppRole(a.role)].app++; tally(a._joined, 'app'); });
     const awaiting = app.filter(a => String(a.status).toUpperCase() === 'PENDING_CLAIM').length;
+    // Indicators: website sign-up (semi-onboarding) vs app onboarding
+    const hasKyc = s => Array.isArray(s.kyc_documents) && s.kyc_documents.length > 0;
+    const wTotal = web.length, wKyc = web.filter(hasKyc).length, wAgree = web.filter(s => s.agreement_pdf_url).length;
+    const wPicked = web.filter(s => (selectedByUser[s.user_id] || []).length).length;
+    const aTotal = app.length, aActive = app.filter(a => String(a.status).toUpperCase() === 'ACTIVE').length;
+    const aDeact = app.filter(a => String(a.status).toUpperCase() === 'DEACTIVATED').length;
+    const aSrc = { app_signup: 0, agent_onboarded: 0, enterprise_invite: 0 };
+    app.forEach(a => { if (aSrc[a._src] !== undefined) aSrc[a._src]++; });
+    const grand = wTotal + app.length, pct = (n, d) => d ? Math.round(n * 100 / d) : 0;
+    const ind = (label, n, d, color) => `<div class="mb-2"><div class="flex justify-between text-xs mb-1"><span class="text-slate-300">${label}</span><span class="text-slate-400">${n} · ${pct(n, d)}%</span></div><div class="h-2 rounded-full bg-slate-800 overflow-hidden"><div style="width:${pct(n, d)}%;background:${color}" class="h-full rounded-full"></div></div></div>`;
+    const shareBar = grand
+      ? `<div class="flex h-3 rounded-full overflow-hidden bg-slate-800 mb-3"><div style="width:${pct(wTotal, grand)}%;background:#8b5cf6"></div><div style="width:${100 - pct(wTotal, grand)}%;background:#34d399"></div></div>
+         <div class="flex justify-between text-xs"><span style="color:#8b5cf6">Website ${wTotal} · ${pct(wTotal, grand)}%</span><span style="color:#34d399">App ${aTotal} · ${100 - pct(wTotal, grand)}%</span></div>`
+      : '<p class="text-xs text-slate-500">No sign-ups yet.</p>';
     const card = (n, label, tone) => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3"><p class="text-2xl font-semibold ${tone || 'text-white'}">${n}</p><p class="text-xs text-slate-400 mt-0.5">${label}</p></div>`;
     const appNote = appAcctError ? `<p class="text-xs text-amber-300 mt-2">App accounts are not reporting yet: ${escapeQuickFix(appAcctError)}. Run app_signup_events_migration.sql in Supabase.</p>` : '';
     const max = Math.max(1, ...days.map(d => perDay[d].web + perDay[d].app));
@@ -3020,11 +3196,35 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
           </tbody></table>
         </div>
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <div class="flex items-center justify-between mb-2"><p class="text-sm font-semibold text-white">Last 14 days</p><p class="text-[11px] text-slate-500"><span style="color:#8b5cf6">Website</span> · <span style="color:#34d399">App</span> (Lagos days)</p></div>
+          <div class="flex items-center justify-between mb-2"><p class="text-sm font-semibold text-white">Last ${sgRange} days</p><p class="text-[11px] text-slate-500"><span style="color:#8b5cf6">Website</span> · <span style="color:#34d399">App</span> (Lagos days)</p></div>
+          <div class="flex gap-1.5 mb-3">${[7, 14, 30, 90].map(n => `<button type="button" data-sgrange="${n}" class="text-[11px] px-2 py-0.5 rounded-full border ${n === sgRange ? 'border-brand-500 text-brand-300' : 'border-slate-700 text-slate-400'}">${n}d</button>`).join('')}</div>
           <div class="flex items-end gap-1">${bars}</div>
+        </div>
+      </div>
+      <div class="grid lg:grid-cols-3 gap-3 mt-3">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <p class="text-sm font-semibold text-white mb-3">Website vs app</p>
+          ${shareBar}
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <p class="text-sm font-semibold text-white mb-1">Website sign-up (semi-onboarding)</p>
+          <p class="text-[11px] text-slate-500 mb-3">How far website sign-ups got</p>
+          ${ind('Signed up', wTotal, wTotal, '#8b5cf6')}${ind('Submitted KYC documents', wKyc, wTotal, '#8b5cf6')}${ind('Signed the agreement', wAgree, wTotal, '#8b5cf6')}${ind('Picked a property', wPicked, wTotal, '#8b5cf6')}
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <p class="text-sm font-semibold text-white mb-1">App onboarding</p>
+          <p class="text-[11px] text-slate-500 mb-3">Status of app accounts and how they joined</p>
+          ${ind('Active', aActive, aTotal, '#34d399')}${ind('Awaiting claim', awaiting, aTotal, '#fbbf24')}${ind('Deactivated', aDeact, aTotal, '#f87171')}
+          <div class="border-t border-slate-800 my-2"></div>
+          ${ind('Signed up in the app', aSrc.app_signup, aTotal, '#34d399')}${ind('Onboarded by an agent', aSrc.agent_onboarded, aTotal, '#34d399')}${ind('Staff invite', aSrc.enterprise_invite, aTotal, '#34d399')}
         </div>
       </div>${appNote}`;
   }
+
+  document.getElementById('signupStats').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-sgrange]'); if (!b) return;
+    sgRange = Number(b.dataset.sgrange) || 14; renderSignupStats();
+  });
 
   async function loadAppAccounts() {
     const { data, error } = await sb.from('app_signup_events').select('*').order('created_at', { ascending: false }).limit(3000);
