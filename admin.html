@@ -552,6 +552,17 @@
         <p class="text-[11px] text-slate-500 mt-1">Choose MainTown Realty for listings that belong to you. For a property someone gave MainTown to list, show the owner's name or their company instead.</p>
       </div>
 
+      <div class="field">
+        <label>City in the app</label>
+        <select id="f-city">
+          <option value="">Auto (work it out from the address)</option>
+          <option value="lagos">Lagos</option><option value="abuja">Abuja (FCT)</option><option value="ogun">Ogun State</option>
+          <option value="ibadan">Ibadan (Oyo)</option><option value="portharcourt">Port Harcourt (Rivers)</option>
+          <option value="asaba">Asaba (Delta)</option><option value="warri">Warri (Delta)</option>
+        </select>
+        <p class="text-[11px] text-slate-500 mt-1">Pick the city so this listing shows up when app users switch to it. Leave on Auto if the address already names the city, for example "Maitama, Abuja".</p>
+      </div>
+
       <div class="field hidden" id="managedLandlordField">
         <label>Managed landlord (MainTown manages this property for them)</label>
         <select id="f-managed-landlord"></select>
@@ -1569,6 +1580,7 @@
         video: videoUrl,
         status: document.getElementById('f-status').value,
         ...(await buildListedByFields()),
+        ...((document.getElementById('f-city').value || editingHadCity) ? { city: document.getElementById('f-city').value || null } : {}),
         ...(mlLoaded ? (() => { const id = document.getElementById('f-managed-landlord').value || null; const l = id ? mlCache.find(x => String(x.id) === String(id)) : null; return { managed_landlord_id: id, managed_landlord_name: l ? l.full_name : null }; })() : {}),
       };
 
@@ -1836,6 +1848,7 @@
     document.getElementById('f-listedby-name').value = '';
     document.getElementById('f-listedby-photo').value = '';
     mlPendingSelect = ''; fillLandlordSelect();
+    document.getElementById('f-city').value = ''; editingHadCity = false;
     showListedByPhoto(null);
     updateListedByFields();
   }
@@ -1845,6 +1858,7 @@
     document.getElementById('f-listedby-name').value = listing.listed_by_name || '';
     document.getElementById('f-listedby-photo').value = '';
     mlPendingSelect = listing.managed_landlord_id || ''; fillLandlordSelect();
+    document.getElementById('f-city').value = listing.city || ''; editingHadCity = !!listing.city;
     editingListedByPhoto = isRenderableUrl(listing.listed_by_photo) ? listing.listed_by_photo : null;
     showListedByPhoto(editingListedByPhoto && resolveImg(editingListedByPhoto));
     updateListedByFields();
@@ -2456,7 +2470,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   // ---------- Managed Landlords ----------
   // Landlords MainTown manages properties for. Table: public.managed_landlords (Super Admin + Finance only).
   const ML_STATUS = { onboarding: 'Onboarding', active: 'Active', suspended: 'Suspended' };
-  var mlCache = [], mlLoaded = false, mlPendingSelect = '';
+  var mlCache = [], mlLoaded = false, mlPendingSelect = '', editingHadCity = false;
   async function fetchManagedLandlords() {
     const { data, error } = await sb.from('managed_landlords').select('*').order('created_at', { ascending: false });
     if (error) { mlLoaded = false; return { error }; }
