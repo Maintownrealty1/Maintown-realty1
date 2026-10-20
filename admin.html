@@ -901,13 +901,58 @@
          that data is wired into Supabase — see the "Finance data" banner. -->
     <section data-view="finance">
       <h2 class="font-display font-semibold text-lg text-white mb-1">Finance</h2>
-      <p class="text-sm text-slate-500 mb-5">Pricing across all live listings.</p>
-
-      <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 mb-6 text-xs text-amber-300">
-        Wallet balances, landlord payouts, and settlement account data live in the app right now and aren't reported here yet — that's the next phase of this integration.
+      <p class="text-sm text-slate-500 mb-1">Revenue, held funds, payouts, refunds and reconciliation, built from the ledger the app reports. Money itself moves in the app: decisions here are records, and critical ones are approval requests to the Super Admin.</p>
+      <p class="text-xs text-slate-600 mb-4">Only Finance and the Super Admin can see this tab.</p>
+      <div id="finTabs" class="flex flex-wrap gap-2 mb-3">
+        <button type="button" class="chip active" data-fintab="overview">Overview</button>
+        <button type="button" class="chip" data-fintab="transactions">Transactions</button>
+        <button type="button" class="chip" data-fintab="held">Held funds</button>
+        <button type="button" class="chip" data-fintab="payouts">Payout liabilities</button>
+        <button type="button" class="chip" data-fintab="refunds">Refunds</button>
+        <button type="button" class="chip" data-fintab="recon">Reconciliation</button>
+        <button type="button" class="chip" data-fintab="controls">Approvals</button>
+        <button type="button" class="chip" data-fintab="pricing">Pricing</button>
       </div>
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <select id="finPeriod" class="!w-auto !py-1.5 !text-xs"><option value="today">Today</option><option value="7d">Last 7 days</option><option value="30d" selected>Last 30 days</option><option value="month">This month</option><option value="all">All time</option></select>
+        <button type="button" id="finRefresh" class="btn-secondary !py-1.5 !text-xs">Refresh</button>
+        <span id="finStatus" class="text-[11px] text-slate-500"></span>
+      </div>
+      <div id="finBody"></div>
+    </section>
 
-      <div id="financeList" class="space-y-2"></div>
+    <!-- ---- Transactions monitor (Developer: read-only) ---- -->
+    <section data-view="transactions">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">Transactions</h2>
+      <p class="text-sm text-slate-500 mb-1">Payments between tenants, buyers and hosts, commissions and fees paid to MainTown, and payouts, as they happen. Read-only: the last 7 days, no names and no totals.</p>
+      <p class="text-xs text-slate-600 mb-4">Need a change or a decision on money? Ask in Team Chat.</p>
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <select id="dvCat" class="!w-auto !py-1.5 !text-xs"></select>
+        <select id="dvStatus" class="!w-auto !py-1.5 !text-xs"><option value="">Any status</option><option value="SUCCESSFUL">Successful</option><option value="PENDING_ESCROW">Held</option><option value="DISPUTED">Disputed</option><option value="REFUNDED">Refunded</option><option value="PENDING">Pending</option></select>
+        <input type="search" id="dvSearch" placeholder="Search reference or property" class="!w-auto !py-1.5 !text-xs">
+        <button type="button" id="dvRefresh" class="btn-secondary !py-1.5 !text-xs">Refresh</button>
+      </div>
+      <div id="dvList" class="space-y-2"></div>
+    </section>
+
+    <!-- ---- Team Chat: messages, reminders and approval requests between staff ---- -->
+    <section data-view="teamchat">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">Team Chat</h2>
+      <p class="text-sm text-slate-500 mb-4">Talk to the whole team or one person, set reminders, and ask the Super Admin (or the Developer, for technical access) for approval. Finance requests always go to the Super Admin.</p>
+      <div id="chatApprovals" class="mb-4"></div>
+      <div id="chatReminders" class="mb-4"></div>
+      <div class="flex items-center gap-2 mb-2"><label class="text-xs text-slate-400">Chat with</label><select id="chatWith" class="!w-auto !py-1.5 !text-xs"></select></div>
+      <div id="chatMsgs" class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2 overflow-y-auto" style="height:48vh;"></div>
+      <div class="mt-3 bg-slate-900 border border-slate-800 rounded-xl p-3">
+        <div class="flex gap-2 mb-2">
+          <button type="button" class="chip active" data-chatmode="message">Message</button>
+          <button type="button" class="chip" data-chatmode="reminder">Reminder</button>
+          <button type="button" class="chip" data-chatmode="approval">Ask for approval</button>
+        </div>
+        <div id="chatExtra" class="space-y-2 mb-2"></div>
+        <textarea id="chatBody" rows="2" class="!text-sm" placeholder="Type a message"></textarea>
+        <div class="flex justify-end mt-2"><button type="button" id="chatSend" class="btn-primary !py-1.5 !text-sm">Send</button></div>
+      </div>
     </section>
 
     <!-- ---- Staff Access (Super Admin only) ----
@@ -976,20 +1021,21 @@
   // Which dashboard tabs each role gets. Edit these arrays to change who
   // sees what — the tab bar and every data load below all key off this.
   const ROLE_VIEWS = {
-    super_admin: ['support', 'supportchat', 'explore', 'listings', 'partners', 'signups', 'legalreview', 'quickfix', 'inspections', 'landlords', 'finance', 'staff'],
-    developer:   ['support', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance'],
-    finance:     ['finance', 'landlords'],
+    super_admin: ['support', 'supportchat', 'explore', 'listings', 'partners', 'signups', 'legalreview', 'quickfix', 'inspections', 'landlords', 'finance', 'teamchat', 'staff'],
+    // Developer: monitors transactions only (read-only, last 7 days, no names, no revenue totals) and has no finance controls.
+    developer:   ['support', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'transactions', 'teamchat'],
+    finance:     ['finance', 'landlords', 'teamchat'],
     // Sales staff follow up inspections and bookings; nothing else.
-    sales_staff: ['inspections'],
-    legal:       ['signups', 'legalreview'],
+    sales_staff: ['inspections', 'teamchat'],
+    legal:       ['signups', 'legalreview', 'teamchat'],
     // Least privilege: support sees customer requests and the inspection/booking schedule,
     // never finance, sign-up (KYC) documents, listings admin or staff access.
-    customer_service: ['support', 'supportchat', 'quickfix', 'inspections'],
+    customer_service: ['support', 'supportchat', 'quickfix', 'inspections', 'teamchat'],
     // Content team: writes Explore / Housing Updates posts and nothing else.
-    media_editor: ['explore'],
+    media_editor: ['explore', 'teamchat'],
   };
   const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal', customer_service: 'Customer Service', media_editor: 'Media', sales_staff: 'Sales Staff' };
-  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspections', legalreview: 'Legal Review', landlords: 'Managed Landlords', finance: 'Finance', staff: 'Staff Access' };
+  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspections', transactions: 'Transactions', teamchat: 'Team Chat', legalreview: 'Legal Review', landlords: 'Managed Landlords', finance: 'Finance', staff: 'Staff Access' };
   let currentStaffRole = null;
   let currentStaffName = null;
   let currentView = null;
@@ -1044,7 +1090,9 @@
     if (view === 'explore') loadExplore();
     if (view === 'quickfix') loadQuickFixRequests();
     if (view === 'inspections') loadInspections();
-    if (view === 'finance') loadFinanceList();
+    if (view === 'finance') loadFinance();
+    if (view === 'transactions') loadDevTransactions();
+    if (view === 'teamchat') loadChat();
     if (view === 'staff') loadStaffUsers();
   }
 
@@ -2486,6 +2534,474 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   }
 
   document.getElementById('refreshQuickFixBtn').addEventListener('click', loadQuickFixRequests);
+
+  // ---------- Finance dashboard (Finance + Super Admin) and Developer transaction monitor ----------
+  // Everything is built from the ledger the app reports (finance_ledger, read through finance_ledger_view).
+  // The view enforces who sees what: Finance and Super Admin see everything; the Developer sees only the last
+  // 7 days without names. Totals and revenue are never drawn for the Developer.
+  const FIN_STREAMS = { commission: 'Agency commission', legal_fee: 'Legal fee', shortlet_fee: 'Short-let platform fee (5%)', ai_screening: 'Screening and processing fees', upgrade: 'Upgrade fees' };
+  const FIN_GROSS = ['RENT_PAYMENT', 'PURCHASE_PAYMENT', 'SHORTLET_BOOKING'];
+  const FIN_CAT_LABEL = {
+    RENT_PAYMENT: 'Rent', PURCHASE_PAYMENT: 'Land / property purchase', SHORTLET_BOOKING: 'Short-let booking',
+    SHORTLET_PAYOUT: 'Short-let host payout', SHORTLET_REFUND: 'Short-let refund', SHORTLET_REFUND_REVERSAL: 'Short-let refund recovery',
+    SHORTLET_CAUTION_HELD: 'Short-let caution fee held', LANDLORD_PAYOUT: 'Landlord / seller payout',
+    AGENT_COMMISSION: 'Agent commission share', COMPANY_COMMISSION: 'Company commission share',
+    AI_FEE: 'Screening / processing fee', UPGRADE_FEE: 'Upgrade fee', TOPUP: 'Wallet top-up', WITHDRAWAL: 'Wallet withdrawal',
+    MAINTOWN_COMMISSION: 'MainTown commission', MAINTOWN_LEGAL_FEE: 'MainTown legal fee', MAINTOWN_SHORTLET_FEE: 'MainTown short-let fee'
+  };
+  const finCatLabel = c => FIN_CAT_LABEL[c] || String(c || '').replace(/_/g, ' ').toLowerCase();
+  const FIN_PAYOUT = ['LANDLORD_PAYOUT', 'SHORTLET_PAYOUT', 'AGENT_COMMISSION', 'COMPANY_COMMISSION'];
+  const FIN_CRITICAL = ['Finance: release held funds', 'Finance: freeze or hold a payout', 'Finance: approve a refund', 'Finance: manual balance adjustment', 'Finance: change the fee schedule', 'Finance: change payout bank details', 'Finance: write off or settle an exception'];
+  const FIN_EXC_CATS = { timing: 'Timing difference', fee: 'Fee difference', failed_split: 'Failed split', reversal: 'Reversal', missing_entry: 'Missing entry', failed_payout: 'Failed payout', dispute: 'Dispute', other: 'Other' };
+  let finTxns = [], finTab = 'overview', finErr = null, finLoadedAt = 0, finShown = 100, finRecon = [], finExc = [];
+
+  const finMoney = n => '₦' + Math.round(Number(n) || 0).toLocaleString('en-US');
+  const finSum = (rows) => rows.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  function finStatusChip(st) {
+    const map = { SUCCESSFUL: ['Successful', 'emerald'], PENDING_ESCROW: ['Held', 'amber'], DISPUTED: ['Disputed', 'red'], REFUNDED: ['Refunded', 'sky'], PENDING: ['Pending', 'amber'] };
+    const [l, c] = map[st] || [st || 'Unknown', 'slate'];
+    return `<span class="text-[11px] px-2 py-0.5 rounded-full border bg-${c}-500/15 text-${c}-300 border-${c}-500/30">${escapeQuickFix(l)}</span>`;
+  }
+  async function fetchLedger() {
+    const all = [];
+    for (let from = 0; from < 20000; from += 1000) {
+      const { data, error } = await sb.from('finance_ledger_view').select('*').order('created_at', { ascending: true }).range(from, from + 999);
+      if (error) return { error };
+      all.push(...data);
+      if (data.length < 1000) break;
+    }
+    return { data: all };
+  }
+  // One row per transaction: its first (created) event plus the status from its latest event.
+  function buildTxns(rows) {
+    const by = new Map();
+    rows.forEach(r => {
+      let t = by.get(r.txn_ref); if (!t) { t = { created: null, latest: null }; by.set(r.txn_ref, t); }
+      if (r.event_type === 'created') t.created = r;
+      if (!t.latest || String(r.created_at) >= String(t.latest.created_at)) t.latest = r;
+    });
+    return [...by.values()].map(t => { const base = t.created || t.latest; return Object.assign({}, base, { status: t.latest.status, date: base.occurred_at }); })
+      .sort((x, y) => new Date(y.date) - new Date(x.date));
+  }
+  function finPeriodStart() {
+    const v = document.getElementById('finPeriod').value, d = new Date();
+    if (v === 'all') return null;
+    if (v === 'today') { d.setHours(0, 0, 0, 0); return d; }
+    if (v === 'month') return new Date(d.getFullYear(), d.getMonth(), 1);
+    return new Date(Date.now() - (v === '7d' ? 7 : 30) * 864e5);
+  }
+  function finInPeriod() { const s = finPeriodStart(); return s ? finTxns.filter(t => new Date(t.date) >= s) : finTxns; }
+  function txnCardHtml(t, showNames) {
+    const credit = t.direction === 'credit';
+    return `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white">${escapeQuickFix(t.title || finCatLabel(t.category))}</span><span class="text-[11px] px-2 py-0.5 rounded-full border border-sky-500/30 text-sky-300 bg-sky-500/10">${escapeQuickFix(finCatLabel(t.category))}</span>${finStatusChip(t.status)}${t.stream ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-violet-500/30 text-violet-300 bg-violet-500/10">MainTown revenue</span>' : ''}</div>
+        <span class="text-sm font-semibold ${credit ? 'text-emerald-300' : 'text-slate-200'}">${credit ? '+' : '-'}${finMoney(t.amount)}</span>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-1">${inspTs(t.date)} · ${escapeQuickFix(t.txn_ref)}${showNames && t.party_name ? ' · ' + escapeQuickFix(t.party_name) + (t.party_role ? ' (' + escapeQuickFix(t.party_role) + ')' : '') : ''}${t.sender || t.recipient ? ' · ' + escapeQuickFix(t.sender || '?') + ' to ' + escapeQuickFix(t.recipient || '?') : ''}${t.property_name ? ' · ' + escapeQuickFix(t.property_name) : ''}</p>
+    </div>`;
+  }
+  const finEmpty = msg => `<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">${msg}</div>`;
+  const finCard = (label, value, sub) => `<div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><p class="text-xs text-slate-500">${label}</p><p class="text-xl font-semibold text-white mt-1">${value}</p>${sub ? `<p class="text-[11px] text-slate-500 mt-1">${sub}</p>` : ''}</div>`;
+
+  function finOverview() {
+    const T = finInPeriod();
+    const gross = finSum(T.filter(t => t.direction === 'debit' && FIN_GROSS.includes(t.category) && t.status !== 'REFUNDED'));
+    const revRows = T.filter(t => t.stream);
+    const rev = finSum(revRows);
+    const held = finTxns.filter(t => t.direction === 'credit' && t.status === 'PENDING_ESCROW');
+    const disp = finTxns.filter(t => t.status === 'DISPUTED');
+    const paid = finSum(T.filter(t => t.direction === 'credit' && FIN_PAYOUT.includes(t.category) && t.status === 'SUCCESSFUL'));
+    const wd = finSum(T.filter(t => t.category === 'WITHDRAWAL' && t.direction === 'debit'));
+    const refunds = finSum(T.filter(t => t.category === 'SHORTLET_REFUND')) - finSum(T.filter(t => t.category === 'SHORTLET_REFUND_REVERSAL'));
+    const byStream = Object.keys(FIN_STREAMS).map(k => [FIN_STREAMS[k], finSum(revRows.filter(t => t.stream === k)), revRows.filter(t => t.stream === k).length]);
+    // daily revenue, last 14 days
+    const days = [];
+    for (let i = 13; i >= 0; i--) { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i); days.push({ d, v: 0 }); }
+    finTxns.filter(t => t.stream).forEach(t => { const x = new Date(t.date); x.setHours(0, 0, 0, 0); const row = days.find(r => r.d.getTime() === x.getTime()); if (row) row.v += Number(t.amount) || 0; });
+    const max = Math.max(1, ...days.map(r => r.v));
+    const bars = days.map(r => `<div class="flex-1 flex flex-col items-center justify-end gap-1" title="${r.d.toLocaleDateString('en-GB')}: ${finMoney(r.v)}"><div style="height:${Math.round(r.v * 80 / max)}px;min-height:${r.v ? 2 : 0}px;background:#8b5cf6" class="w-full rounded-t"></div><span class="text-[9px] text-slate-500">${r.d.getDate()}</span></div>`).join('');
+    const openExc = finExc.filter(e => e.status === 'open').length;
+    return `<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        ${finCard('MainTown earned revenue', finMoney(rev), 'Commission, legal fees, short-let fee, screening and upgrade fees')}
+        ${finCard('Gross charges processed', finMoney(gross), 'Tenant, buyer and guest payments')}
+        ${finCard('Held, waiting for release', finMoney(finSum(held)), held.length + ' held' + (disp.length ? ' · ' + disp.length + ' disputed' : ''))}
+        ${finCard('Open exceptions', openExc, 'See Reconciliation')}
+        ${finCard('Credited to beneficiaries', finMoney(paid), 'Landlords, hosts, agents, companies')}
+        ${finCard('Withdrawn to banks', finMoney(wd), 'Wallet withdrawals')}
+        ${finCard('Refunds (net)', finMoney(refunds), 'Short-let refunds less recoveries')}
+        ${finCard('Transactions in period', T.length, '')}
+      </div>
+      <div class="grid lg:grid-cols-2 gap-3 mt-3">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><p class="text-sm font-semibold text-white mb-3">Revenue by stream</p>
+          ${byStream.map(([l, v, n]) => `<div class="flex justify-between text-sm py-1.5 border-b border-slate-800 last:border-0"><span class="text-slate-300">${l} <span class="text-slate-500 text-xs">(${n})</span></span><span class="text-white">${finMoney(v)}</span></div>`).join('')}
+          <p class="text-[11px] text-slate-500 mt-2">Landlord rent, sale proceeds and other beneficiary money are never counted as MainTown revenue. Gateway fees, taxes and refunds are not deducted here yet.</p></div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><p class="text-sm font-semibold text-white mb-1">Revenue, last 14 days</p><p class="text-[11px] text-slate-500 mb-3">MainTown earned revenue per day</p><div class="flex items-end gap-1 h-24">${bars}</div></div>
+      </div>`;
+  }
+  function finTransactions() {
+    const T = finInPeriod();
+    const cats = Array.from(new Set(finTxns.map(t => t.category).filter(Boolean))).sort();
+    return `<div class="flex flex-wrap items-center gap-2 mb-3">
+        <select id="finCat" class="!w-auto !py-1.5 !text-xs"><option value="">All types</option>${cats.map(c => `<option value="${c}">${escapeQuickFix(finCatLabel(c))}</option>`).join('')}</select>
+        <select id="finSt" class="!w-auto !py-1.5 !text-xs"><option value="">Any status</option><option value="SUCCESSFUL">Successful</option><option value="PENDING_ESCROW">Held</option><option value="DISPUTED">Disputed</option><option value="REFUNDED">Refunded</option><option value="PENDING">Pending</option></select>
+        <input type="search" id="finQ" placeholder="Search name, reference or property" class="!w-auto !py-1.5 !text-xs">
+      </div><div id="finTxnList" class="space-y-2" data-total="${T.length}"></div>`;
+  }
+  function finRenderTxnList() {
+    const el = document.getElementById('finTxnList'); if (!el) return;
+    const cat = (document.getElementById('finCat') || {}).value || '', st = (document.getElementById('finSt') || {}).value || '', q = ((document.getElementById('finQ') || {}).value || '').toLowerCase();
+    const rows = finInPeriod().filter(t => (!cat || t.category === cat) && (!st || t.status === st) && (!q || [t.txn_ref, t.party_name, t.property_name, t.title].some(v => String(v || '').toLowerCase().includes(q))));
+    if (!rows.length) { el.innerHTML = finEmpty('No transactions match.'); return; }
+    el.innerHTML = `<p class="text-xs text-slate-500">${rows.length} transactions · ${finMoney(finSum(rows))} total value</p>` + rows.slice(0, finShown).map(t => txnCardHtml(t, true)).join('')
+      + (rows.length > finShown ? '<button type="button" class="btn-secondary !text-xs" id="finMore">Show more</button>' : '');
+  }
+  function finHeld() {
+    const held = finTxns.filter(t => t.status === 'PENDING_ESCROW' || t.status === 'DISPUTED');
+    if (!held.length) return finEmpty('Nothing is held right now.');
+    const age = t => Math.floor((Date.now() - new Date(t.date)) / 864e5);
+    const bucket = (lo, hi) => held.filter(t => age(t) >= lo && age(t) <= hi);
+    const b = [['0 to 7 days', bucket(0, 7)], ['8 to 14 days', bucket(8, 14)], ['15 days or more', bucket(15, 99999)]];
+    return `<div class="grid grid-cols-3 gap-3 mb-3">${b.map(([l, r]) => finCard(l, finMoney(finSum(r)), r.length + ' items')).join('')}</div>
+      <p class="text-[11px] text-slate-500 mb-3">Sale proceeds are held until the buyer confirms documents (or 7 days after dispatch); a buyer dispute freezes them. Short-let host shares are held until check-in. To release or freeze, request approval from the Super Admin.</p>
+      <div class="space-y-2">${held.map(t => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5">
+        <div class="flex items-center justify-between gap-2 flex-wrap"><div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white">${escapeQuickFix(t.title || t.category)}</span>${finStatusChip(t.status)}${age(t) >= 14 ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-red-500/30 text-red-300 bg-red-500/10">Overdue?</span>' : ''}</div><span class="text-sm font-semibold text-white">${finMoney(t.amount)}</span></div>
+        <p class="text-[11px] text-slate-500 mt-1">${escapeQuickFix(t.party_name || 'Beneficiary')} (${escapeQuickFix(t.party_role || 'user')}) · held ${age(t)} day(s) · ${escapeQuickFix(t.property_name || '')} · ${escapeQuickFix(t.txn_ref)}</p>
+        <div class="flex gap-2 mt-2"><button type="button" class="btn-secondary !py-1 !text-xs" data-fin-request="Finance: release held funds" data-ref="${escapeQuickFix(t.txn_ref)}" data-amount="${Math.round(t.amount)}">Request release</button><button type="button" class="btn-secondary !py-1 !text-xs" data-fin-request="Finance: freeze or hold a payout" data-ref="${escapeQuickFix(t.txn_ref)}" data-amount="${Math.round(t.amount)}">Request freeze</button></div>
+      </div>`).join('')}</div>`;
+  }
+  function finBalances() {
+    const m = new Map();
+    finTxns.forEach(t => {
+      if (!t.user_id || t.user_id === 'maintown') return;
+      let r = m.get(t.user_id); if (!r) { r = { id: t.user_id, name: t.party_name, role: t.party_role, bal: 0, held: 0, paid: 0, wd: 0 }; m.set(t.user_id, r); }
+      if (!r.name && t.party_name) r.name = t.party_name;
+      const amt = Number(t.amount) || 0;
+      if (t.status === 'SUCCESSFUL') r.bal += t.direction === 'credit' ? amt : -amt;
+      if (t.status === 'PENDING_ESCROW' || t.status === 'DISPUTED') r.held += amt;
+      if (t.direction === 'credit' && FIN_PAYOUT.includes(t.category) && t.status === 'SUCCESSFUL') r.paid += amt;
+      if (t.category === 'WITHDRAWAL' && t.direction === 'debit') r.wd += amt;
+    });
+    return [...m.values()].sort((x, y) => y.bal - x.bal);
+  }
+  function finPayouts() {
+    const rows = finBalances().filter(r => r.bal > 0 || r.held > 0 || r.paid > 0);
+    const owed = rows.reduce((s, r) => s + Math.max(0, r.bal), 0);
+    if (!rows.length) return finEmpty('No beneficiary balances yet.');
+    return `<div class="grid grid-cols-2 gap-3 mb-3">${finCard('Wallet balances owed to users', finMoney(owed), 'Per ledger. These wallets are app records, not provider-held balances, until the payment provider is live.')}${finCard('Beneficiaries', rows.length, '')}</div>
+      <div class="space-y-2">${rows.map(r => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5"><div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-sm text-white">${escapeQuickFix(r.name || r.id)} <span class="text-xs text-slate-500">(${escapeQuickFix(r.role || 'user')})</span></span><span class="text-sm font-semibold text-white">${finMoney(r.bal)}</span></div>
+        <p class="text-[11px] text-slate-500 mt-1">Credited ${finMoney(r.paid)} · Withdrawn ${finMoney(r.wd)} · Still held ${finMoney(r.held)}</p></div>`).join('')}</div>`;
+  }
+  function finRefunds() {
+    const rows = finInPeriod().filter(t => /REFUND/.test(t.category || ''));
+    if (!rows.length) return finEmpty('No refunds or reversals in this period.');
+    const net = finSum(rows.filter(t => t.category === 'SHORTLET_REFUND')) - finSum(rows.filter(t => t.category === 'SHORTLET_REFUND_REVERSAL'));
+    return `<div class="grid grid-cols-2 gap-3 mb-3">${finCard('Net refunds', finMoney(net), rows.length + ' entries')}${finCard('Refund rule', 'Never from MainTown funds', 'Refunds come from the held host amount, or are recovered from the host wallet or next payout.')}</div><div class="space-y-2">${rows.map(t => txnCardHtml(t, true)).join('')}</div>`;
+  }
+  const RECON_HELP = {
+    gateway: 'Ledger figure = card top-ups credited on the day. Compare with the payment provider settlement or bank credit.',
+    wallet: 'Ledger figure = net wallet movement on the day (credits less debits, excluding MainTown). Compare with provider wallet records.',
+    payout: 'Ledger figure = wallet withdrawals to banks on the day. Compare with provider payout report and bank debits.',
+    held_funds: 'Ledger figure = value of currently held items created up to the end of the day. Compare with the provider hold balance.',
+    refunds: 'Ledger figure = net refunds on the day. Compare with provider refund report.',
+    month_end: 'Ledger figure = MainTown earned revenue for the month of the date. Compare with the close pack.'
+  };
+  function reconLedgerTotal(scope, dateStr) {
+    if (!dateStr) return 0;
+    const start = new Date(dateStr + 'T00:00:00'), end = new Date(start.getTime() + 864e5);
+    const inDay = t => { const d = new Date(t.date); return d >= start && d < end; };
+    const D = finTxns.filter(inDay), ok = t => t.status === 'SUCCESSFUL';
+    if (scope === 'gateway') return finSum(D.filter(t => t.category === 'TOPUP' && t.direction === 'credit' && ok(t)));
+    if (scope === 'wallet') return D.filter(t => t.user_id !== 'maintown' && ok(t)).reduce((s, t) => s + (t.direction === 'credit' ? 1 : -1) * (Number(t.amount) || 0), 0);
+    if (scope === 'payout') return finSum(D.filter(t => t.category === 'WITHDRAWAL' && t.direction === 'debit'));
+    if (scope === 'held_funds') return finSum(finTxns.filter(t => (t.status === 'PENDING_ESCROW' || t.status === 'DISPUTED') && new Date(t.date) < end));
+    if (scope === 'refunds') return finSum(D.filter(t => t.category === 'SHORTLET_REFUND')) - finSum(D.filter(t => t.category === 'SHORTLET_REFUND_REVERSAL'));
+    const ms = new Date(start.getFullYear(), start.getMonth(), 1), me = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+    return finSum(finTxns.filter(t => t.stream && new Date(t.date) >= ms && new Date(t.date) < me));
+  }
+  function finRecon_() {
+    const today = new Date().toISOString().slice(0, 10);
+    const iAmSuper = currentStaffRole === 'super_admin';
+    const recon = finRecon.map(r => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5">
+        <div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-sm text-white">${escapeQuickFix(r.scope.replace('_', ' '))} · ${escapeQuickFix(r.recon_date)}</span>${lrStatusChip(r.status === 'signed_off' ? 'verified' : r.status === 'rejected' ? 'declined' : 'pending').replace('Verified', 'Signed off').replace('Declined', 'Rejected').replace('Waiting for review', 'Waiting for sign-off')}</div>
+        <p class="text-xs text-slate-400 mt-1">Provider ${finMoney(r.gateway_total)} · Ledger ${finMoney(r.ledger_total)} · Difference <span class="${Number(r.difference) === 0 ? 'text-emerald-300' : 'text-red-300'}">${finMoney(r.difference)}</span></p>
+        ${r.notes ? `<p class="text-[11px] text-slate-500 mt-1">${escapeQuickFix(r.notes)}</p>` : ''}
+        <p class="text-[11px] text-slate-600 mt-1">Prepared by ${escapeQuickFix(r.prepared_by)} · ${inspTs(r.prepared_at)}${r.reviewed_by ? ' · Reviewed by ' + escapeQuickFix(r.reviewed_by) + (r.review_note ? ': ' + escapeQuickFix(r.review_note) : '') : ''}</p>
+        ${iAmSuper && r.status === 'submitted' && r.prepared_by !== finMe ? `<div class="flex gap-2 mt-2"><button type="button" class="btn-primary !py-1 !text-xs" data-recon-act="signoff" data-id="${escapeQuickFix(r.id)}">Sign off</button><button type="button" class="btn-secondary !py-1 !text-xs" data-recon-act="reject" data-id="${escapeQuickFix(r.id)}">Reject</button></div>` : ''}
+        ${iAmSuper && r.status === 'submitted' && r.prepared_by === finMe ? '<p class="text-[11px] text-amber-300 mt-1">You prepared this, so someone else must sign it off.</p>' : ''}
+      </div>`).join('') || finEmpty('No reconciliations yet.');
+    const exc = finExc.map(e => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5">
+        <div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-sm text-white">${escapeQuickFix(FIN_EXC_CATS[e.category] || e.category)}${e.amount ? ' · ' + finMoney(e.amount) : ''}</span><span class="text-[11px] ${e.status === 'open' ? 'text-amber-300' : 'text-emerald-300'}">${e.status === 'open' ? 'Open' : 'Resolved'}</span></div>
+        <p class="text-xs text-slate-400 mt-1">${escapeQuickFix(e.description)}</p>
+        <p class="text-[11px] text-slate-600 mt-1">${e.reference ? 'Ref ' + escapeQuickFix(e.reference) + ' · ' : ''}Owner ${escapeQuickFix(e.owner_email || 'unassigned')}${e.due_date ? ' · due ' + escapeQuickFix(e.due_date) : ''}${e.status === 'resolved' ? ' · ' + escapeQuickFix(e.resolution || '') : ''}</p>
+        ${e.status === 'open' ? `<div class="mt-2"><button type="button" class="btn-secondary !py-1 !text-xs" data-exc-resolve="${escapeQuickFix(e.id)}">Mark resolved</button></div>` : ''}
+      </div>`).join('') || finEmpty('No exceptions logged.');
+    return `<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
+        <p class="text-sm font-semibold text-white mb-1">New reconciliation</p><p class="text-[11px] text-slate-500 mb-3">Prepared by Finance and signed off by a different person (the Super Admin).</p>
+        <div class="grid sm:grid-cols-3 gap-2">
+          <div class="field"><label>Date</label><input type="date" id="rc-date" value="${today}"></div>
+          <div class="field"><label>What are you reconciling?</label><select id="rc-scope"><option value="gateway">Gateway settlement</option><option value="wallet">Wallet movements</option><option value="payout">Payouts and withdrawals</option><option value="held_funds">Held funds</option><option value="refunds">Refunds</option><option value="month_end">Month-end revenue</option></select></div>
+          <div class="field"><label>Provider / bank figure</label><input type="number" id="rc-provider" inputmode="decimal" placeholder="0"></div>
+        </div>
+        <p class="text-xs text-slate-300 mt-2">Ledger figure: <span id="rc-ledger" class="font-semibold text-white"></span> · Difference: <span id="rc-diff" class="font-semibold"></span></p>
+        <p id="rc-help" class="text-[11px] text-slate-500 mt-1"></p>
+        <div class="field mt-2"><label>Notes (explain any difference)</label><textarea id="rc-notes" rows="2"></textarea></div>
+        <button type="button" class="btn-primary mt-2" id="rc-save">Submit for sign-off</button>
+      </div>
+      <p class="text-sm font-semibold text-white mb-2">Reconciliations</p><div class="space-y-2 mb-5">${recon}</div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
+        <p class="text-sm font-semibold text-white mb-2">Log an exception</p>
+        <div class="grid sm:grid-cols-3 gap-2">
+          <div class="field"><label>Type</label><select id="ex-cat">${Object.keys(FIN_EXC_CATS).map(k => `<option value="${k}">${FIN_EXC_CATS[k]}</option>`).join('')}</select></div>
+          <div class="field"><label>Amount</label><input type="number" id="ex-amount" inputmode="decimal"></div>
+          <div class="field"><label>Reference</label><input type="text" id="ex-ref" placeholder="REF-MT-..."></div>
+        </div>
+        <div class="field mt-2"><label>What happened?</label><textarea id="ex-desc" rows="2"></textarea></div>
+        <div class="grid sm:grid-cols-2 gap-2"><div class="field"><label>Owner (email)</label><input type="email" id="ex-owner" value="${escapeQuickFix(finMe || '')}"></div><div class="field"><label>Due date</label><input type="date" id="ex-due"></div></div>
+        <button type="button" class="btn-primary mt-2" id="ex-save">Log exception</button>
+      </div>
+      <p class="text-sm font-semibold text-white mb-2">Exception log</p><div class="space-y-2">${exc}</div>`;
+  }
+  async function finRefreshInputs() {
+    const d = document.getElementById('rc-date'), sc = document.getElementById('rc-scope'); if (!d || !sc) return;
+    const led = reconLedgerTotal(sc.value, d.value), pv = document.getElementById('rc-provider').value;
+    document.getElementById('rc-ledger').textContent = finMoney(led);
+    const diff = (Number(pv) || 0) - led, el = document.getElementById('rc-diff');
+    el.textContent = pv === '' ? '-' : finMoney(diff); el.className = 'font-semibold ' + (pv !== '' && diff !== 0 ? 'text-red-300' : 'text-emerald-300');
+    document.getElementById('rc-help').textContent = RECON_HELP[sc.value] || '';
+  }
+  // Approvals tab: Finance asks for permission on critical actions; Super Admin decides (also in Team Chat).
+  function finControls() {
+    const mine = chatMsgs.filter(m => m.kind === 'approval_request' && m.sender_email === finMe && /^finance/i.test(m.area || ''));
+    const iAmSuper = currentStaffRole === 'super_admin';
+    const pending = chatMsgs.filter(m => m.kind === 'approval_request' && m.request_status === 'pending' && /^finance/i.test(m.area || ''));
+    return `<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
+        <p class="text-sm font-semibold text-white mb-1">Request approval for a critical action</p>
+        <p class="text-[11px] text-slate-500 mb-3">These need the Super Admin's permission before they are carried out. Approval is a recorded permission: the app does not yet carry out the action by itself.</p>
+        <div class="field"><label>Action</label><select id="ap-area">${FIN_CRITICAL.map(x => `<option>${escapeQuickFix(x)}</option>`).join('')}</select></div>
+        <div class="grid grid-cols-2 gap-2"><div class="field"><label>Amount (optional)</label><input type="number" id="ap-amount" inputmode="decimal"></div><div class="field"><label>Reference (optional)</label><input type="text" id="ap-ref" placeholder="REF-MT-..."></div></div>
+        <div class="field"><label>Why is this needed?</label><textarea id="ap-body" rows="2"></textarea></div>
+        <button type="button" class="btn-primary" id="ap-send">Send to Super Admin</button>
+      </div>
+      ${iAmSuper ? `<p class="text-sm font-semibold text-white mb-2">Waiting for your decision</p><div class="space-y-2 mb-5">${pending.map(m => approvalCardHtml(m, true)).join('') || finEmpty('Nothing waiting.')}</div>` : ''}
+      <p class="text-sm font-semibold text-white mb-2">${iAmSuper ? 'All finance requests' : 'My requests'}</p><div class="space-y-2">${(iAmSuper ? chatMsgs.filter(m => m.kind === 'approval_request' && /^finance/i.test(m.area || '')) : mine).slice().reverse().map(m => approvalCardHtml(m, false)).join('') || finEmpty('No requests yet.')}</div>`;
+  }
+  function finRender() {
+    document.querySelectorAll('[data-fintab]').forEach(b => b.classList.toggle('active', b.dataset.fintab === finTab));
+    const body = document.getElementById('finBody');
+    if (finErr) { body.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load the ledger: ${escapeQuickFix(finErr.message)}<p class="text-xs mt-2 text-red-200/80">Run 13_finance_and_team_chat.sql in Supabase SQL Editor if the tables are missing.</p></div>`; return; }
+    if (finTab === 'pricing') { body.innerHTML = '<div id="financeList" class="space-y-2"></div>'; loadFinanceList(); return; }
+    body.innerHTML = { overview: finOverview, transactions: finTransactions, held: finHeld, payouts: finPayouts, refunds: finRefunds, recon: finRecon_, controls: finControls }[finTab]();
+    if (finTab === 'transactions') finRenderTxnList();
+    if (finTab === 'recon') finRefreshInputs();
+    document.getElementById('finStatus').textContent = finLoadedAt ? 'Updated ' + new Date(finLoadedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+  }
+  let finMe = '';
+  async function loadFinance() {
+    document.getElementById('finBody').innerHTML = '<p class="text-sm text-slate-500">Loading the ledger...</p>';
+    try { const u = await sb.auth.getUser(); finMe = (u.data && u.data.user && u.data.user.email) || ''; } catch (e) {}
+    const r = await fetchLedger();
+    if (r.error) { finErr = r.error; finRender(); return; }
+    finErr = null; finTxns = buildTxns(r.data); finLoadedAt = Date.now();
+    const rc = await sb.from('finance_reconciliations').select('*').order('prepared_at', { ascending: false }).limit(100); finRecon = rc.error ? [] : rc.data;
+    const ex = await sb.from('finance_exceptions').select('*').order('created_at', { ascending: false }).limit(200); finExc = ex.error ? [] : ex.data;
+    await loadChatData();
+    finRender();
+  }
+  document.getElementById('finRefresh').addEventListener('click', loadFinance);
+  document.getElementById('finPeriod').addEventListener('change', finRender);
+  document.getElementById('finTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-fintab]'); if (!b) return; finTab = b.dataset.fintab; finShown = 100; finRender(); });
+  document.getElementById('finBody').addEventListener('input', (e) => {
+    if (['finCat', 'finSt', 'finQ'].includes(e.target.id)) finRenderTxnList();
+    if (['rc-date', 'rc-scope', 'rc-provider'].includes(e.target.id)) finRefreshInputs();
+  });
+  document.getElementById('finBody').addEventListener('click', async (e) => {
+    if (e.target.id === 'finMore') { finShown += 100; finRenderTxnList(); return; }
+    const rq = e.target.closest('[data-fin-request]');
+    if (rq) {
+      finTab = 'controls'; finRender();
+      document.getElementById('ap-area').value = rq.dataset.finRequest; document.getElementById('ap-ref').value = rq.dataset.ref || ''; document.getElementById('ap-amount').value = rq.dataset.amount || '';
+      document.getElementById('ap-body').focus(); return;
+    }
+    if (e.target.id === 'ap-send') {
+      const body = document.getElementById('ap-body').value.trim(); if (body.length < 5) { showToast('Explain why this is needed.', true); return; }
+      const ok = await chatInsert({ kind: 'approval_request', body, area: document.getElementById('ap-area').value, amount: Number(document.getElementById('ap-amount').value) || null, reference: document.getElementById('ap-ref').value.trim() || null, request_target_role: 'super_admin', request_status: 'pending' });
+      if (ok) { showToast('Sent to the Super Admin.'); await loadChatData(); finRender(); }
+      return;
+    }
+    if (e.target.id === 'rc-save') {
+      const date = document.getElementById('rc-date').value, scope = document.getElementById('rc-scope').value, pv = document.getElementById('rc-provider').value;
+      if (!date || pv === '') { showToast('Enter the date and the provider / bank figure.', true); return; }
+      const diff = Number(pv) - reconLedgerTotal(scope, date), notes = document.getElementById('rc-notes').value.trim();
+      if (diff !== 0 && notes.length < 5) { showToast('There is a difference. Please explain it in the notes.', true); return; }
+      const { error } = await sb.from('finance_reconciliations').insert({ recon_date: date, scope, gateway_total: Number(pv), ledger_total: reconLedgerTotal(scope, date), notes: notes || null, prepared_by: finMe });
+      if (error) { showToast('Could not save: ' + error.message, true); return; }
+      showToast('Submitted for sign-off.'); loadFinance(); return;
+    }
+    const ra = e.target.closest('[data-recon-act]');
+    if (ra) {
+      let note = null;
+      if (ra.dataset.reconAct === 'reject') { note = prompt('Why are you rejecting this reconciliation? (required)'); if (!note || note.trim().length < 5) return; }
+      const { error } = await sb.from('finance_reconciliations').update({ status: ra.dataset.reconAct === 'signoff' ? 'signed_off' : 'rejected', reviewed_by: finMe, reviewed_at: new Date().toISOString(), review_note: note }).eq('id', ra.dataset.id);
+      if (error) { showToast('Could not save: ' + error.message, true); return; }
+      showToast('Saved.'); loadFinance(); return;
+    }
+    if (e.target.id === 'ex-save') {
+      const desc = document.getElementById('ex-desc').value.trim(); if (desc.length < 5) { showToast('Describe what happened.', true); return; }
+      const { error } = await sb.from('finance_exceptions').insert({ category: document.getElementById('ex-cat').value, amount: Number(document.getElementById('ex-amount').value) || null, reference: document.getElementById('ex-ref').value.trim() || null, description: desc, owner_email: document.getElementById('ex-owner').value.trim() || null, due_date: document.getElementById('ex-due').value || null, created_by: finMe });
+      if (error) { showToast('Could not save: ' + error.message, true); return; }
+      showToast('Exception logged.'); loadFinance(); return;
+    }
+    const rs = e.target.closest('[data-exc-resolve]');
+    if (rs) {
+      const res = prompt('How was this resolved? (required)'); if (!res || res.trim().length < 5) return;
+      const { error } = await sb.from('finance_exceptions').update({ status: 'resolved', resolution: res.trim(), resolved_by: finMe, resolved_at: new Date().toISOString() }).eq('id', rs.dataset.excResolve);
+      if (error) { showToast('Could not save: ' + error.message, true); return; }
+      showToast('Resolved.'); loadFinance(); return;
+    }
+    approvalClick(e);
+  });
+
+  // Developer: read-only stream (the view limits it to 7 days and removes names). No totals, no revenue, no controls.
+  async function loadDevTransactions() {
+    const el = document.getElementById('dvList'); el.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
+    const r = await fetchLedger();
+    if (r.error) { el.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load transactions: ${escapeQuickFix(r.error.message)}</div>`; return; }
+    finTxns = buildTxns(r.data);
+    const cats = Array.from(new Set(finTxns.map(t => t.category).filter(Boolean))).sort(), sel = document.getElementById('dvCat'), keep = sel.value;
+    sel.innerHTML = '<option value="">All types</option>' + cats.map(c => `<option value="${c}">${escapeQuickFix(finCatLabel(c))}</option>`).join(''); sel.value = keep;
+    dvRender();
+  }
+  function dvRender() {
+    const el = document.getElementById('dvList'), cat = document.getElementById('dvCat').value, st = document.getElementById('dvStatus').value, q = document.getElementById('dvSearch').value.toLowerCase();
+    const rows = finTxns.filter(t => (!cat || t.category === cat) && (!st || t.status === st) && (!q || [t.txn_ref, t.property_name, t.title].some(v => String(v || '').toLowerCase().includes(q)))).slice(0, 200);
+    el.innerHTML = rows.length ? rows.map(t => txnCardHtml(t, false)).join('') : finEmpty('No transactions in the last 7 days match.');
+  }
+  document.getElementById('dvRefresh').addEventListener('click', loadDevTransactions);
+  ['dvCat', 'dvStatus'].forEach(id => document.getElementById(id).addEventListener('change', dvRender));
+  document.getElementById('dvSearch').addEventListener('input', dvRender);
+
+  // ---------- Team Chat: messages, reminders, approval requests ----------
+  let chatMsgs = [], chatDir = [], chatWith = '', chatMode = 'message', chatRt = null, chatLastPending = -1;
+  const chatMe = () => finMe;
+  async function chatInsert(row) {
+    if (!finMe) { try { const u = await sb.auth.getUser(); finMe = (u.data && u.data.user && u.data.user.email) || ''; } catch (e) {} }
+    const { error } = await sb.from('admin_chat_messages').insert(Object.assign({ sender_email: finMe, sender_name: currentStaffName, sender_role: currentStaffRole, kind: 'message' }, row));
+    if (error) { showToast('Could not send: ' + error.message, true); return false; }
+    return true;
+  }
+  async function loadChatData() {
+    if (!finMe) { try { const u = await sb.auth.getUser(); finMe = (u.data && u.data.user && u.data.user.email) || ''; } catch (e) {} }
+    const r = await sb.from('admin_chat_messages').select('*').order('created_at', { ascending: true }).limit(600);
+    chatMsgs = r.error ? [] : r.data;
+    return r;
+  }
+  const canDecide = m => m.kind === 'approval_request' && m.request_status === 'pending' && m.sender_email !== finMe && (currentStaffRole === 'super_admin' || currentStaffRole === m.request_target_role);
+  function approvalCardHtml(m, withButtons) {
+    const st = m.request_status;
+    return `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+      <div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-sm text-white">${escapeQuickFix(m.area || 'Request')}${m.amount ? ' · ' + finMoney(m.amount) : ''}</span>${lrStatusChip(st === 'approved' ? 'verified' : st === 'declined' ? 'declined' : 'pending').replace('Verified', 'Approved').replace('Waiting for review', 'Waiting for decision')}</div>
+      <p class="text-xs text-slate-400 mt-1">${escapeQuickFix(m.body).replace(/\n/g, '<br>')}</p>
+      <p class="text-[11px] text-slate-600 mt-1">From ${escapeQuickFix(m.sender_name || m.sender_email)} (${escapeQuickFix(m.sender_role)}) to ${escapeQuickFix(String(m.request_target_role || '').replace('_', ' '))} · ${inspTs(m.created_at)}${m.reference ? ' · ref ' + escapeQuickFix(m.reference) : ''}</p>
+      ${m.decided_by ? `<p class="text-[11px] text-slate-500 mt-1">${st === 'approved' ? 'Approved' : 'Declined'} by ${escapeQuickFix(m.decided_by)} · ${inspTs(m.decided_at)}${m.decision_note ? ': ' + escapeQuickFix(m.decision_note) : ''}</p>` : ''}
+      ${withButtons && canDecide(m) ? `<div class="flex gap-2 mt-2"><button type="button" class="btn-primary !py-1 !text-xs" data-ap-act="approve" data-id="${escapeQuickFix(m.id)}">Approve</button><button type="button" class="btn-secondary !py-1 !text-xs" data-ap-act="decline" data-id="${escapeQuickFix(m.id)}">Decline</button></div>` : ''}
+      ${st === 'approved' && m.sender_email === finMe ? `<div class="mt-2"><button type="button" class="btn-secondary !py-1 !text-xs" data-ap-act="done" data-id="${escapeQuickFix(m.id)}">${m.done ? 'Marked as carried out' : 'Mark as carried out'}</button></div>` : ''}
+    </div>`;
+  }
+  async function approvalClick(e) {
+    const b = e.target.closest('[data-ap-act]'); if (!b) return;
+    const act = b.dataset.apAct, id = b.dataset.id;
+    if (act === 'done') { const { error } = await sb.rpc('chat_mark_done', { p_id: id, p_done: true }); if (error) { showToast(error.message, true); return; } }
+    else if (act === 'approve') { if (!confirm('Approve this request?')) return; const { error } = await sb.rpc('chat_decide', { p_id: id, p_approve: true, p_note: null }); if (error) { showToast(error.message, true); return; } showToast('Approved.'); }
+    else if (act === 'decline') { const note = prompt('Why are you declining? (required)'); if (!note || note.trim().length < 5) return; const { error } = await sb.rpc('chat_decide', { p_id: id, p_approve: false, p_note: note.trim() }); if (error) { showToast(error.message, true); return; } showToast('Declined.'); }
+    await loadChatData();
+    if (currentView === 'teamchat') chatRender(); else if (currentView === 'finance') finRender();
+  }
+  function chatRender() {
+    const dirSel = document.getElementById('chatWith');
+    const people = chatDir.filter(p => p.email && p.email !== finMe);
+    dirSel.innerHTML = '<option value="">Everyone (team room)</option>' + people.map(p => `<option value="${escapeQuickFix(p.email)}">${escapeQuickFix(p.name || p.email)} (${escapeQuickFix(String(p.role || '').replace('_', ' '))})</option>`).join('');
+    dirSel.value = chatWith;
+    // approvals waiting for me
+    const waiting = chatMsgs.filter(canDecide);
+    document.getElementById('chatApprovals').innerHTML = waiting.length ? `<p class="text-sm font-semibold text-amber-300 mb-2">Waiting for your decision (${waiting.length})</p><div class="space-y-2">${waiting.map(m => approvalCardHtml(m, true)).join('')}</div>` : '';
+    // reminders for me
+    const rem = chatMsgs.filter(m => m.kind === 'reminder' && (m.to_email === finMe) && !m.done).sort((x, y) => new Date(x.remind_at) - new Date(y.remind_at));
+    document.getElementById('chatReminders').innerHTML = rem.length ? `<p class="text-sm font-semibold text-white mb-2">My reminders</p><div class="space-y-2">${rem.map(m => { const due = new Date(m.remind_at) <= new Date(); return `<div class="bg-slate-900 border ${due ? 'border-amber-500/50' : 'border-slate-800'} rounded-xl px-4 py-2.5 flex items-center justify-between gap-2"><div><p class="text-sm text-white">${escapeQuickFix(m.body)}</p><p class="text-[11px] ${due ? 'text-amber-300' : 'text-slate-500'} mt-0.5">${due ? 'Due now · ' : ''}${inspTs(m.remind_at)}${m.sender_email !== finMe ? ' · from ' + escapeQuickFix(m.sender_name || m.sender_email) : ''}</p></div><button type="button" class="btn-secondary !py-1 !text-xs" data-chat-done="${escapeQuickFix(m.id)}">Done</button></div>`; }).join('')}</div>` : '';
+    // the conversation
+    const inRoom = m => chatWith ? ((m.sender_email === finMe && m.to_email === chatWith) || (m.sender_email === chatWith && m.to_email === finMe)) : !m.to_email;
+    const list = chatMsgs.filter(m => inRoom(m) && !(m.kind === 'reminder' && m.to_email === finMe && m.sender_email === finMe));
+    const box = document.getElementById('chatMsgs'), atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
+    box.innerHTML = list.length ? list.map(m => {
+      const mine = m.sender_email === finMe;
+      if (m.kind === 'approval_request') return approvalCardHtml(m, true);
+      return `<div class="flex ${mine ? 'justify-end' : 'justify-start'}"><div class="max-w-[85%] rounded-xl px-3 py-2 ${mine ? 'bg-violet-600/30 border border-violet-500/30' : 'bg-slate-800 border border-slate-700'}">
+        <p class="text-[11px] ${mine ? 'text-violet-200' : 'text-slate-400'}">${mine ? 'You' : escapeQuickFix(m.sender_name || m.sender_email)} · ${escapeQuickFix(String(m.sender_role || '').replace('_', ' '))}${m.kind === 'reminder' ? ' · Reminder for ' + inspTs(m.remind_at) : ''}</p>
+        <p class="text-sm text-white mt-0.5">${escapeQuickFix(m.body).replace(/\n/g, '<br>')}</p><p class="text-[10px] text-slate-500 mt-0.5">${inspTs(m.created_at)}</p></div></div>`;
+    }).join('') : '<p class="text-sm text-slate-500">No messages yet. Say hello.</p>';
+    if (atEnd) box.scrollTop = box.scrollHeight;
+    // composer extras
+    const extra = document.getElementById('chatExtra');
+    if (chatMode === 'reminder') extra.innerHTML = `<div class="field"><label>Remind ${chatWith ? 'them' : 'me'} at</label><input type="datetime-local" id="chat-remind"></div>`;
+    else if (chatMode === 'approval') {
+      const areas = (currentStaffRole === 'finance' ? FIN_CRITICAL.concat(['Access: I need a permission', 'Other']) : ['Access: I need a permission', 'Technical: developer help', 'Other']);
+      extra.innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="field"><label>Area</label><select id="chat-area">${areas.map(x => `<option>${escapeQuickFix(x)}</option>`).join('')}</select></div><div class="field"><label>Ask</label><select id="chat-target"><option value="super_admin">Super Admin</option><option value="developer">Developer</option></select></div></div>
+        <div class="grid grid-cols-2 gap-2"><div class="field"><label>Amount (optional)</label><input type="number" id="chat-amount" inputmode="decimal"></div><div class="field"><label>Reference (optional)</label><input type="text" id="chat-ref"></div></div>
+        <p class="text-[11px] text-slate-500">Finance requests always go to the Super Admin.</p>`;
+    } else extra.innerHTML = '';
+    document.querySelectorAll('[data-chatmode]').forEach(b => b.classList.toggle('active', b.dataset.chatmode === chatMode));
+    document.getElementById('chatBody').placeholder = chatMode === 'reminder' ? 'What should the reminder say?' : chatMode === 'approval' ? 'Explain what you need approved and why' : 'Type a message';
+  }
+  async function loadChat() {
+    if (!chatDir.length) { const d = await sb.rpc('chat_directory'); chatDir = d.error ? [] : (d.data || []); }
+    const r = await loadChatData();
+    if (r.error) { document.getElementById('chatMsgs').innerHTML = `<div class="text-sm text-red-300">Could not load chat: ${escapeQuickFix(r.error.message)}. Run 13_finance_and_team_chat.sql in Supabase SQL Editor.</div>`; return; }
+    chatRender();
+    if (!chatRt) {
+      chatRt = sb.channel('admin-chat').on('postgres_changes', { event: '*', schema: 'public', table: 'admin_chat_messages' }, async () => {
+        await loadChatData(); if (currentView === 'teamchat') chatRender(); else if (currentView === 'finance' && finTab === 'controls') finRender();
+      }).subscribe();
+      setInterval(async () => { if (currentView === 'teamchat') { await loadChatData(); chatRender(); } }, 20000);
+    }
+  }
+  document.getElementById('chatWith').addEventListener('change', (e) => { chatWith = e.target.value; chatRender(); });
+  document.querySelector('[data-view="teamchat"]').addEventListener('click', async (e) => {
+    const mode = e.target.closest('[data-chatmode]'); if (mode) { chatMode = mode.dataset.chatmode; chatRender(); return; }
+    const dn = e.target.closest('[data-chat-done]');
+    if (dn) { const { error } = await sb.rpc('chat_mark_done', { p_id: dn.dataset.chatDone, p_done: true }); if (error) { showToast(error.message, true); return; } await loadChatData(); chatRender(); return; }
+    await approvalClick(e);
+  });
+  document.getElementById('chatSend').addEventListener('click', async () => {
+    const body = document.getElementById('chatBody').value.trim(); if (!body) return;
+    let row = { body, to_email: chatWith || null };
+    if (chatMode === 'reminder') {
+      const when = document.getElementById('chat-remind').value; if (!when) { showToast('Pick when to remind.', true); return; }
+      row = { body, kind: 'reminder', remind_at: new Date(when).toISOString(), to_email: chatWith || finMe };
+    } else if (chatMode === 'approval') {
+      const area = document.getElementById('chat-area').value; let target = document.getElementById('chat-target').value;
+      if (/^finance/i.test(area)) target = 'super_admin';
+      row = { body, kind: 'approval_request', area, request_target_role: target, request_status: 'pending', amount: Number(document.getElementById('chat-amount').value) || null, reference: document.getElementById('chat-ref').value.trim() || null, to_email: null };
+    }
+    const btn = document.getElementById('chatSend'); btn.disabled = true;
+    const ok = await chatInsert(row); btn.disabled = false;
+    if (ok) { document.getElementById('chatBody').value = ''; await loadChatData(); chatRender(); }
+  });
+  // Reminders that fall due while the admin page is open, and new approval requests waiting for you.
+  const chatToasted = new Set();
+  async function chatBackgroundCheck() {
+    if (!currentStaffRole) return;
+    try {
+      if (!finMe) { const u = await sb.auth.getUser(); finMe = (u.data && u.data.user && u.data.user.email) || ''; }
+      const due = await sb.from('admin_chat_messages').select('id,body').eq('kind', 'reminder').eq('to_email', finMe).eq('done', false).lte('remind_at', new Date().toISOString());
+      (due.data || []).forEach(m => { if (!chatToasted.has(m.id)) { chatToasted.add(m.id); showToast('Reminder: ' + m.body); } });
+      const pend = await sb.from('admin_chat_messages').select('id,sender_email,request_target_role').eq('kind', 'approval_request').eq('request_status', 'pending');
+      const n = (pend.data || []).filter(m => m.sender_email !== finMe && (currentStaffRole === 'super_admin' || currentStaffRole === m.request_target_role)).length;
+      if (chatLastPending >= 0 && n > chatLastPending) showToast('You have ' + n + ' approval request(s) waiting in Team Chat.');
+      chatLastPending = n;
+    } catch (e) {}
+  }
+  setInterval(chatBackgroundCheck, 60000);
+  setTimeout(chatBackgroundCheck, 8000);
 
   // ---------- Legal Review ----------
   // Property documents (legal_reviews) and the app KYC report (app_kyc_submissions). Files live in the private
