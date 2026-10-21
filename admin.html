@@ -853,7 +853,7 @@
     <section data-view="inspections">
       <div class="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div>
-          <h2 class="font-display font-semibold text-lg text-white mb-1">Inspections &amp; Schedules</h2>
+          <h2 class="font-display font-semibold text-lg text-white mb-1">Inspection Logs</h2>
           <p class="text-sm text-slate-500">Every host and guest booking, with the date and the exact time each step happened (Lagos time). Open an item to assign it, log your call and set its follow-up status.</p>
         </div>
         <div class="flex items-center gap-2"><button type="button" id="clearAllInspBtn" class="btn-secondary hidden" style="color:#fca5a5">Delete all inspections</button><button type="button" id="refreshInspBtn" class="btn-secondary">Refresh</button></div>
@@ -862,11 +862,13 @@
       <div id="inspSummary" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5"></div>
 
       <div class="flex flex-wrap items-center gap-2 mb-3">
-        <button type="button" class="chip active" data-insp-tab="schedule">Schedule</button>
+        <button type="button" class="chip active" data-insp-tab="table">Table</button>
+        <button type="button" class="chip" data-insp-tab="schedule">Schedule</button>
         <button type="button" class="chip" data-insp-tab="log">Activity log</button>
       </div>
 
       <div class="flex flex-wrap items-center gap-2 mb-4">
+        <select id="inspCategory" class="!w-auto !py-1.5 !text-xs"></select>
         <select id="inspFlow" class="!w-auto !py-1.5 !text-xs"></select>
         <select id="inspStatus" class="!w-auto !py-1.5 !text-xs"></select>
         <select id="inspFollow" class="!w-auto !py-1.5 !text-xs"><option value="">All follow-up</option><option value="needs">Needs follow-up</option><option value="unassigned">Unassigned</option><option value="mine">Assigned to me</option></select>
@@ -1081,7 +1083,7 @@
     media_editor: ['explore', 'teamchat'],
   };
   const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal', customer_service: 'Customer Service', media_editor: 'Media', sales_staff: 'Sales Staff' };
-  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspections', transactions: 'Transactions', teamchat: 'Team Chat', legalreview: 'Legal Review', landlords: 'Managed Landlords', finance: 'Finance', staff: 'Staff Access' };
+  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspection Logs', transactions: 'Transactions', teamchat: 'Team Chat', legalreview: 'Legal Review', landlords: 'Managed Landlords', finance: 'Finance', staff: 'Staff Access' };
   let currentStaffRole = null;
   let currentStaffName = null;
   let currentView = null;
@@ -3423,9 +3425,16 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     requested: 'Requested', confirmed: 'Confirmed', declined: 'Declined', cancelled: 'Cancelled', completed: 'Completed',
     rescheduled: 'Rescheduled', conducted: 'Inspection held, awaiting user', uncompleted: 'Uncompleted (not satisfied)', booked: 'Booked', scheduled: 'Scheduled', checked_in: 'Checked in'
   };
+  const INSP_CATS = { rental: 'Rentals', commercial: 'Commercial', land_property: 'Land & Properties', event_hall: 'Event Halls', shortlet: 'Shortlets', unspecified: 'Not tagged (older record)' };
+  function inspCat(e) {
+    const c = e.details && e.details.category; if (c) return c;
+    if (e.flow === 'shortlet_booking') return 'shortlet';
+    if (e.flow === 'land_inspection' || e.flow === 'land_allocation') return 'land_property';
+    return 'unspecified';
+  }
   const INSP_CLOSED = ['declined', 'cancelled', 'completed', 'uncompleted'];
   let inspCache = [];
-  let inspTab = 'schedule';
+  let inspTab = 'table';
 
   // ---------- Inspection follow-up desk ----------
   // Who is following up each inspection, its follow-up status and notes (table: public.inspection_followups).
@@ -3536,6 +3545,10 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     inspCache = data || [];
     const clrBtn = document.getElementById('clearAllInspBtn'); if (clrBtn) clrBtn.classList.toggle('hidden', currentStaffRole !== 'super_admin');
     await loadInspFollowData();
+    const cats = Array.from(new Set(inspCache.map(inspCat))).sort();
+    const catSel = document.getElementById('inspCategory'), keepCat = catSel.value;
+    catSel.innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option value="${escapeQuickFix(c)}">${escapeQuickFix(INSP_CATS[c] || c)}</option>`).join('');
+    catSel.value = cats.includes(keepCat) ? keepCat : '';
     const flows = Array.from(new Set(inspCache.map(e => e.flow))).sort();
     const flowSel = document.getElementById('inspFlow'), keepFlow = flowSel.value;
     flowSel.innerHTML = '<option value="">All flows</option>' + flows.map(f => `<option value="${escapeQuickFix(f)}">${escapeQuickFix(INSP_FLOWS[f] || f)}</option>`).join('');
@@ -3563,6 +3576,8 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const q = document.getElementById('inspSearch').value.trim().toLowerCase();
     const from = document.getElementById('inspFrom').value, to = document.getElementById('inspTo').value;
     if (flow && e.flow !== flow) return false;
+    const catF = document.getElementById('inspCategory').value;
+    if (catF && inspCat(e) !== catF) return false;
     if (kind && e.kind !== kind) return false;
     const ff = document.getElementById('inspFollow').value;
     if (ff) {
@@ -3572,7 +3587,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       if (ff === 'mine' && !(fu && fu.assigned_to && fu.assigned_to === inspMe)) return false;
       if (ff === 'unassigned' && !(open && !(fu && fu.assigned_to))) return false;
     }
-    if (q && ![e.listing_title, e.guest_name, e.host_name, e.location].some(v => String(v || '').toLowerCase().includes(q))) return false;
+    if (q && ![e.listing_title, e.guest_name, e.host_name, e.location, e.listing_id, e.guest_id, INSP_CATS[inspCat(e)]].some(v => String(v || '').toLowerCase().includes(q))) return false;
     const day = inspDay(e.scheduled_date);
     if ((from || to) && !day) return false;
     if (from && day < from) return false;
@@ -3604,6 +3619,24 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     document.querySelectorAll('[data-insp-tab]').forEach(b => b.classList.toggle('active', b.dataset.inspTab === inspTab));
     const empty = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">No inspections reported yet. They appear here as soon as a guest books through the app.</div>';
     if (!inspCache.length) { listEl.innerHTML = empty; return; }
+
+    if (inspTab === 'table') {
+      const rows = Array.from(latest.values()).filter(inspMatches).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+      if (!rows.length) { listEl.innerHTML = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">Nothing matches these filters.</div>'; return; }
+      const th = h => `<th class="px-3 py-2 font-medium whitespace-nowrap">${h}</th>`;
+      listEl.innerHTML = `<div class="overflow-x-auto bg-slate-900 border border-slate-800 rounded-xl"><table class="w-full text-xs text-left">
+        <thead class="text-slate-400 border-b border-slate-800"><tr>${['Logged', 'Category', 'Property', 'Guest', 'Host', 'Scheduled', 'Status'].map(th).join('')}</tr></thead>
+        <tbody>${rows.map(e => `<tr data-insp-row="${escapeQuickFix(e.entity_key)}" class="border-b border-slate-800/60 align-top cursor-pointer hover:bg-slate-800/40">
+          <td class="px-3 py-2 text-slate-400 whitespace-nowrap">${inspTs(e.created_at)}</td>
+          <td class="px-3 py-2 text-slate-200 whitespace-nowrap">${escapeQuickFix(INSP_CATS[inspCat(e)] || inspCat(e))}<div class="text-slate-500">${escapeQuickFix(INSP_FLOWS[e.flow] || e.flow)}</div></td>
+          <td class="px-3 py-2 text-white">${escapeQuickFix(e.listing_title || 'Property')}<div class="text-slate-500">ID ${escapeQuickFix(e.listing_id || '-')}${e.location ? ' · ' + escapeQuickFix(e.location) : ''}</div></td>
+          <td class="px-3 py-2 text-slate-200">${escapeQuickFix(e.guest_name || e.guest_id || 'Guest')}</td>
+          <td class="px-3 py-2 text-slate-200">${escapeQuickFix(e.host_name || 'Host')}</td>
+          <td class="px-3 py-2 text-slate-300 whitespace-nowrap">${escapeQuickFix(inspWhen(e))}</td>
+          <td class="px-3 py-2">${inspChip(e.kind)}</td></tr>`).join('')}</tbody></table></div>
+        <p class="text-xs text-slate-500 mt-2">${rows.length} record${rows.length === 1 ? '' : 's'}. Click a row to open it, assign it and log follow-up.</p>`;
+      return;
+    }
 
     if (inspTab === 'log') {
       const rows = inspCache.filter(inspMatches);
@@ -3697,7 +3730,13 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     loadInspections();
   });
   document.getElementById('refreshInspBtn').addEventListener('click', loadInspections);
-  ['inspFlow', 'inspStatus', 'inspFollow', 'inspFrom', 'inspTo'].forEach(id => document.getElementById(id).addEventListener('change', renderInspections));
+  document.getElementById('inspList').addEventListener('click', (ev) => {
+    const tr = ev.target.closest('[data-insp-row]'); if (!tr) return;
+    inspOpenKey = tr.dataset.inspRow; inspTab = 'schedule'; renderInspections();
+  });
+  // Near real-time: refresh every 20s while the Inspection Logs tab is open and visible.
+  setInterval(() => { if (currentView === 'inspections' && !document.hidden) loadInspections(); }, 20000);
+  ['inspCategory', 'inspFlow', 'inspStatus', 'inspFollow', 'inspFrom', 'inspTo'].forEach(id => document.getElementById(id).addEventListener('change', renderInspections));
   document.getElementById('inspSearch').addEventListener('input', renderInspections);
   document.querySelectorAll('[data-insp-tab]').forEach(b => b.addEventListener('click', () => { inspTab = b.dataset.inspTab; renderInspections(); }));
 
