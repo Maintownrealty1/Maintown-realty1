@@ -225,7 +225,9 @@
           <option value="rent">Flexible Rent</option>
           <option value="land">Land &amp; Property</option>
           <option value="short-let">Short Let</option>
+          <option value="event-center" id="f-cat-event-center">Event Center (Venue Hire)</option>
         </select>
+        <p class="hint" id="f-event-gate-note" style="display:none;margin-top:6px;">Event centers can only be listed by MainTown staff (Super Admin or Developer) and venue owners in the app. Agents cannot list them.</p>
       </div>
 
       <div class="grid sm:grid-cols-2 gap-x-5">
@@ -487,6 +489,49 @@
             <textarea id="f-sl-about" rows="3" placeholder="Tell guests what makes this place special: the area, the view, who it suits."></textarea>
           </div>
           <p class="hint" style="margin:-6px 0 14px;">Tick "What this place offers" in the Features list below. Smoke alarm, carbon monoxide alarm and first aid kit are shown to guests as safety items.</p>
+        </div>
+
+        <!-- ===== Event Center only (venue hire) ===== -->
+        <div class="field" data-cat="event-center">
+          <label>Venue Hire Price per Event Day (₦)</label>
+          <input type="number" id="f-event-price" min="0" placeholder="e.g. 1500000">
+        </div>
+        <div class="field" data-cat="event-center">
+          <label>Venue Type</label>
+          <select id="f-event-venue-type">
+            <option>Banquet / Event Hall</option><option>Conference Hall</option><option>Outdoor Garden / Lawn</option><option>Rooftop / Terrace</option><option>Hotel Ballroom</option><option>Multi-purpose Hall</option>
+          </select>
+        </div>
+        <div class="field" data-cat="event-center">
+          <label>Capacity (maximum guests)</label>
+          <input type="number" id="f-event-capacity" min="1" step="1" placeholder="e.g. 500">
+        </div>
+        <div class="field" data-cat="event-center">
+          <label>Parking Spaces — optional</label>
+          <input type="number" id="f-event-parking" min="0" step="1" placeholder="e.g. 80">
+        </div>
+        <div class="field" data-cat="event-center">
+          <label>Power Supply</label>
+          <select id="f-event-power"><option>Public grid</option><option selected>Grid + generator</option><option>Grid + inverter/solar</option><option>Generator only</option></select>
+        </div>
+        <div class="sm:col-span-2" data-cat="event-center">
+          <div class="price-box">
+            <h3>Booking availability</h3>
+            <p class="hint" style="margin:-6px 0 12px;">Clients book one event date at a time. Dates that are already booked are blocked automatically; add any other dates the venue is not available.</p>
+            <div class="field">
+              <label>Blocked dates — optional</label>
+              <div class="flex gap-2">
+                <input type="date" id="f-event-block-input" class="flex-1">
+                <button type="button" class="pill" id="f-event-block-add">Block</button>
+              </div>
+              <div id="f-event-block-chips" class="pill-row" style="margin-top:8px;"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>About this venue</label>
+            <textarea id="f-event-about" rows="3" placeholder="Describe the hall: seating, stage, bridal suite, parking, nearest landmarks."></textarea>
+          </div>
+          <p class="hint" style="margin:-6px 0 14px;">Fee: the booker pays a flat 2% MainTown service charge on top of the hire price. The venue owner receives 100% of the hire price. No agency commission or legal fee applies. Tick the venue's amenities in the Features list below.</p>
         </div>
       </div>
 
@@ -1161,6 +1206,7 @@
       return;
     }
     currentStaffRole = staffRow.role;
+    applyEventCenterRoleGate();
     currentStaffName = staffRow.full_name || staffRow.email || null;
     if (staffRow._unlinked) setTimeout(() => showToast('Your login is not linked to your staff record, so lists will look empty. Ask a Super Admin to run staff_access_repair.sql in Supabase.', true), 600);
     loginScreen.classList.add('hidden');
@@ -1199,7 +1245,8 @@
   let selectedFeatures = [];
   const featureChipsEl = document.getElementById('featureChips');
 
-  function currentPresets() { return document.getElementById('f-category').value === 'short-let' ? SL_PRESET_FEATURES : PRESET_FEATURES; }
+  const EVENT_PRESET_FEATURES = ['Air conditioning', 'Stage', 'Sound system', 'Projector / screen', 'Backup generator', 'Parking', 'Catering kitchen', 'Bridal / changing room', 'CCTV & security', 'Restrooms'];
+  function currentPresets() { const c = document.getElementById('f-category').value; return c === 'short-let' ? SL_PRESET_FEATURES : (c === 'event-center' ? EVENT_PRESET_FEATURES : PRESET_FEATURES); }
   function renderFeatureChips() {
     const PRESETS = currentPresets();
     featureChipsEl.innerHTML = PRESETS.map(f =>
@@ -1242,6 +1289,23 @@
   // Listing" (or taps elsewhere) without pressing Enter first, the text
   // would otherwise just sit in the box and silently never get saved.
   document.getElementById('f-feature-custom').addEventListener('blur', commitCustomFeature);
+
+  // ---------- Event Center: who may list one ----------
+  // Only Super Admin and Developer (MainTown staff) can create event center listings here.
+  // Every other role keeps the option hidden, and the publish handler enforces the same rule.
+  const EVENT_CENTER_ROLES = ['super_admin', 'developer'];
+  function canListEventCenterStaff() { return EVENT_CENTER_ROLES.includes(currentStaffRole); }
+  function applyEventCenterRoleGate() {
+    const opt = document.getElementById('f-cat-event-center');
+    if (!opt) return;
+    const ok = canListEventCenterStaff();
+    opt.disabled = !ok; opt.hidden = !ok;
+    if (!ok && document.getElementById('f-category').value === 'event-center' && !editingId) {
+      document.getElementById('f-category').value = 'rent';
+      document.getElementById('f-category').dispatchEvent(new Event('change'));
+    }
+    const note = document.getElementById('f-event-gate-note'); if (note) note.style.display = ok ? '' : 'none';
+  }
 
   // ---------- Category-dependent fields ----------
   // Elements tagged data-cat="rent" / "land" / "short-let" (space-
@@ -1371,7 +1435,7 @@
     const annualField = document.getElementById('f-rent-annual').closest('.field');
     annualField.querySelector('label').textContent = com ? 'Annual Rent (₦) — paid in full upfront' : 'Annual Rent (₦) — optional, fill manually';
     const fp = document.getElementById('feePreview'); if (fp && com) fp.style.display = 'none';
-    if (categorySelect.value === 'short-let' || categorySelect.value === 'rent') renderFeatureChips();
+    if (categorySelect.value === 'short-let' || categorySelect.value === 'rent' || categorySelect.value === 'event-center') renderFeatureChips();
   }
   function renderSlBlocked() {
     document.getElementById('f-sl-block-chips').innerHTML = slBlocked.map(d => `<span class="pill on" data-unblock="${d}" style="cursor:pointer;">${d} ✕</span>`).join('');
@@ -1387,7 +1451,23 @@
     const c = e.target.closest('[data-unblock]'); if (!c) return;
     slBlocked = slBlocked.filter(d => d !== c.dataset.unblock); renderSlBlocked();
   });
+  let evBlocked = [];
+  function renderEvBlocked() {
+    document.getElementById('f-event-block-chips').innerHTML = evBlocked.map(d => `<span class="pill on" data-ev-unblock="${d}" style="cursor:pointer;">${d} ✕</span>`).join('');
+  }
+  document.getElementById('f-event-block-add').addEventListener('click', () => {
+    const v = document.getElementById('f-event-block-input').value;
+    if (v && !evBlocked.includes(v)) { evBlocked.push(v); evBlocked.sort(); renderEvBlocked(); }
+    document.getElementById('f-event-block-input').value = '';
+  });
+  document.getElementById('f-event-block-chips').addEventListener('click', (e) => {
+    const c = e.target.closest('[data-ev-unblock]'); if (!c) return;
+    evBlocked = evBlocked.filter(d => d !== c.dataset.evUnblock); renderEvBlocked();
+  });
   function resetCommercialAndShortlet() {
+    ['f-event-price', 'f-event-capacity', 'f-event-parking', 'f-event-block-input', 'f-event-about'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('f-event-venue-type').selectedIndex = 0; document.getElementById('f-event-power').value = 'Grid + generator';
+    evBlocked = []; renderEvBlocked();
     document.getElementById('f-usage').value = 'residential';
     ['f-com-sqm', 'f-com-parking', 'f-sl-from', 'f-sl-to', 'f-sl-block-input', 'f-sl-about'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('f-com-type').selectedIndex = 0; document.getElementById('f-com-power').selectedIndex = 0;
@@ -1561,6 +1641,31 @@
       if (landUse) fees.push(`Land Use: ${landUse}`);
       fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
         .filter(l => !/^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Plot Size:|^Title Document:|^Land Use:|^Outright Price:|^Installment Price:|^Installment Duration:|^Initial Deposit:|^Legal Fee:|^Survey Plan:|^Red Copy:|^Sold In Parts:|^Price Basis:|^Plots Available:|^Half Plot Price:|^Half Plot Installment:/.test(l)));
+    } else if (category === 'event-center') {
+      if (!canListEventCenterStaff()) {
+        showToast('Only MainTown staff (Super Admin or Developer) can list an event center.', true);
+        return;
+      }
+      beds = 0;
+      const evPrice = parseInt(document.getElementById('f-event-price').value, 10);
+      const evCap = parseInt(document.getElementById('f-event-capacity').value, 10);
+      if (!title || !location || !evPrice) {
+        showToast('Please fill in Title, Location, and Venue Hire Price at minimum.', true);
+        return;
+      }
+      if (!evCap || evCap < 1) { showToast('Enter the maximum number of guests the venue can hold.', true); return; }
+      rentDisplay = `₦${evPrice.toLocaleString('en-US')}/event day`;
+      fees.push(`Venue Type: ${document.getElementById('f-event-venue-type').value}`);
+      fees.push(`Capacity: ${evCap} guests`);
+      const evPark = parseInt(document.getElementById('f-event-parking').value, 10);
+      if (!isNaN(evPark)) fees.push(`Parking Spaces: ${evPark}`);
+      fees.push(`Power Supply: ${document.getElementById('f-event-power').value}`);
+      if (evBlocked.length) fees.push(`Blocked Dates: ${evBlocked.join(', ')}`);
+      fees.push('MainTown Service Charge: 2% of hire fee (paid by the booker)');
+      const evAbout = document.getElementById('f-event-about').value.replace(/\s+/g, ' ').trim();
+      if (evAbout) fees.push(`About This Venue: ${evAbout}`);
+      fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
+        .filter(l => !/^Venue Type:|^Capacity:|^Parking Spaces:|^Power Supply:|^Blocked Dates:|^MainTown Service Charge:|^About This Venue:/.test(l)));
     } else if (category === 'short-let') {
       beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
       const nightly = parseInt(document.getElementById('f-nightly-rate').value, 10);
@@ -1777,7 +1882,7 @@
     const rows = all.filter(l => listingSourceFilter === 'all' || (listingSourceFilter === 'pending' ? l.status === 'pending' : sourceOf(l) === listingSourceFilter));
 
     const rowsHtml = rows.map(l => {
-      const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' };
+      const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let', 'event-center': 'Event Center' };
       let categoryLabel = categoryLabels[l.category] || categoryLabels.rent;
       // Commercial space is stored as a rent listing flagged "Usage: Commercial" — show it as Commercial.
       if ((!l.category || l.category === 'rent') && (l.fees || []).some(f => String(f).trim() === 'Usage: Commercial')) categoryLabel = 'Commercial';
@@ -2112,6 +2217,17 @@
       if (toilets) document.getElementById('f-land-toilets').value = parseInt(toilets.replace(/[^0-9]/g, ''), 10) || '';
       if (parking) document.getElementById('f-land-parking').value = parseInt(parking.replace(/[^0-9]/g, ''), 10) || '';
       remainingFees = allFees.filter(f => !/^Plot Size:|^Title Document:|^Land Use:|^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Outright Price:|^Installment Price:|^Installment Duration:|^Initial Deposit:|^Legal Fee:|^Survey Plan:|^Red Copy:|^Sold In Parts:|^Price Basis:|^Plots Available:|^Half Plot Price:|^Half Plot Installment:/.test(f));
+    } else if (category === 'event-center') {
+      const gvE = (pfx) => { const l = allFees.find(f => f.startsWith(pfx)); return l ? l.slice(l.indexOf(':') + 1).trim() : ''; };
+      document.getElementById('f-event-price').value = rentDigits || '';
+      if (gvE('Venue Type:')) document.getElementById('f-event-venue-type').value = gvE('Venue Type:');
+      document.getElementById('f-event-capacity').value = parseInt(gvE('Capacity:'), 10) || '';
+      document.getElementById('f-event-parking').value = gvE('Parking Spaces:') === '' ? '' : (parseInt(gvE('Parking Spaces:'), 10) || 0);
+      if (gvE('Power Supply:')) document.getElementById('f-event-power').value = gvE('Power Supply:');
+      const evBlk = allFees.find(f => f.startsWith('Blocked Dates:'));
+      evBlocked = evBlk ? (evBlk.match(/\d{4}-\d{2}-\d{2}/g) || []) : []; renderEvBlocked();
+      document.getElementById('f-event-about').value = gvE('About This Venue:');
+      remainingFees = allFees.filter(f => !/^Venue Type:|^Capacity:|^Parking Spaces:|^Power Supply:|^Blocked Dates:|^MainTown Service Charge:|^About This Venue:/.test(f));
     } else if (category === 'short-let') {
       document.getElementById('f-nightly-rate').value = rentDigits || '';
       const minStay = allFees.find(f => f.startsWith('Minimum Stay:'));
@@ -2239,7 +2355,7 @@
   function selectedHtml(userId) {
     const rows = selectedByUser[userId] || [];
     if (!rows.length) return '';
-    const kind = { rent: 'Rent', land: 'Buy', 'short-let': 'Book' };
+    const kind = { rent: 'Rent', land: 'Buy', 'short-let': 'Book', 'event-center': 'Book' };
     return rows.map(r => {
       let title = r.listing_title || 'A listing', ci = r.check_in, co = r.check_out, n = r.nights;
       const m = title.match(/\s*\[(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2}), (\d+) nights?\]\s*$/);
@@ -2458,7 +2574,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       listEl.innerHTML = '<p class="text-sm text-slate-500">No listings yet.</p>';
       return;
     }
-    const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let' };
+    const categoryLabels = { rent: 'Flexible Rent', land: 'Land & Property', 'short-let': 'Short Let', 'event-center': 'Event Center' };
     listEl.innerHTML = data.map(l => `
       <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
         <div class="min-w-0 flex-1">
@@ -2539,18 +2655,18 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   // Everything is built from the ledger the app reports (finance_ledger, read through finance_ledger_view).
   // The view enforces who sees what: Finance and Super Admin see everything; the Developer sees only the last
   // 7 days without names. Totals and revenue are never drawn for the Developer.
-  const FIN_STREAMS = { commission: 'Agency commission', legal_fee: 'Legal fee', shortlet_fee: 'Short-let platform fee (5%)', ai_screening: 'Screening and processing fees', upgrade: 'Upgrade fees' };
-  const FIN_GROSS = ['RENT_PAYMENT', 'PURCHASE_PAYMENT', 'SHORTLET_BOOKING'];
+  const FIN_STREAMS = { commission: 'Agency commission', legal_fee: 'Legal fee', shortlet_fee: 'Short-let platform fee (5%)', event_fee: 'Event center service charge (2%)', ai_screening: 'Screening and processing fees', upgrade: 'Upgrade fees' };
+  const FIN_GROSS = ['RENT_PAYMENT', 'PURCHASE_PAYMENT', 'SHORTLET_BOOKING', 'EVENT_BOOKING'];
   const FIN_CAT_LABEL = {
     RENT_PAYMENT: 'Rent', PURCHASE_PAYMENT: 'Land / property purchase', SHORTLET_BOOKING: 'Short-let booking',
-    SHORTLET_PAYOUT: 'Short-let host payout', SHORTLET_REFUND: 'Short-let refund', SHORTLET_REFUND_REVERSAL: 'Short-let refund recovery',
+    SHORTLET_PAYOUT: 'Short-let host payout', EVENT_BOOKING: 'Event center booking', EVENT_PAYOUT: 'Event center venue payout', SHORTLET_REFUND: 'Short-let refund', SHORTLET_REFUND_REVERSAL: 'Short-let refund recovery',
     SHORTLET_CAUTION_HELD: 'Short-let caution fee held', LANDLORD_PAYOUT: 'Landlord / seller payout',
     AGENT_COMMISSION: 'Agent commission share', COMPANY_COMMISSION: 'Company commission share',
     AI_FEE: 'Screening / processing fee', UPGRADE_FEE: 'Upgrade fee', TOPUP: 'Wallet top-up', WITHDRAWAL: 'Wallet withdrawal',
-    MAINTOWN_COMMISSION: 'MainTown commission', MAINTOWN_LEGAL_FEE: 'MainTown legal fee', MAINTOWN_SHORTLET_FEE: 'MainTown short-let fee'
+    MAINTOWN_COMMISSION: 'MainTown commission', MAINTOWN_LEGAL_FEE: 'MainTown legal fee', MAINTOWN_SHORTLET_FEE: 'MainTown short-let fee', MAINTOWN_EVENT_FEE: 'MainTown event center fee'
   };
   const finCatLabel = c => FIN_CAT_LABEL[c] || String(c || '').replace(/_/g, ' ').toLowerCase();
-  const FIN_PAYOUT = ['LANDLORD_PAYOUT', 'SHORTLET_PAYOUT', 'AGENT_COMMISSION', 'COMPANY_COMMISSION'];
+  const FIN_PAYOUT = ['LANDLORD_PAYOUT', 'SHORTLET_PAYOUT', 'EVENT_PAYOUT', 'AGENT_COMMISSION', 'COMPANY_COMMISSION'];
   const FIN_CRITICAL = ['Finance: release held funds', 'Finance: freeze or hold a payout', 'Finance: approve a refund', 'Finance: manual balance adjustment', 'Finance: change the fee schedule', 'Finance: change payout bank details', 'Finance: write off or settle an exception'];
   const FIN_EXC_CATS = { timing: 'Timing difference', fee: 'Fee difference', failed_split: 'Failed split', reversal: 'Reversal', missing_entry: 'Missing entry', failed_payout: 'Failed payout', dispute: 'Dispute', other: 'Other' };
   let finTxns = [], finTab = 'overview', finErr = null, finLoadedAt = 0, finShown = 100, finRecon = [], finExc = [];
@@ -2623,7 +2739,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const bars = days.map(r => `<div class="flex-1 flex flex-col items-center justify-end gap-1" title="${r.d.toLocaleDateString('en-GB')}: ${finMoney(r.v)}"><div style="height:${Math.round(r.v * 80 / max)}px;min-height:${r.v ? 2 : 0}px;background:#8b5cf6" class="w-full rounded-t"></div><span class="text-[9px] text-slate-500">${r.d.getDate()}</span></div>`).join('');
     const openExc = finExc.filter(e => e.status === 'open').length;
     return `<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        ${finCard('MainTown earned revenue', finMoney(rev), 'Commission, legal fees, short-let fee, screening and upgrade fees')}
+        ${finCard('MainTown earned revenue', finMoney(rev), 'Commission, legal fees, short-let fee, event center service charge, screening and upgrade fees')}
         ${finCard('Gross charges processed', finMoney(gross), 'Tenant, buyer and guest payments')}
         ${finCard('Held, waiting for release', finMoney(finSum(held)), held.length + ' held' + (disp.length ? ' · ' + disp.length + ' disputed' : ''))}
         ${finCard('Open exceptions', openExc, 'See Reconciliation')}
@@ -2663,7 +2779,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const bucket = (lo, hi) => held.filter(t => age(t) >= lo && age(t) <= hi);
     const b = [['0 to 7 days', bucket(0, 7)], ['8 to 14 days', bucket(8, 14)], ['15 days or more', bucket(15, 99999)]];
     return `<div class="grid grid-cols-3 gap-3 mb-3">${b.map(([l, r]) => finCard(l, finMoney(finSum(r)), r.length + ' items')).join('')}</div>
-      <p class="text-[11px] text-slate-500 mb-3">Sale proceeds are held until the buyer confirms documents (or 7 days after dispatch); a buyer dispute freezes them. Short-let host shares are held until check-in. To release or freeze, request approval from the Super Admin.</p>
+      <p class="text-[11px] text-slate-500 mb-3">Sale proceeds are held until the buyer confirms documents (or 7 days after dispatch); a buyer dispute freezes them. Short-let host shares are held until check-in, and event center venue shares until the event day. To release or freeze, request approval from the Super Admin.</p>
       <div class="space-y-2">${held.map(t => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5">
         <div class="flex items-center justify-between gap-2 flex-wrap"><div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white">${escapeQuickFix(t.title || t.category)}</span>${finStatusChip(t.status)}${age(t) >= 14 ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-red-500/30 text-red-300 bg-red-500/10">Overdue?</span>' : ''}</div><span class="text-sm font-semibold text-white">${finMoney(t.amount)}</span></div>
         <p class="text-[11px] text-slate-500 mt-1">${escapeQuickFix(t.party_name || 'Beneficiary')} (${escapeQuickFix(t.party_role || 'user')}) · held ${age(t)} day(s) · ${escapeQuickFix(t.property_name || '')} · ${escapeQuickFix(t.txn_ref)}</p>
