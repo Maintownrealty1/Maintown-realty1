@@ -493,8 +493,9 @@
 
         <!-- ===== Event Center only (venue hire) ===== -->
         <div class="field" data-cat="event-center">
-          <label>Venue Hire Price per Event Day (₦)</label>
-          <input type="number" id="f-event-price" min="0" placeholder="e.g. 1500000">
+          <label>Base Price Per Hour (₦)</label>
+          <input type="number" id="f-event-price" min="0" placeholder="e.g. 50000">
+          <p class="hint" style="margin-top:4px;">Guests choose a date plus start and end time. The hire fee is worked out as hours booked × this hourly rate.</p>
         </div>
         <div class="field" data-cat="event-center">
           <label>Venue Type</label>
@@ -517,7 +518,7 @@
         <div class="sm:col-span-2" data-cat="event-center">
           <div class="price-box">
             <h3>Booking availability</h3>
-            <p class="hint" style="margin:-6px 0 12px;">Clients book one event date at a time. Dates that are already booked are blocked automatically; add any other dates the venue is not available.</p>
+            <p class="hint" style="margin:-6px 0 12px;">Guests inspect the venue first, then pick one event date plus a start and end time. Hours that are already booked are blocked automatically, and a guest cannot book overlapping hours; add any other dates the venue is not available.</p>
             <div class="field">
               <label>Blocked dates — optional</label>
               <div class="flex gap-2">
@@ -1650,11 +1651,12 @@
       const evPrice = parseInt(document.getElementById('f-event-price').value, 10);
       const evCap = parseInt(document.getElementById('f-event-capacity').value, 10);
       if (!title || !location || !evPrice) {
-        showToast('Please fill in Title, Location, and Venue Hire Price at minimum.', true);
+        showToast('Please fill in Title, Location, and Base Price Per Hour at minimum.', true);
         return;
       }
       if (!evCap || evCap < 1) { showToast('Enter the maximum number of guests the venue can hold.', true); return; }
-      rentDisplay = `₦${evPrice.toLocaleString('en-US')}/event day`;
+      rentDisplay = `₦${evPrice.toLocaleString('en-US')}/hour`;
+      fees.push(`Price Per Hour: ₦${evPrice.toLocaleString('en-US')}`);
       fees.push(`Venue Type: ${document.getElementById('f-event-venue-type').value}`);
       fees.push(`Capacity: ${evCap} guests`);
       const evPark = parseInt(document.getElementById('f-event-parking').value, 10);
@@ -1665,7 +1667,7 @@
       const evAbout = document.getElementById('f-event-about').value.replace(/\s+/g, ' ').trim();
       if (evAbout) fees.push(`About This Venue: ${evAbout}`);
       fees = fees.concat(feesTextarea.value.split('\n').map(s => s.trim()).filter(Boolean)
-        .filter(l => !/^Venue Type:|^Capacity:|^Parking Spaces:|^Power Supply:|^Blocked Dates:|^MainTown Service Charge:|^About This Venue:/.test(l)));
+        .filter(l => !/^Price Per Hour:|^Venue Type:|^Capacity:|^Parking Spaces:|^Power Supply:|^Blocked Dates:|^MainTown Service Charge:|^About This Venue:/.test(l)));
     } else if (category === 'short-let') {
       beds = parseInt(document.getElementById('f-beds').value, 10) || 0;
       const nightly = parseInt(document.getElementById('f-nightly-rate').value, 10);
@@ -2219,7 +2221,12 @@
       remainingFees = allFees.filter(f => !/^Plot Size:|^Title Document:|^Land Use:|^Property Type:|^Bathrooms:|^Toilets:|^Parking Spaces:|^Outright Price:|^Installment Price:|^Installment Duration:|^Initial Deposit:|^Legal Fee:|^Survey Plan:|^Red Copy:|^Sold In Parts:|^Price Basis:|^Plots Available:|^Half Plot Price:|^Half Plot Installment:/.test(f));
     } else if (category === 'event-center') {
       const gvE = (pfx) => { const l = allFees.find(f => f.startsWith(pfx)); return l ? l.slice(l.indexOf(':') + 1).trim() : ''; };
-      document.getElementById('f-event-price').value = rentDigits || '';
+      // Hourly rate: stored as "Price Per Hour". Older listings only have a per-event-day price,
+      // so the field is left empty for those and the admin must set the hourly rate before saving.
+      const evHr = parseInt(String(gvE('Price Per Hour:')).replace(/[^0-9]/g, ''), 10);
+      const evLegacyDay = /event day/i.test(String(listing.rent || '')) && !evHr;
+      document.getElementById('f-event-price').value = evHr || (evLegacyDay ? '' : (rentDigits || ''));
+      if (evLegacyDay) showToast('This venue was priced per event day. Enter its Base Price Per Hour before saving.', true);
       if (gvE('Venue Type:')) document.getElementById('f-event-venue-type').value = gvE('Venue Type:');
       document.getElementById('f-event-capacity').value = parseInt(gvE('Capacity:'), 10) || '';
       document.getElementById('f-event-parking').value = gvE('Parking Spaces:') === '' ? '' : (parseInt(gvE('Parking Spaces:'), 10) || 0);
@@ -2227,7 +2234,7 @@
       const evBlk = allFees.find(f => f.startsWith('Blocked Dates:'));
       evBlocked = evBlk ? (evBlk.match(/\d{4}-\d{2}-\d{2}/g) || []) : []; renderEvBlocked();
       document.getElementById('f-event-about').value = gvE('About This Venue:');
-      remainingFees = allFees.filter(f => !/^Venue Type:|^Capacity:|^Parking Spaces:|^Power Supply:|^Blocked Dates:|^MainTown Service Charge:|^About This Venue:/.test(f));
+      remainingFees = allFees.filter(f => !/^Price Per Hour:|^Venue Type:|^Capacity:|^Parking Spaces:|^Power Supply:|^Blocked Dates:|^MainTown Service Charge:|^About This Venue:/.test(f));
     } else if (category === 'short-let') {
       document.getElementById('f-nightly-rate').value = rentDigits || '';
       const minStay = allFees.find(f => f.startsWith('Minimum Stay:'));
@@ -2779,7 +2786,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const bucket = (lo, hi) => held.filter(t => age(t) >= lo && age(t) <= hi);
     const b = [['0 to 7 days', bucket(0, 7)], ['8 to 14 days', bucket(8, 14)], ['15 days or more', bucket(15, 99999)]];
     return `<div class="grid grid-cols-3 gap-3 mb-3">${b.map(([l, r]) => finCard(l, finMoney(finSum(r)), r.length + ' items')).join('')}</div>
-      <p class="text-[11px] text-slate-500 mb-3">Sale proceeds are held until the buyer confirms documents (or 7 days after dispatch); a buyer dispute freezes them. Short-let host shares are held until check-in, and event center venue shares until the event day. To release or freeze, request approval from the Super Admin.</p>
+      <p class="text-[11px] text-slate-500 mb-3">Sale proceeds are held until the buyer confirms documents (or 7 days after dispatch); a buyer dispute freezes them. Short-let host shares are held until check-in. Event center venue shares are paid out instantly. To release or freeze, request approval from the Super Admin.</p>
       <div class="space-y-2">${held.map(t => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5">
         <div class="flex items-center justify-between gap-2 flex-wrap"><div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white">${escapeQuickFix(t.title || t.category)}</span>${finStatusChip(t.status)}${age(t) >= 14 ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-red-500/30 text-red-300 bg-red-500/10">Overdue?</span>' : ''}</div><span class="text-sm font-semibold text-white">${finMoney(t.amount)}</span></div>
         <p class="text-[11px] text-slate-500 mt-1">${escapeQuickFix(t.party_name || 'Beneficiary')} (${escapeQuickFix(t.party_role || 'user')}) · held ${age(t)} day(s) · ${escapeQuickFix(t.property_name || '')} · ${escapeQuickFix(t.txn_ref)}</p>
