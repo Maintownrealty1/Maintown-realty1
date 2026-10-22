@@ -877,6 +877,8 @@
         <label class="text-xs text-slate-500 flex items-center gap-1">To <input type="date" id="inspTo" class="!w-auto !py-1.5 !text-xs" /></label>
       </div>
 
+      <div id="inspSlotPanel" class="mb-4"></div>
+
       <div id="inspList" class="space-y-3"></div>
     </section>
 
@@ -1938,6 +1940,7 @@
             <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${categoryLabel}</span>
             <span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded ${src.cls}" title="Where this listing was created">${src.label}</span>
             ${st ? `<span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded ${st.cls}">${st.label}</span>` : ''}
+            ${(l.payment_hold_until && new Date(l.payment_hold_until).getTime() > Date.now()) ? `<span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border-amber-500/30" title="A guest is completing checkout. 15-minute hold, held by ${escHtml(l.held_by_user_id || 'a guest')}">Checkout hold · ${Math.max(1, Math.ceil((new Date(l.payment_hold_until).getTime() - Date.now()) / 60000))}m</span>` : ''}
           </p>
           <p class="text-xs text-slate-500 truncate">${escHtml(l.location)} · ${escHtml(l.rent)}</p>
           <p class="text-[11px] text-slate-500 truncate">Listed by: <span class="text-slate-300">${listedByLabel(l)}</span></p>
@@ -2748,7 +2751,25 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       cands.forEach(c => { const d = Math.abs(new Date(c.date).getTime() - when); if (d < bd) { bd = d; best = c; } });
       t.ptype = best.ptype;
     });
-    return out;
+    // MainTown's short-let platform fee (5% of the whole stay, collected once at checkout) is reported with the booking itself (meta.platformFee).
+    // If the separate fee row never arrived, the fee is read from the booking so it still counts as revenue.
+    // A fee row that did arrive always wins, so nothing is counted twice.
+    const feeRows = out.filter(t => t.category === 'MAINTOWN_SHORTLET_FEE');
+    const synth = [];
+    out.forEach(t => {
+      if (t.category !== 'SHORTLET_BOOKING' || t.direction !== 'debit' || t.status === 'REFUNDED') return;
+      let m = t.meta; if (typeof m === 'string') { try { m = JSON.parse(m); } catch (e) { m = null; } }
+      const fee = Math.round(Number(m && (m.platformFee != null ? m.platformFee : m.platform_fee)) || 0);
+      if (!(fee > 0)) return;
+      const when = new Date(t.date).getTime(), key = pkey(t.property_name);
+      if (feeRows.some(f => pkey(f.property_name) === key && f.amount === fee && Math.abs(new Date(f.date).getTime() - when) < 10 * 60 * 1000)) return;
+      synth.push(Object.assign({}, t, {
+        txn_ref: 'FEE-' + t.txn_ref, direction: 'credit', category: 'MAINTOWN_SHORTLET_FEE', stream: 'shortlet_fee', ptype: 'shortlet', amount: fee,
+        title: 'Short-let platform fee - ' + (t.property_name || 'Property'), fee_type: 'Short-let platform fee (5% of the stay, collected at checkout)',
+        sender: 'Guest', recipient: 'MainTown Realty', status: 'SUCCESSFUL', party_name: 'MainTown Realty', party_role: 'platform'
+      }));
+    });
+    return out.concat(synth).sort((x, y) => new Date(y.date) - new Date(x.date));
   }
   function finPeriodStart() {
     const v = document.getElementById('finPeriod').value, d = new Date();
@@ -3586,6 +3607,43 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     return a ? `By ${escapeQuickFix(a)}${e.actor_role ? ' (' + escapeQuickFix(e.actor_role) + ')' : ''}` : '';
   }
 
+  // Booked inspection slots + active 15-minute checkout holds (tables: inspection_slots, checkout_holds;
+  // see inspection_slots_and_checkout_holds_migration.sql). Refreshed together with the activity log.
+  async function loadSlotPanel() {
+    const box = document.getElementById('inspSlotPanel');
+    if (!box) return;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const todayIso = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    const [sl, hd] = await Promise.all([
+      sb.from('inspection_slots').select('*').eq('status', 'booked').gte('date', todayIso).order('date', { ascending: true }).order('start_time', { ascending: true }).limit(300),
+      sb.from('checkout_holds').select('*').gt('hold_until', new Date().toISOString()).order('hold_until', { ascending: true }).limit(100)
+    ]);
+    if (sl.error || hd.error) {
+      const msg = (sl.error || hd.error).message || '';
+      box.innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-400">Slot locks and checkout holds are not available yet: ${escapeQuickFix(msg)}. Run inspection_slots_and_checkout_holds_migration.sql once in Supabase (SQL Editor).</div>`;
+      return;
+    }
+    const titleFor = key => { const hit = inspCache.find(e => String(e.listing_id) === String(key) && e.listing_title); return hit ? hit.listing_title : key; };
+    const t12 = t => { const [h, m] = String(t).split(':'); const hh = Number(h); return ((hh % 12) || 12) + ':' + m + ' ' + (hh >= 12 ? 'PM' : 'AM'); };
+    const slots = sl.data || [], holds = hd.data || [];
+    const slotRows = slots.map(x => `<tr class="border-b border-slate-800/60"><td class="px-3 py-1.5 whitespace-nowrap">${escapeQuickFix(x.date)}</td><td class="px-3 py-1.5 whitespace-nowrap">${t12(x.start_time)} – ${t12(x.end_time)}</td><td class="px-3 py-1.5">${escapeQuickFix(titleFor(x.property_id))}</td><td class="px-3 py-1.5">${escapeQuickFix(x.booked_by || '')}</td><td class="px-3 py-1.5 text-slate-500">${escapeQuickFix(x.booking_ref || '')}</td></tr>`).join('');
+    const holdRows = holds.map(x => `<tr class="border-b border-slate-800/60"><td class="px-3 py-1.5">${escapeQuickFix(titleFor(x.listing_key))}</td><td class="px-3 py-1.5">${escapeQuickFix(x.category || '')}</td><td class="px-3 py-1.5">${escapeQuickFix(x.held_by_user_id)}</td><td class="px-3 py-1.5 whitespace-nowrap text-amber-300">${Math.max(1, Math.ceil((new Date(x.hold_until).getTime() - Date.now()) / 60000))} min left</td></tr>`).join('');
+    const tbl = (head, rows, empty) => rows ? `<div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead class="text-slate-400 border-b border-slate-800"><tr>${head.map(h => `<th class="px-3 py-2 font-medium whitespace-nowrap">${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="px-4 py-3 text-xs text-slate-500">${empty}</p>`;
+    const wasOpen = box.querySelector('details') ? box.querySelector('details').open : false;
+    box.innerHTML = `<details ${wasOpen ? 'open' : ''} class="bg-slate-900 border border-slate-800 rounded-xl">
+      <summary class="cursor-pointer px-4 py-3 text-sm text-slate-200 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span class="font-semibold">Slot locks &amp; checkout holds</span>
+        <span class="text-xs text-slate-400">${slots.length} upcoming booked slot${slots.length === 1 ? '' : 's'}</span>
+        <span class="text-xs ${holds.length ? 'text-amber-300' : 'text-slate-400'}">${holds.length} active checkout hold${holds.length === 1 ? '' : 's'}</span>
+      </summary>
+      <div class="border-t border-slate-800">
+        <p class="px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500">Booked inspection slots</p>
+        ${tbl(['Date', 'Time', 'Property', 'Guest', 'Inspection'], slotRows, 'No upcoming slots are locked.')}
+        <p class="px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500">Active checkout holds (15 minutes)</p>
+        ${tbl(['Listing', 'Type', 'Held by', 'Time left'], holdRows, 'No checkout is in progress right now.')}
+      </div></details>`;
+  }
+
   async function loadInspections() {
     const listEl = document.getElementById('inspList');
     listEl.innerHTML = '<p class="text-sm text-slate-500">Loading inspections...</p>';
@@ -3611,6 +3669,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     stSel.innerHTML = '<option value="">Any status</option>' + kinds.map(k => `<option value="${escapeQuickFix(k)}">${escapeQuickFix(INSP_KINDS[k] || k)}</option>`).join('');
     stSel.value = kinds.includes(keepSt) ? keepSt : '';
     renderInspections();
+    loadSlotPanel().catch(() => {}); // never let the slot panel hold up the activity log
   }
 
   function inspLatestByEntity() {
