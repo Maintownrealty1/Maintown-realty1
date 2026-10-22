@@ -2665,6 +2665,16 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   // The view enforces who sees what: Finance and Super Admin see everything; the Developer sees only the last
   // 7 days without names. Totals and revenue are never drawn for the Developer.
   const FIN_STREAMS = { commission: 'Agency commission', legal_fee: 'Legal fee', shortlet_fee: 'Short-let platform fee (5%)', event_fee: 'Event center service charge (2%)', ai_screening: 'Screening and processing fees', upgrade: 'Upgrade fees' };
+  // Property type of a ledger row: the app tags new rows (meta.property_type); older rows are inferred where possible.
+  const FIN_PTYPES = { residential: 'Residential rent', commercial: 'Commercial rent', land: 'Land', house_property: 'House property', shortlet: 'Shortlet', event_hall: 'Event hall', untagged: 'Not tagged' };
+  function finType(r) {
+    let m = r && r.meta; if (typeof m === 'string') { try { m = JSON.parse(m); } catch (e) { m = null; } }
+    if (m && m.property_type && FIN_PTYPES[m.property_type]) return m.property_type;
+    const c = String((r && r.category) || '');
+    if (/^SHORTLET/.test(c)) return 'shortlet';
+    if (/^EVENT/.test(c)) return 'event_hall';
+    return 'untagged';
+  }
   const FIN_GROSS = ['RENT_PAYMENT', 'PURCHASE_PAYMENT', 'SHORTLET_BOOKING', 'EVENT_BOOKING'];
   const FIN_CAT_LABEL = {
     RENT_PAYMENT: 'Rent', PURCHASE_PAYMENT: 'Land / property purchase', SHORTLET_BOOKING: 'Short-let booking',
@@ -2705,7 +2715,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       if (r.event_type === 'created') t.created = r;
       if (!t.latest || String(r.created_at) >= String(t.latest.created_at)) t.latest = r;
     });
-    return [...by.values()].map(t => { const base = t.created || t.latest; return Object.assign({}, base, { status: t.latest.status, date: base.occurred_at }); })
+    return [...by.values()].map(t => { const base = t.created || t.latest; return Object.assign({}, base, { status: t.latest.status, date: base.occurred_at, ptype: finType(base) }); })
       .sort((x, y) => new Date(y.date) - new Date(x.date));
   }
   function finPeriodStart() {
@@ -2720,7 +2730,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const credit = t.direction === 'credit';
     return `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5">
       <div class="flex items-center justify-between gap-2 flex-wrap">
-        <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white">${escapeQuickFix(t.title || finCatLabel(t.category))}</span><span class="text-[11px] px-2 py-0.5 rounded-full border border-sky-500/30 text-sky-300 bg-sky-500/10">${escapeQuickFix(finCatLabel(t.category))}</span>${finStatusChip(t.status)}${t.stream ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-violet-500/30 text-violet-300 bg-violet-500/10">MainTown revenue</span>' : ''}</div>
+        <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white">${escapeQuickFix(t.title || finCatLabel(t.category))}</span><span class="text-[11px] px-2 py-0.5 rounded-full border border-sky-500/30 text-sky-300 bg-sky-500/10">${escapeQuickFix(finCatLabel(t.category))}</span>${finStatusChip(t.status)}${t.ptype && t.ptype !== 'untagged' ? `<span class="text-[11px] px-2 py-0.5 rounded-full border border-amber-500/30 text-amber-300 bg-amber-500/10">${escapeQuickFix(FIN_PTYPES[t.ptype])}</span>` : ''}${t.stream ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-violet-500/30 text-violet-300 bg-violet-500/10">MainTown revenue</span>' : ''}</div>
         <span class="text-sm font-semibold ${credit ? 'text-emerald-300' : 'text-slate-200'}">${credit ? '+' : '-'}${finMoney(t.amount)}</span>
       </div>
       <p class="text-[11px] text-slate-500 mt-1">${inspTs(t.date)} · ${escapeQuickFix(t.txn_ref)}${showNames && t.party_name ? ' · ' + escapeQuickFix(t.party_name) + (t.party_role ? ' (' + escapeQuickFix(t.party_role) + ')' : '') : ''}${t.sender || t.recipient ? ' · ' + escapeQuickFix(t.sender || '?') + ' to ' + escapeQuickFix(t.recipient || '?') : ''}${t.property_name ? ' · ' + escapeQuickFix(t.property_name) : ''}</p>
@@ -2761,6 +2771,12 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><p class="text-sm font-semibold text-white mb-3">Revenue by stream</p>
           ${byStream.map(([l, v, n]) => `<div class="flex justify-between text-sm py-1.5 border-b border-slate-800 last:border-0"><span class="text-slate-300">${l} <span class="text-slate-500 text-xs">(${n})</span></span><span class="text-white">${finMoney(v)}</span></div>`).join('')}
           <p class="text-[11px] text-slate-500 mt-2">Landlord rent, sale proceeds and other beneficiary money are never counted as MainTown revenue. Gateway fees, taxes and refunds are not deducted here yet.</p></div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 lg:col-span-2"><p class="text-sm font-semibold text-white mb-1">By property type</p>
+          <p class="text-[11px] text-slate-500 mb-3">Money paid in by tenants, buyers and guests, and what MainTown earned from it.</p>
+          <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-[11px] text-slate-500 text-left border-b border-slate-800"><th class="py-1.5 font-medium">Type</th><th class="py-1.5 font-medium text-right">Payments</th><th class="py-1.5 font-medium text-right">Gross charged</th><th class="py-1.5 font-medium text-right">MainTown revenue</th></tr></thead><tbody>
+          ${Object.keys(FIN_PTYPES).map(k => { const g = T.filter(t => t.ptype === k && t.direction === 'debit' && FIN_GROSS.includes(t.category) && t.status !== 'REFUNDED'), r = revRows.filter(t => t.ptype === k); if (!g.length && !r.length) return ''; return `<tr class="border-b border-slate-800 last:border-0"><td class="py-1.5 text-slate-300">${FIN_PTYPES[k]}</td><td class="py-1.5 text-right text-slate-400">${g.length}</td><td class="py-1.5 text-right text-white">${finMoney(finSum(g))}</td><td class="py-1.5 text-right text-white">${finMoney(finSum(r))}</td></tr>`; }).join('')}
+          </tbody></table></div>
+          <p class="text-[11px] text-slate-500 mt-2">"Not tagged" covers older records saved before property types were reported, and fees that are not tied to a property (screening, upgrades).</p></div>
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><p class="text-sm font-semibold text-white mb-1">Revenue, last 14 days</p><p class="text-[11px] text-slate-500 mb-3">MainTown earned revenue per day</p><div class="flex items-end gap-1 h-24">${bars}</div></div>
       </div>`;
   }
@@ -2769,14 +2785,15 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const cats = Array.from(new Set(finTxns.map(t => t.category).filter(Boolean))).sort();
     return `<div class="flex flex-wrap items-center gap-2 mb-3">
         <select id="finCat" class="!w-auto !py-1.5 !text-xs"><option value="">All types</option>${cats.map(c => `<option value="${c}">${escapeQuickFix(finCatLabel(c))}</option>`).join('')}</select>
+        <select id="finPt" class="!w-auto !py-1.5 !text-xs"><option value="">All property types</option>${Object.keys(FIN_PTYPES).map(k => `<option value="${k}">${FIN_PTYPES[k]}</option>`).join('')}</select>
         <select id="finSt" class="!w-auto !py-1.5 !text-xs"><option value="">Any status</option><option value="SUCCESSFUL">Successful</option><option value="PENDING_ESCROW">Held</option><option value="DISPUTED">Disputed</option><option value="REFUNDED">Refunded</option><option value="PENDING">Pending</option></select>
         <input type="search" id="finQ" placeholder="Search name, reference or property" class="!w-auto !py-1.5 !text-xs">
       </div><div id="finTxnList" class="space-y-2" data-total="${T.length}"></div>`;
   }
   function finRenderTxnList() {
     const el = document.getElementById('finTxnList'); if (!el) return;
-    const cat = (document.getElementById('finCat') || {}).value || '', st = (document.getElementById('finSt') || {}).value || '', q = ((document.getElementById('finQ') || {}).value || '').toLowerCase();
-    const rows = finInPeriod().filter(t => (!cat || t.category === cat) && (!st || t.status === st) && (!q || [t.txn_ref, t.party_name, t.property_name, t.title].some(v => String(v || '').toLowerCase().includes(q))));
+    const cat = (document.getElementById('finCat') || {}).value || '', pt = (document.getElementById('finPt') || {}).value || '', st = (document.getElementById('finSt') || {}).value || '', q = ((document.getElementById('finQ') || {}).value || '').toLowerCase();
+    const rows = finInPeriod().filter(t => (!cat || t.category === cat) && (!pt || t.ptype === pt) && (!st || t.status === st) && (!q || [t.txn_ref, t.party_name, t.property_name, t.title].some(v => String(v || '').toLowerCase().includes(q))));
     if (!rows.length) { el.innerHTML = finEmpty('No transactions match.'); return; }
     el.innerHTML = `<p class="text-xs text-slate-500">${rows.length} transactions · ${finMoney(finSum(rows))} total value</p>` + rows.slice(0, finShown).map(t => txnCardHtml(t, true)).join('')
       + (rows.length > finShown ? '<button type="button" class="btn-secondary !text-xs" id="finMore">Show more</button>' : '');
@@ -2937,7 +2954,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   document.getElementById('finPeriod').addEventListener('change', finRender);
   document.getElementById('finTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-fintab]'); if (!b) return; finTab = b.dataset.fintab; finShown = 100; finRender(); });
   document.getElementById('finBody').addEventListener('input', (e) => {
-    if (['finCat', 'finSt', 'finQ'].includes(e.target.id)) finRenderTxnList();
+    if (['finCat', 'finPt', 'finSt', 'finQ'].includes(e.target.id)) finRenderTxnList();
     if (['rc-date', 'rc-scope', 'rc-provider'].includes(e.target.id)) finRefreshInputs();
   });
   document.getElementById('finBody').addEventListener('click', async (e) => {
@@ -3520,7 +3537,10 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       const d = new Date(day + 'T00:00:00Z');
       label = d.toLocaleDateString('en-NG', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
     }
-    if (e.flow === 'shortlet_booking' && e.details && e.details.check_out) label += ' to ' + e.details.check_out;
+    if (e.flow === 'shortlet_booking' && e.details && e.details.check_out) {
+      const co = e.details.check_out;
+      label += ' to ' + (/^\d{4}-\d{2}-\d{2}$/.test(co) ? new Date(co + 'T00:00:00Z').toLocaleDateString('en-NG', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : co);
+    }
     return label + (e.scheduled_time ? ' · ' + e.scheduled_time : '');
   }
   function inspParties(e) {
@@ -3542,7 +3562,8 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       listEl.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load inspections: ${escapeQuickFix(error.message)}<p class="text-xs mt-2 text-red-200/80">If the table or permission is missing, run inspection_events_migration.sql once in Supabase (SQL Editor). Only Super Admin and Developer staff can read this table.</p></div>`;
       return;
     }
-    inspCache = data || [];
+    // Events uploaded in one batch share the same server time, so break ties with the phone's own clock.
+    inspCache = (data || []).slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)) || String(b.client_at || '').localeCompare(String(a.client_at || '')));
     const clrBtn = document.getElementById('clearAllInspBtn'); if (clrBtn) clrBtn.classList.toggle('hidden', currentStaffRole !== 'super_admin');
     await loadInspFollowData();
     const cats = Array.from(new Set(inspCache.map(inspCat))).sort();
