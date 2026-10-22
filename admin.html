@@ -2671,10 +2671,19 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     let m = r && r.meta; if (typeof m === 'string') { try { m = JSON.parse(m); } catch (e) { m = null; } }
     if (m && m.property_type && FIN_PTYPES[m.property_type]) return m.property_type;
     const c = String((r && r.category) || '');
-    if (/^SHORTLET/.test(c)) return 'shortlet';
-    if (/^EVENT/.test(c)) return 'event_hall';
+    // Also matches MainTown's own fee rows (MAINTOWN_SHORTLET_FEE, MAINTOWN_EVENT_FEE), which do not start with SHORTLET / EVENT.
+    if (/SHORTLET/.test(c)) return 'shortlet';
+    if (/EVENT/.test(c)) return 'event_hall';
     // Older rows: the app titles commercial rent "Annual Rent" and flexi residential rent "Rent Installment".
     if (c === 'RENT_PAYMENT') { const ti = String((r && r.title) || ''); if (/^Annual Rent/i.test(ti)) return 'commercial'; if (/^Rent Installment/i.test(ti)) return 'residential'; }
+    // Land / house purchases: if the ledger row carries no property type, work it out so the sale is never lost
+    // from the Land / House property filters and the By property type table.
+    if (c === 'PURCHASE_PAYMENT') {
+      const hint = String((r && r.property_name) || '') + ' ' + String((r && r.title) || '');
+      if (/\b(land|plot|plots|acre|acres|sqm)\b/i.test(hint)) return 'land';
+      if (/\b(duplex|bungalow|house|flat|flats|terrace|mansion|apartment|bedroom|bed|detached)\b/i.test(hint)) return 'house_property';
+      return 'land';
+    }
     return 'untagged';
   }
   // Chip text for the main payment rows: say what kind of rent / purchase it is, as in the app.
@@ -2723,9 +2732,11 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const out = [...by.values()].map(t => { const base = t.created || t.latest; return Object.assign({}, base, { status: t.latest.status, date: base.occurred_at, ptype: finType(base) }); })
       .sort((x, y) => new Date(y.date) - new Date(x.date));
     // Commission, legal fee and payout rows follow the type of the rent / purchase payment for the same property.
+    // Half-plot purchases are titled "<listing> (Half plot)" on the payment but not always on the fee rows, so match without it.
+    const pkey = n => String(n || '').replace(/\s*\(Half plot\)\s*$/i, '').trim().toLowerCase();
     const byProp = {};
-    out.forEach(t => { if ((t.category === 'RENT_PAYMENT' || t.category === 'PURCHASE_PAYMENT') && t.ptype !== 'untagged' && t.property_name) byProp[t.property_name] = t.ptype; });
-    out.forEach(t => { if (t.ptype === 'untagged' && t.property_name && byProp[t.property_name] && ['MAINTOWN_COMMISSION', 'MAINTOWN_LEGAL_FEE', 'LANDLORD_PAYOUT', 'AGENT_COMMISSION', 'COMPANY_COMMISSION'].includes(t.category)) t.ptype = byProp[t.property_name]; });
+    out.forEach(t => { if (['RENT_PAYMENT', 'PURCHASE_PAYMENT', 'SHORTLET_BOOKING', 'EVENT_BOOKING'].includes(t.category) && t.ptype !== 'untagged' && t.property_name) byProp[pkey(t.property_name)] = t.ptype; });
+    out.forEach(t => { if (t.ptype === 'untagged' && t.property_name && byProp[pkey(t.property_name)] && ['MAINTOWN_COMMISSION', 'MAINTOWN_LEGAL_FEE', 'LANDLORD_PAYOUT', 'AGENT_COMMISSION', 'COMPANY_COMMISSION', 'AI_FEE'].includes(t.category)) t.ptype = byProp[pkey(t.property_name)]; });
     return out;
   }
   function finPeriodStart() {
@@ -2786,7 +2797,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
           <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-[11px] text-slate-500 text-left border-b border-slate-800"><th class="py-1.5 font-medium">Type</th><th class="py-1.5 font-medium text-right">Payments</th><th class="py-1.5 font-medium text-right">Gross charged</th><th class="py-1.5 font-medium text-right">MainTown revenue</th></tr></thead><tbody>
           ${Object.keys(FIN_PTYPES).map(k => { const g = T.filter(t => t.ptype === k && t.direction === 'debit' && FIN_GROSS.includes(t.category) && t.status !== 'REFUNDED'), r = revRows.filter(t => t.ptype === k); if (!g.length && !r.length) return ''; return `<tr class="border-b border-slate-800 last:border-0"><td class="py-1.5 text-slate-300">${FIN_PTYPES[k]}</td><td class="py-1.5 text-right text-slate-400">${g.length}</td><td class="py-1.5 text-right text-white">${finMoney(finSum(g))}</td><td class="py-1.5 text-right text-white">${finMoney(finSum(r))}</td></tr>`; }).join('')}
           </tbody></table></div>
-          <p class="text-[11px] text-slate-500 mt-2">"Not tagged" covers older records saved before property types were reported, and fees that are not tied to a property (screening, upgrades).</p></div>
+          <p class="text-[11px] text-slate-500 mt-2">"Not tagged" covers older records saved before property types were reported, and fees that are not tied to a property (upgrades, wallet-level fees).</p></div>
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><p class="text-sm font-semibold text-white mb-1">Revenue, last 14 days</p><p class="text-[11px] text-slate-500 mb-3">MainTown earned revenue per day</p><div class="flex items-end gap-1 h-24">${bars}</div></div>
       </div>`;
   }
