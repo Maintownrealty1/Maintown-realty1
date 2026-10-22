@@ -2732,11 +2732,22 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const out = [...by.values()].map(t => { const base = t.created || t.latest; return Object.assign({}, base, { status: t.latest.status, date: base.occurred_at, ptype: finType(base) }); })
       .sort((x, y) => new Date(y.date) - new Date(x.date));
     // Commission, legal fee and payout rows follow the type of the rent / purchase payment for the same property.
-    // Half-plot purchases are titled "<listing> (Half plot)" on the payment but not always on the fee rows, so match without it.
+    // Fee, commission, legal and payout rows take the type of the payment they belong to. They are matched by property
+    // name AND by time: they are created within seconds of that payment, so when two different listings share the
+    // same name (a rental and a sale, say) each row still follows its own payment instead of the other one.
     const pkey = n => String(n || '').replace(/\s*\(Half plot\)\s*$/i, '').trim().toLowerCase();
-    const byProp = {};
-    out.forEach(t => { if (['RENT_PAYMENT', 'PURCHASE_PAYMENT', 'SHORTLET_BOOKING', 'EVENT_BOOKING'].includes(t.category) && t.ptype !== 'untagged' && t.property_name) byProp[pkey(t.property_name)] = t.ptype; });
-    out.forEach(t => { if (t.ptype === 'untagged' && t.property_name && byProp[pkey(t.property_name)] && ['MAINTOWN_COMMISSION', 'MAINTOWN_LEGAL_FEE', 'LANDLORD_PAYOUT', 'AGENT_COMMISSION', 'COMPANY_COMMISSION', 'AI_FEE'].includes(t.category)) t.ptype = byProp[pkey(t.property_name)]; });
+    const PAYS = ['RENT_PAYMENT', 'PURCHASE_PAYMENT', 'SHORTLET_BOOKING', 'EVENT_BOOKING'];
+    const FOLLOW = ['MAINTOWN_COMMISSION', 'MAINTOWN_LEGAL_FEE', 'LANDLORD_PAYOUT', 'AGENT_COMMISSION', 'COMPANY_COMMISSION', 'AI_FEE'];
+    const payByProp = {};
+    out.forEach(t => { if (PAYS.includes(t.category) && t.ptype !== 'untagged' && t.property_name) (payByProp[pkey(t.property_name)] = payByProp[pkey(t.property_name)] || []).push(t); });
+    out.forEach(t => {
+      if (t.ptype !== 'untagged' || !t.property_name || !FOLLOW.includes(t.category)) return;
+      const cands = payByProp[pkey(t.property_name)]; if (!cands || !cands.length) return;
+      const when = new Date(t.date).getTime();
+      let best = cands[0], bd = Infinity;
+      cands.forEach(c => { const d = Math.abs(new Date(c.date).getTime() - when); if (d < bd) { bd = d; best = c; } });
+      t.ptype = best.ptype;
+    });
     return out;
   }
   function finPeriodStart() {
