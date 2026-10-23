@@ -20,7 +20,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
@@ -247,6 +246,30 @@
   .legal-drawer-close { width: 36px; height: 36px; border-radius: 999px; background: #0B1120; border: 1px solid rgba(255,255,255,0.1); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; flex-shrink: 0; transition: background 0.15s ease, border-color 0.15s ease; }
   .legal-drawer-close:hover { background: #1B2740; border-color: rgba(139,92,246,0.5); }
   .legal-drawer-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: #fff; margin: 4px 0 16px; flex-shrink: 0; }
+
+  /* ---- Join sheet (role -> Google / email) ---- */
+  .join-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 250; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+  .join-overlay.show { opacity: 1; pointer-events: auto; }
+  .join-sheet { position: fixed; left: 50%; bottom: 0; transform: translate(-50%, 100%); width: 100%; max-width: 460px; max-height: 92vh; overflow-y: auto; background: #0F172A; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px 20px 0 0; box-shadow: 0 -20px 60px rgba(0,0,0,0.6); z-index: 260; padding: 22px 20px calc(22px + env(safe-area-inset-bottom,0px)); transition: transform 0.28s ease; pointer-events: none; color: #E2E8F0; }
+  .join-sheet.show { transform: translate(-50%, 0); pointer-events: auto; }
+  @media (min-width: 640px) { .join-sheet { bottom: auto; top: 50%; border-radius: 18px; transform: translate(-50%, -46%); opacity: 0; } .join-sheet.show { transform: translate(-50%, -50%); opacity: 1; } }
+  .join-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .join-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 6px; }
+  .join-sub { font-size: 13px; color: #94A3B8; line-height: 1.55; margin: 0 0 14px; }
+  .join-sheet .notice-box { background: rgba(124,58,237,0.1); border: 1px solid rgba(168,85,247,0.3); }
+  .join-sheet .notice-box p { color: #CBD5E1; }
+  .btn-google { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px; border-radius: 12px; background: #fff; color: #1F2937; font-weight: 600; font-size: 14.5px; border: 1px solid #E2E8F0; cursor: pointer; margin-top: 6px; }
+  .btn-google:disabled { opacity: 0.55; cursor: not-allowed; }
+  .join-divider { display: flex; align-items: center; gap: 10px; color: #64748B; font-size: 12px; margin: 14px 0 6px; }
+  .join-divider::before, .join-divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+  .join-link { background: none; border: none; color: #A855F7; font: inherit; font-size: 13.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; padding: 6px 2px; }
+  .join-consent { font-size: 11.5px; color: #94A3B8; line-height: 1.55; margin: 14px 0 0; text-align: center; }
+  .join-consent .join-link { font-size: 11.5px; padding: 0; }
+  .join-status { font-size: 12.5px; margin: 10px 0 0; text-align: center; display: none; }
+  #join-email-form { display: none; margin-top: 8px; }
+  #join-email-form .field-input { background: #0B1120; color: #fff; }
+  .join-banner { display: none; margin: 0 0 16px; padding: 12px 14px; border-radius: 12px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; font-size: 13px; line-height: 1.5; }
+  .role-card .role-text .role-sub { font-size: 12px; }
 </style>
 <script src="./theme.js"></script>
 </head>
@@ -301,18 +324,11 @@
   <!-- ===================== SCREEN 1: Role Selection & Basic Info ===================== -->
   <div id="screen-1" class="screen">
 
-    <div class="progress-wrap" id="progress-wrap-1">
-      <div class="progress-labels">
-        <span class="progress-step">Step 1 of 2: Tell us about you</span>
-        <span class="progress-pct">50%</span>
-      </div>
-      <div class="progress-track"><div class="progress-fill" style="width:50%"></div></div>
-    </div>
+    <div id="join-banner" class="join-banner"></div>
+    <h1 class="title">Join MainTown Realty</h1>
+    <p class="subtitle">Choose how you'll use MainTown, then sign up in one tap. Your full onboarding happens inside the MainTown app when it launches.</p>
 
-    <h1 class="title">Create your account</h1>
-    <p class="subtitle">Tell us who you are so we can tailor your experience.</p>
-
-    
+    <div class="selected-listing-slot"></div>
 
     <div class="role-group" id="role-group">
       <button type="button" class="role-card" data-role="tenant">
@@ -341,48 +357,25 @@
       </button>
     </div>
 
-    <form id="reg-form">
-      <div class="field">
-        <label class="field-label">Full Name</label>
-        <input class="field-input" id="reg-fullname" type="text" required placeholder="e.g. Onwochei Precious Ebuka">
-      </div>
-      <div class="field" id="reg-occupation-field" style="display:none;">
-        <label class="field-label">Occupation *</label>
-        <input class="field-input" id="reg-occupation" type="text" required placeholder="e.g. Software Engineer / Student / Self-employed">
-      </div>
-      <div class="field">
-        <label class="field-label">Phone Number</label>
-        <div class="phone-row">
-          <select class="country-select" id="country-code">
-            <option value="+234">NG +234</option>
-            <option value="+1">CA/US +1</option>
-            <option value="+44">UK +44</option>
-          </select>
-          <input class="field-input phone-input" id="reg-phone" type="tel" required placeholder="801 234 5678">
-        </div>
-      </div>
-      <p class="kyc-note" style="margin:-8px 0 20px;"><i data-lucide="info" class="w-3.5 h-3.5" style="display:inline; vertical-align:-2px;"></i> You'll set up your email and password login in the next step.</p>
-      <button type="submit" id="continue-btn" class="btn-primary" disabled>Continue</button>
-      <p id="role-hint" class="role-hint">Select a role above to continue</p>
-    </form>
+    <button type="button" id="notice-toggle" class="notice-box" style="width:100%; cursor:pointer; font:inherit; text-align:left;">
+      <i data-lucide="info" class="w-4 h-4"></i>
+      <p><b>Platform Status &amp; WhatsApp Verification Notice</b> — inspections, bookings and payments are handled manually on WhatsApp for now. <span style="color:#7C3AED; font-weight:600;">Tap to learn more</span></p>
+    </button>
+    <div id="notice-full" class="notice-box" style="display:none;">
+      <i data-lucide="info" class="w-4 h-4"></i>
+      <p><b>Platform Status &amp; WhatsApp Verification Notice:</b> Physical property inspections, booking confirmations, and payment verifications are currently handled manually via our dedicated WhatsApp Desk during this web phase. AI underwriting, instant digital scheduling, and automated in-app wallets will be fully enabled upon our upcoming official mobile app release.</p>
+    </div>
+    <p id="role-hint" class="role-hint">Select a role above to continue</p>
   </div>
   <!-- ===================== END SCREEN 1 ===================== -->
 
   <!-- ===================== SCREEN 1b: Partnership Value & Agreement (Agent/Landlord only) ===================== -->
   <div id="screen-partnership" class="screen hidden-screen">
 
-    <div class="progress-wrap" id="progress-wrap-partnership">
-      <div class="progress-labels">
-        <span class="progress-step">Step 2 of 3: Partnership Benefits &amp; Terms</span>
-        <span class="progress-pct">67%</span>
-      </div>
-      <div class="progress-track"><div class="progress-fill" style="width:67%"></div></div>
-    </div>
-
     <div id="partnership-role-badge" class="kyc-role-badge"></div>
 
     <h1 class="title">Partnering with MainTown Realty</h1>
-    <p class="subtitle">Review your partnership perks and earn industry-leading terms on every listing.</p>
+    <p class="subtitle">Here is how partnering with MainTown works. You will review and accept the full terms when you onboard in the app.</p>
 
     <p class="s-section-label-alt"><i data-lucide="sparkles" class="w-4 h-4 text-brand-400" style="display:inline; vertical-align:-3px;"></i> Your Partnership Perks</p>
     <div id="partnership-perks" class="perk-list"></div>
@@ -390,75 +383,15 @@
     <p class="s-section-label-alt"><i data-lucide="receipt" class="w-4 h-4 text-brand-400" style="display:inline; vertical-align:-3px;"></i> Commission &amp; Fee Structure</p>
     <div id="partnership-terms" class="commission-box"></div>
 
-    <label class="agree-row">
-      <input type="checkbox" id="partnership-agree-checkbox" class="agree-checkbox">
-      <span>I have read and agree to the Partnership Terms &amp; Commission Structure.</span>
-    </label>
-
     <div class="notice-box">
       <i data-lucide="info" class="w-4 h-4"></i>
       <p><b>Platform Status &amp; WhatsApp Verification Notice:</b> Physical property inspections, booking confirmations, and payment verifications are currently handled manually via our dedicated WhatsApp Desk during this web phase. AI underwriting, instant digital scheduling, and automated in-app wallets will be fully enabled upon our upcoming official mobile app release.</p>
     </div>
 
-    <button type="button" id="partnership-continue-btn" class="btn-primary" disabled>Accept &amp; Continue to Create Login →</button>
-    <button type="button" id="partnership-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Sign Up</button>
+    <button type="button" id="partnership-continue-btn" class="btn-primary">Sign up to join →</button>
+    <button type="button" id="partnership-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
   </div>
   <!-- ===================== END SCREEN 1b ===================== -->
-
-  <!-- ===================== SCREEN 4: Create Your Login ===================== -->
-  <div id="screen-4" class="screen hidden-screen">
-
-    <div class="progress-wrap" id="progress-wrap-4">
-      <div class="progress-labels">
-        <span class="progress-step">Step 2 of 2: Create Your Login</span>
-        <span class="progress-pct">100%</span>
-      </div>
-      <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
-    </div>
-
-    <div class="kyc-icon-wrap">
-      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
-    </div>
-
-    <h1 class="title" style="text-align:center;">Create your login</h1>
-    <p class="subtitle" style="text-align:center;">Set your email and password, then review and accept our Terms of Service to finish creating your account.</p>
-
-    <div class="selected-listing-slot"></div>
-
-    <div class="field">
-      <label class="field-label">Email Address</label>
-      <input class="field-input" id="reg-email" type="email" required placeholder="you@example.com">
-    </div>
-    <div class="field">
-      <label class="field-label">Create Password</label>
-      <div class="field-password-wrap">
-        <input class="field-input" id="reg-password" type="password" required minlength="8" placeholder="At least 8 characters" autocomplete="new-password">
-        <button type="button" class="password-toggle-btn" data-toggle-for="reg-password" aria-label="Show password">
-          <i data-lucide="eye" class="pw-icon-show"></i>
-          <i data-lucide="eye-off" class="pw-icon-hide" style="display:none;"></i>
-        </button>
-      </div>
-      <p id="password-hint" class="kyc-note" style="display:none; margin:8px 0 0;">Password must be at least 8 characters.</p>
-    </div>
-
-    <button type="button" id="open-legal-drawer-btn" class="legal-link-row">
-      <span id="legal-preview-title" class="legal-link-text">Read Terms of Service</span>
-    </button>
-
-    <button type="button" id="tenant-notice-toggle" class="notice-box" style="display:none; width:100%; cursor:pointer; font:inherit; text-align:left;">
-      <i data-lucide="info" class="w-4 h-4"></i>
-      <p><b>Platform Status &amp; WhatsApp Verification Notice</b> — manual verification during this web phase. <span style="color:#93c5fd; font-weight:600;">Tap to learn more</span></p>
-    </button>
-    <div id="tenant-notice-full" class="notice-box" style="display:none;">
-      <i data-lucide="info" class="w-4 h-4"></i>
-      <p><b>Platform Status &amp; WhatsApp Verification Notice:</b> Physical property inspections, booking confirmations, and payment verifications are currently handled manually via our dedicated WhatsApp Desk during this web phase. AI underwriting, instant digital scheduling, and automated in-app wallets will be fully enabled upon our upcoming official mobile app release.</p>
-    </div>
-
-    <button type="button" id="create-login-btn" class="btn-primary" disabled>Agree to Terms to Continue</button>
-    <p id="sign-status" class="kyc-note" style="display:none; text-align:center; margin:10px 0 0;"></p>
-    <button type="button" id="login-back-btn" class="btn-primary btn-back"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
-  </div>
-  <!-- ===================== END SCREEN 4 ===================== -->
 
   <!-- ===================== Terms of Service Drawer (opens from Screen 4) ===================== -->
   <div id="legal-drawer-overlay" class="legal-drawer-overlay"></div>
@@ -472,17 +405,62 @@
     <div id="legal-box" class="legal-box"></div>
     <p class="scroll-hint" style="display:flex; align-items:center; justify-content:center; gap:5px;"><i data-lucide="move-vertical" class="w-3.5 h-3.5"></i> Scroll to read the complete agreement</p>
 
-    <label class="agree-row">
-      <input type="checkbox" id="agree-checkbox" class="agree-checkbox">
-      <span>I have read and agree to the full MainTown Realty Terms of Service and Default Rules.</span>
-    </label>
+    <button type="button" id="drawer-done-btn" class="btn-primary" style="flex-shrink:0; margin-top:12px;">Close</button>
+  </div>
 
-    <div class="field">
-      <label class="field-label">Digital Signature (type your full legal name)</label>
-      <input class="field-input signature-input" id="signature-input" type="text" placeholder="Your full name as signature">
+  <!-- ===================== Join sheet: Continue with Google / email ===================== -->
+  <div id="join-overlay" class="join-overlay"></div>
+  <div id="join-sheet" class="join-sheet" role="dialog" aria-modal="true" aria-labelledby="join-title" aria-hidden="true">
+    <div class="join-head">
+      <div id="join-role-badge" class="kyc-role-badge" style="margin:0;"></div>
+      <button type="button" id="join-close-btn" aria-label="Close" class="legal-drawer-close">✕</button>
+    </div>
+    <h2 class="join-title" id="join-title">Continue as a Tenant</h2>
+    <p class="join-sub" id="join-sub"></p>
+    <div class="selected-listing-slot"></div>
+    <button type="button" id="join-benefits-btn" class="join-link" style="display:none; margin-bottom:8px;">See partnership benefits</button>
+
+    <button type="button" id="join-notice-toggle" class="notice-box" style="width:100%; cursor:pointer; font:inherit; text-align:left; margin:0 0 12px;">
+      <i data-lucide="message-circle" class="w-4 h-4"></i>
+      <p><b>Handled manually on WhatsApp for now.</b> After you sign up we continue with you on WhatsApp. <span style="color:#C4B5FD; font-weight:600;">Tap to learn more</span></p>
+    </button>
+    <div id="join-notice-full" class="notice-box" style="display:none; margin:0 0 12px;">
+      <i data-lucide="info" class="w-4 h-4"></i>
+      <p><b>Platform Status &amp; WhatsApp Verification Notice:</b> Physical property inspections, booking confirmations, and payment verifications are currently handled manually via our dedicated WhatsApp Desk during this web phase. AI underwriting, instant digital scheduling, and automated in-app wallets will be fully enabled upon our upcoming official mobile app release.</p>
     </div>
 
-    <button type="button" id="drawer-done-btn" class="btn-primary" style="flex-shrink:0; margin-top:4px;" disabled>Sign &amp; Continue</button>
+    <button type="button" id="join-google-btn" class="btn-google">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <span id="join-google-label">Continue with Google</span>
+    </button>
+
+    <div class="join-divider">or</div>
+    <div style="text-align:center;"><button type="button" id="join-email-toggle" class="join-link">Use email instead</button></div>
+
+    <div id="join-email-form">
+      <div class="field">
+        <label class="field-label" for="join-name">Full name</label>
+        <input class="field-input" id="join-name" type="text" autocomplete="name" placeholder="e.g. Onwochei Precious Ebuka">
+      </div>
+      <div class="field">
+        <label class="field-label" for="join-email">Email address</label>
+        <input class="field-input" id="join-email" type="email" autocomplete="email" placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label class="field-label" for="join-password">Create a password</label>
+        <div class="field-password-wrap">
+          <input class="field-input" id="join-password" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+          <button type="button" class="password-toggle-btn" data-toggle-for="join-password" aria-label="Show password">
+            <i data-lucide="eye" class="pw-icon-show"></i>
+            <i data-lucide="eye-off" class="pw-icon-hide" style="display:none;"></i>
+          </button>
+        </div>
+      </div>
+      <button type="button" id="join-email-submit" class="btn-primary">Create account</button>
+    </div>
+
+    <p id="join-status" class="join-status"></p>
+    <p class="join-consent">By continuing you agree to the MainTown Realty <a href="./terms.html" target="_blank" rel="noopener" class="join-link">Terms of Service</a> and <a href="./privacy.html" target="_blank" rel="noopener" class="join-link">Privacy Policy</a>, and that we may contact you on WhatsApp and by email about your request.</p>
   </div>
 
   <!-- ===================== SCREEN 5: Success ===================== -->
@@ -490,8 +468,9 @@
     <div class="success-icon-wrap">
       <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
     </div>
-    <h1 class="title" style="text-align:center;">You're all set!</h1>
-    <p class="subtitle" style="text-align:center;">Our onboarding team will verify your details and guide you to complete your request.</p>
+    <h1 class="title" id="done-title" style="text-align:center;">You're all set!</h1>
+    <p class="subtitle" id="done-sub" style="text-align:center;">We're opening WhatsApp so our team can continue with you. We've also emailed you a link to chat with us. Your full onboarding will be completed in the MainTown app when it launches.</p>
+    <p id="done-status" class="kyc-note" style="text-align:center; margin:0 0 10px; display:none;"></p>
     <a id="whatsapp-continue-btn" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;">
       <i data-lucide="message-circle" class="w-4 h-4"></i> Continue on WhatsApp
     </a>
@@ -760,103 +739,57 @@
 
   let currentRole = null;
 
+  const ROLE_META = {
+    tenant:   { short: 'a Tenant',   sub: "You're signing up to rent, buy or book a property. Your full tenant onboarding (identity checks and the rest) happens inside the MainTown app." },
+    landlord: { short: 'a Landlord', sub: "You're signing up to list and manage your properties. Your landlord onboarding (verification, payout account and agreement) happens inside the MainTown app." },
+    agent:    { short: 'an Agent',   sub: "You're signing up to represent listings and clients. Your agent onboarding (verification, credentials and agreement) happens inside the MainTown app." }
+  };
+
   const screen1 = document.getElementById('screen-1');
   const screenPartnership = document.getElementById('screen-partnership');
-  const screen4 = document.getElementById('screen-4');
   const screen5 = document.getElementById('screen-5');
+  const roleCards = document.querySelectorAll('.role-card');
 
-  // ---- Reload persistence ----
-  // Keeps the user on whatever step/role/fields they had so a reload
-  // doesn't send them back to Step 1. Password, the agreement checkbox,
-  // and the signature are deliberately NOT saved — those must always be
-  // re-entered/re-confirmed, so "must agree before login is created"
-  // still holds after a reload.
-  const STORAGE_KEY = 'mtRealtySignupState';
+  const STORAGE_KEY = 'mtRealtySignupState';   // role + selected listing, kept across the Google redirect
+  const FLIGHT_KEY = 'mtSignupInFlight';       // set while Google / email confirmation has the user away from this page
+  let signedInUser = null;                      // set when someone is signed in but has not chosen a role yet
+  let signedInProvider = 'google';
+  let finishing = false;
 
+  // ---- tiny storage helpers (all fail silently: private mode etc.) ----
   function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ role: currentRole, selectedListing })); } catch (e) {}
+  }
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) { return null; }
+  }
+  function setFlight(obj) { try { localStorage.setItem(FLIGHT_KEY, JSON.stringify(obj)); } catch (e) {} }
+  function getFlight() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        role: currentRole,
-        screen: currentScreenKey,
-        fullname: fullNameInput.value,
-        occupation: document.getElementById('reg-occupation').value,
-        countryCode: document.getElementById('country-code').value,
-        phone: phoneInput.value,
-        email: emailInput.value,
-        selectedListing,
-      }));
-    } catch (e) { /* storage unavailable (private mode, etc.) — fail silently */ }
+      const f = JSON.parse(localStorage.getItem(FLIGHT_KEY) || 'null');
+      if (f && Date.now() - (f.t || 0) > 1000 * 60 * 60 * 24) { localStorage.removeItem(FLIGHT_KEY); return null; } // stale after a day
+      return f;
+    } catch (e) { return null; }
   }
+  function clearFlight() { try { localStorage.removeItem(FLIGHT_KEY); } catch (e) {} }
+  function clearSavedState() { try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(FLIGHT_KEY); } catch (e) {} }
 
-  function clearSavedState() {
-    try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
-  }
-
-  let currentScreenKey = 'screen-1';
-
-  function showScreen(fromEl, toEl) {
-    fromEl.classList.add('hidden-screen');
+  function showScreen(toEl) {
+    [screen1, screenPartnership, screen5].forEach(el => el.classList.add('hidden-screen'));
     toEl.classList.remove('hidden-screen');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    currentScreenKey = toEl.id;
-    saveState();
     renderSelectedListing();
     if (window.lucide) lucide.createIcons();
   }
 
-  // Same as showScreen but with no transition/scroll — used only when
-  // restoring straight to a saved step on page load.
-  function jumpToScreen(id) {
-    [screen1, screenPartnership, screen4, screen5].forEach(s => s.classList.add('hidden-screen'));
-    const target = document.getElementById(id) || screen1;
-    target.classList.remove('hidden-screen');
-    currentScreenKey = target.id;
-    if (window.lucide) lucide.createIcons();
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2600);
   }
 
-  // The step count differs by role: Agent/Landlord get an extra
-  // "Partnership Benefits & Terms" step that Tenants never see.
-  function getStepPlan(role) {
-    if (role === 'agent' || role === 'landlord') {
-      return [
-        { key: 'account', label: 'Tell us about you' },
-        { key: 'partnership', label: 'Partnership Benefits & Terms' },
-        { key: 'login', label: 'Create Your Login' },
-      ];
-    }
-    return [
-      { key: 'account', label: 'Tell us about you' },
-      { key: 'login', label: 'Create Your Login' },
-    ];
-  }
-
-  function setProgress(wrapId, stepKey) {
-    const plan = getStepPlan(currentRole || 'tenant');
-    const idx = plan.findIndex(s => s.key === stepKey);
-    const stepNum = idx === -1 ? 1 : idx + 1;
-    const total = plan.length;
-    const pct = Math.round((stepNum / total) * 100);
-    const wrap = document.getElementById(wrapId);
-    wrap.querySelector('.progress-step').textContent = `Step ${stepNum} of ${total}: ${plan[idx] ? plan[idx].label : ''}`;
-    wrap.querySelector('.progress-pct').textContent = pct + '%';
-    wrap.querySelector('.progress-fill').style.width = pct + '%';
-  }
-
-  // ---- Screen 1: role + form ----
-  const roleCards = document.querySelectorAll('.role-card');
-  const continueBtn = document.getElementById('continue-btn');
-  const roleHint = document.getElementById('role-hint');
-  const fullNameInput = document.getElementById('reg-fullname');
-  const phoneInput = document.getElementById('reg-phone');
-  // Email/password live on Screen 4 (Create Your Login) — declared once
-  // that screen's markup exists further down, but referenced here too
-  // since IDs are the same across the whole document.
-  const emailInput = document.getElementById('reg-email');
-  const passwordInput = document.getElementById('reg-password');
-  const passwordHint = document.getElementById('password-hint');
-  const agreeCheckbox = document.getElementById('agree-checkbox');
-  const signatureInput = document.getElementById('signature-input');
-
+  // ---- password show/hide ----
   document.querySelectorAll('.password-toggle-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const target = document.getElementById(btn.dataset.toggleFor);
@@ -869,461 +802,310 @@
     });
   });
 
-  function updateContinueState() {
-    const occupationField = document.getElementById('reg-occupation-field');
-    const occupationRequired = occupationField.style.display !== 'none';
-    const occupationOk = !occupationRequired || document.getElementById('reg-occupation').value.trim().length > 0;
-    const formFilled = fullNameInput.value.trim() && phoneInput.value.trim() && occupationOk;
-    continueBtn.disabled = !(currentRole && formFilled);
-    roleHint.style.display = currentRole ? 'none' : 'block';
+  // ---- WhatsApp notice (Screen 1 + join sheet): short line, tap for the full text ----
+  document.getElementById('notice-toggle').addEventListener('click', () => {
+    document.getElementById('notice-toggle').style.display = 'none';
+    document.getElementById('notice-full').style.display = 'flex';
+  });
+  document.getElementById('join-notice-toggle').addEventListener('click', () => {
+    document.getElementById('join-notice-toggle').style.display = 'none';
+    document.getElementById('join-notice-full').style.display = 'flex';
+  });
+
+  // ==================================================================
+  // Join sheet — pick a role, then "Continue with Google" (or email).
+  // No onboarding happens here: the website only saves the login and the
+  // chosen role. Full onboarding (KYC, agreements, payouts) is done in the
+  // MainTown app after launch, where this same login is used.
+  // ==================================================================
+  const joinOverlay = document.getElementById('join-overlay');
+  const joinSheet = document.getElementById('join-sheet');
+  const joinGoogleBtn = document.getElementById('join-google-btn');
+  const joinEmailSubmit = document.getElementById('join-email-submit');
+
+  function setJoinStatus(msg, isError) {
+    const el = document.getElementById('join-status');
+    if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+    el.textContent = msg;
+    el.style.color = isError ? '#f87171' : '#94a3b8';
+    el.style.display = 'block';
   }
+
+  function openJoin(role) {
+    currentRole = role;
+    const data = legalContent[role];
+    document.getElementById('join-role-badge').innerHTML = `<i data-lucide="${data.roleIcon}" class="w-4 h-4"></i><span>${data.label}</span>`;
+    document.getElementById('join-title').textContent = 'Continue as ' + ROLE_META[role].short;
+    document.getElementById('join-sub').textContent = ROLE_META[role].sub;
+    document.getElementById('join-benefits-btn').style.display = (role === 'landlord' || role === 'agent') ? 'inline-block' : 'none';
+    document.getElementById('join-email-form').style.display = 'none';
+    document.getElementById('join-email-toggle').style.display = '';
+    joinGoogleBtn.disabled = false;
+    document.getElementById('join-google-label').textContent = 'Continue with Google';
+    joinEmailSubmit.disabled = false; joinEmailSubmit.textContent = 'Create account';
+    setJoinStatus('');
+    saveState();
+    renderSelectedListing();
+    joinOverlay.classList.add('show');
+    joinSheet.classList.add('show');
+    joinSheet.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    if (window.lucide) lucide.createIcons();
+  }
+  function closeJoin() {
+    joinOverlay.classList.remove('show');
+    joinSheet.classList.remove('show');
+    joinSheet.setAttribute('aria-hidden', 'true');
+    if (!document.getElementById('legal-drawer').classList.contains('show')) document.body.style.overflow = '';
+  }
+  document.getElementById('join-close-btn').addEventListener('click', closeJoin);
+  joinOverlay.addEventListener('click', closeJoin);
 
   roleCards.forEach(card => {
     card.addEventListener('click', () => {
-      roleCards.forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      currentRole = card.dataset.role;
-      setProgress('progress-wrap-1', 'account');
-
-      const occupationField = document.getElementById('reg-occupation-field');
-      const occupationInput = document.getElementById('reg-occupation');
-      if (currentRole === 'tenant') {
-        occupationField.style.display = 'block';
-        occupationInput.required = true;
-        continueBtn.textContent = 'Continue to Create Login';
-      } else {
-        occupationField.style.display = 'none';
-        occupationInput.required = false;
-        document.getElementById('reg-occupation').value = '';
-        continueBtn.textContent = 'Continue to Partnership Benefits →';
-      }
-      updateContinueState();
-      saveState();
+      const role = card.dataset.role;
+      roleCards.forEach(c => c.classList.toggle('selected', c === card));
+      if (signedInUser) { finishSignup(signedInUser, signedInProvider, role); return; } // already signed in: just save the role
+      openJoin(role);
     });
   });
 
-  [fullNameInput, phoneInput, document.getElementById('reg-occupation'), document.getElementById('country-code')]
-    .forEach(el => el.addEventListener('input', () => { updateContinueState(); saveState(); }));
-  document.getElementById('country-code').addEventListener('change', saveState);
+  document.getElementById('join-email-toggle').addEventListener('click', () => {
+    document.getElementById('join-email-form').style.display = 'block';
+    document.getElementById('join-email-toggle').style.display = 'none';
+    setTimeout(() => document.getElementById('join-name').focus(), 50);
+  });
 
-  // ---- Screen 4: Create Your Login (also owns the Terms of Service drawer) ----
-  function populateLoginScreen() {
-    setProgress('progress-wrap-4', 'login');
-    // Agent/Landlord already saw the WhatsApp operational notice on the
-    // Partnership screen — Tenants skip that screen, so they see it here,
-    // collapsed to one line until tapped.
-    const isTenant = currentRole === 'tenant';
-    document.getElementById('tenant-notice-toggle').style.display = isTenant ? 'flex' : 'none';
-    document.getElementById('tenant-notice-full').style.display = 'none';
-    agreeCheckbox.checked = false;
-    signatureInput.value = '';
-    updateTermsPreview();
-    updateLoginBtnState();
+  // ---- Continue with Google ----
+  joinGoogleBtn.addEventListener('click', async () => {
+    if (joinGoogleBtn.disabled) return;
+    setJoinStatus('');
+    joinGoogleBtn.disabled = true;
+    document.getElementById('join-google-label').textContent = 'Opening Google…';
+    saveState();
+    setFlight({ role: currentRole, provider: 'google', t: Date.now() });
+    try {
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + window.location.pathname, queryParams: { prompt: 'select_account' } }
+      });
+      if (error) throw error;
+      // the browser now leaves for Google; nothing else to do here
+    } catch (err) {
+      console.error(err);
+      clearFlight();
+      joinGoogleBtn.disabled = false;
+      document.getElementById('join-google-label').textContent = 'Continue with Google';
+      setJoinStatus('Could not open Google sign-in (' + (err.message || 'unknown error') + '). You can use email instead.', true);
+    }
+  });
+
+  // ---- Use email instead (name + email + new password) ----
+  joinEmailSubmit.addEventListener('click', async () => {
+    if (joinEmailSubmit.disabled) return;
+    const name = document.getElementById('join-name').value.trim();
+    const email = document.getElementById('join-email').value.trim();
+    const password = document.getElementById('join-password').value;
+    if (name.length < 2) { setJoinStatus('Please enter your full name.', true); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setJoinStatus('Please enter a valid email address.', true); return; }
+    if (password.length < 8) { setJoinStatus('Password must be at least 8 characters.', true); return; }
+
+    joinEmailSubmit.disabled = true; joinEmailSubmit.textContent = 'Creating your account…';
+    setJoinStatus('');
+    const exists = 'That email already has an account. Sign in with Google, use the right password, or try a different email.';
+    try {
+      let { data, error } = await sb.auth.signUp({
+        email, password,
+        options: { data: { full_name: name, role: currentRole }, emailRedirectTo: window.location.origin + window.location.pathname }
+      });
+      if (error) {
+        if (/already|registered|exists/i.test(error.message || '')) {
+          const r = await sb.auth.signInWithPassword({ email, password });
+          if (r.error) throw new Error(exists);
+          data = { session: r.data.session, user: r.data.user };
+        } else { throw error; }
+      }
+      // With email confirmation on, Supabase answers an existing email with a user that has no identities.
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error(exists);
+
+      if (data.session) {
+        await finishSignup(data.session.user, 'email', currentRole, name);
+      } else {
+        // Email confirmation is switched on in Supabase: keep going on WhatsApp, finish saving once they confirm.
+        setFlight({ role: currentRole, provider: 'email', name, email, noWhatsapp: true, t: Date.now() });
+        finishWithoutSession(name, email);
+      }
+    } catch (err) {
+      console.error(err);
+      joinEmailSubmit.disabled = false; joinEmailSubmit.textContent = 'Create account';
+      setJoinStatus(err.message || 'Something went wrong. Please try again.', true);
+    }
+  });
+
+  // ---- Partnership benefits: view only (nothing to sign here) ----
+  function populatePartnershipScreen() {
+    const roleData = legalContent[currentRole];
+    document.getElementById('partnership-role-badge').innerHTML = `<i data-lucide="${roleData.roleIcon}" class="w-4 h-4"></i><span>${roleData.label}</span>`;
+    const content = partnershipContent[currentRole];
+    document.getElementById('partnership-perks').innerHTML = content.perks.map(p => `
+      <div class="perk-item">
+        <div class="perk-item-icon-wrap"><i data-lucide="${p.icon}" class="w-4 h-4"></i></div>
+        <p class="perk-item-text">${p.text}</p>
+      </div>`).join('');
+    document.getElementById('partnership-terms').innerHTML = `
+      <h3><i data-lucide="receipt" class="text-brand-400"></i>Commission &amp; Fee Structure — ${roleData.label}</h3>
+      <ul>${content.terms.map(t => `<li><b>${t.label}:</b> ${t.body}</li>`).join('')}</ul>`;
+    if (window.lucide) lucide.createIcons();
   }
-
-  // Reflects agreement/signature status on the main screen's Terms link,
-  // since the checkbox + signature now live inside the drawer itself.
-  function updateTermsPreview() {
-    const linkRow = document.getElementById('open-legal-drawer-btn');
-    const title = document.getElementById('legal-preview-title');
-    const signed = agreeCheckbox.checked && signatureInput.value.trim().length > 1;
-    if (signed) {
-      linkRow.classList.add('confirmed-terms');
-      title.textContent = `Terms of Service — signed as ${signatureInput.value.trim()} ✓`;
-    } else {
-      linkRow.classList.remove('confirmed-terms');
-      title.textContent = 'Read Terms of Service';
-    }
-  }
-
-  document.getElementById('tenant-notice-toggle').addEventListener('click', () => {
-    document.getElementById('tenant-notice-toggle').style.display = 'none';
-    document.getElementById('tenant-notice-full').style.display = 'flex';
+  document.getElementById('join-benefits-btn').addEventListener('click', () => {
+    closeJoin(); populatePartnershipScreen(); showScreen(screenPartnership);
   });
+  document.getElementById('partnership-continue-btn').addEventListener('click', () => { showScreen(screen1); openJoin(currentRole); });
+  document.getElementById('partnership-back-btn').addEventListener('click', () => showScreen(screen1));
 
-  document.getElementById('reg-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (continueBtn.disabled) return;
-    if (currentRole === 'agent' || currentRole === 'landlord') {
-      populatePartnershipScreen();
-      showScreen(screen1, screenPartnership);
-    } else {
-      populateLoginScreen();
-      showScreen(screen1, screen4);
-    }
-  });
-
-  document.getElementById('login-back-btn').addEventListener('click', () => {
-    if (currentRole === 'agent' || currentRole === 'landlord') {
-      showScreen(screen4, screenPartnership);
-    } else {
-      showScreen(screen4, screen1);
-    }
-  });
-
-  // ---- Terms of Service drawer ----
+  // ---- Terms of Service (read-only) ----
   const legalDrawerOverlay = document.getElementById('legal-drawer-overlay');
   const legalDrawer = document.getElementById('legal-drawer');
-
   function openLegalDrawer() {
-    const data = legalContent[currentRole];
+    const data = legalContent[currentRole || 'tenant'];
     document.getElementById('legal-drawer-role-badge').innerHTML = `<i data-lucide="${data.roleIcon}" class="w-4 h-4"></i><span>${data.label}</span>`;
-    const box = document.getElementById('legal-box');
-    box.innerHTML = data.sections.map(s => {
+    document.getElementById('legal-box').innerHTML = data.sections.map(s => {
       const heading = `<h3><i data-lucide="scale" class="text-brand-400"></i>${s.title}</h3>`;
-      if (s.critical) {
-        return `<div class="critical-section"><div class="critical-badge"><i data-lucide="alert-triangle" class="text-amber-400"></i>Compliance Warning</div>${heading}<p>${s.body}</p></div>`;
-      }
+      if (s.critical) return `<div class="critical-section"><div class="critical-badge"><i data-lucide="alert-triangle" class="text-amber-400"></i>Compliance Warning</div>${heading}<p>${s.body}</p></div>`;
       return `${heading}<p>${s.body}</p>`;
     }).join('');
     legalDrawerOverlay.classList.add('show');
     legalDrawer.classList.add('show');
     legalDrawer.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
-    updateDrawerSignState();
     if (window.lucide) lucide.createIcons();
   }
   function closeLegalDrawer() {
     legalDrawerOverlay.classList.remove('show');
     legalDrawer.classList.remove('show');
     legalDrawer.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
+    document.body.style.overflow = joinSheet.classList.contains('show') ? 'hidden' : '';
   }
-  const drawerDoneBtn = document.getElementById('drawer-done-btn');
-
-  // The drawer's own "Sign & Continue" stays disabled until both the
-  // checkbox is ticked AND a signature is typed — this is the one and
-  // only gate for agreeing to terms, enforced right where the terms live.
-  function updateDrawerSignState() {
-    const signed = agreeCheckbox.checked && signatureInput.value.trim().length > 1;
-    drawerDoneBtn.disabled = !signed;
-  }
-  agreeCheckbox.addEventListener('change', () => { updateDrawerSignState(); updateTermsPreview(); updateLoginBtnState(); });
-  signatureInput.addEventListener('input', () => { updateDrawerSignState(); updateTermsPreview(); updateLoginBtnState(); });
-
-  document.getElementById('open-legal-drawer-btn').addEventListener('click', openLegalDrawer);
   document.getElementById('close-legal-drawer-btn').addEventListener('click', closeLegalDrawer);
-  drawerDoneBtn.addEventListener('click', () => {
-    if (drawerDoneBtn.disabled) return; // can't leave the drawer signed off without agreeing
-    closeLegalDrawer();
-  });
+  document.getElementById('drawer-done-btn').addEventListener('click', closeLegalDrawer);
   legalDrawerOverlay.addEventListener('click', closeLegalDrawer);
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && legalDrawer.classList.contains('show')) closeLegalDrawer();
+    if (e.key !== 'Escape') return;
+    if (legalDrawer.classList.contains('show')) closeLegalDrawer();
+    else if (joinSheet.classList.contains('show')) closeJoin();
   });
 
-  function updateLoginBtnState() {
-    const emailFilled = emailInput.value.trim().length > 0;
-    const passwordOk = passwordInput.value.length >= 8;
-    const passwordTouched = passwordInput.value.length > 0;
-    passwordHint.style.display = (passwordTouched && !passwordOk) ? 'block' : 'none';
-    const agreedToTerms = agreeCheckbox.checked && signatureInput.value.trim().length > 1;
-    createLoginBtn.disabled = !(emailFilled && passwordOk && agreedToTerms);
-    createLoginBtn.textContent = agreedToTerms ? 'Create Login' : 'Agree to Terms to Continue';
-  }
-
-  // ---- Screen 1b: Partnership Value & Agreement (Agent/Landlord only) ----
-  function populatePartnershipScreen() {
-    const roleData = kycContent[currentRole];
-    document.getElementById('partnership-role-badge').innerHTML = `<i data-lucide="${roleData.roleIcon}" class="w-4 h-4"></i><span>${roleData.label}</span>`;
-    setProgress('progress-wrap-partnership', 'partnership');
-
-    const content = partnershipContent[currentRole];
-
-    const perksEl = document.getElementById('partnership-perks');
-    perksEl.innerHTML = content.perks.map(p => `
-      <div class="perk-item">
-        <div class="perk-item-icon-wrap"><i data-lucide="${p.icon}" class="w-4 h-4"></i></div>
-        <p class="perk-item-text">${p.text}</p>
-      </div>
-    `).join('');
-
-    // Strict role isolation: only this role's own commission terms are
-    // ever rendered here — Agent terms never reach a Landlord and vice versa.
-    const termsEl = document.getElementById('partnership-terms');
-    termsEl.innerHTML = `
-      <h3><i data-lucide="receipt" class="text-brand-400"></i>Commission &amp; Fee Structure — ${roleData.label}</h3>
-      <ul>${content.terms.map(t => `<li><b>${t.label}:</b> ${t.body}</li>`).join('')}</ul>
-    `;
-
-    const checkbox = document.getElementById('partnership-agree-checkbox');
-    checkbox.checked = false;
-    document.getElementById('partnership-continue-btn').disabled = true;
-
-    if (window.lucide) lucide.createIcons();
-  }
-
-  document.getElementById('partnership-agree-checkbox').addEventListener('change', (e) => {
-    document.getElementById('partnership-continue-btn').disabled = !e.target.checked;
-  });
-
-  document.getElementById('partnership-continue-btn').addEventListener('click', () => {
-    if (document.getElementById('partnership-continue-btn').disabled) return;
-    populateLoginScreen();
-    showScreen(screenPartnership, screen4);
-  });
-
-  document.getElementById('partnership-back-btn').addEventListener('click', () => showScreen(screenPartnership, screen1));
-
-  // ---- Screen 4: Create Your Login ----
-  const createLoginBtn = document.getElementById('create-login-btn');
-  [emailInput, passwordInput].forEach(el => el.addEventListener('input', updateLoginBtnState));
-  emailInput.addEventListener('input', saveState);
-
-  // Builds the signed legal agreement as an actual PDF (name, role, KYC
-  // attestation, every section of the legal terms, and the typed
-  // signature + timestamp) and returns it as a Blob for upload.
-  function buildAgreementPdf({ name, roleLabel, email, phone, occupation, guarantor, incomeRange, kycItems, signature, signedAt }) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 48;
-    const maxWidth = pageWidth - margin * 2;
-    let y = 56;
-
-    function ensureSpace(lines) {
-      if (y + lines * 14 > doc.internal.pageSize.getHeight() - 48) { doc.addPage(); y = 56; }
-    }
-    function heading(text, size) {
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(size);
-      ensureSpace(2);
-      doc.text(text, margin, y); y += size * 0.9;
-    }
-    function paragraph(text, size) {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(size || 10);
-      const lines = doc.splitTextToSize(text, maxWidth);
-      ensureSpace(lines.length);
-      doc.text(lines, margin, y);
-      y += lines.length * (size ? size * 1.15 : 12) + 4;
-    }
-
-    heading('MainTown Realty — Signed Onboarding Agreement', 16);
-    y += 6;
-    paragraph(`Role: ${roleLabel}`);
-    paragraph(`Full Name: ${name}`);
-    if (occupation) paragraph(`Occupation: ${occupation}`);
-    paragraph(`Email: ${email}`);
-    paragraph(`Phone: ${phone}`);
-    if (guarantor) paragraph(`Guarantor: ${guarantor.name} (${guarantor.relationship || 'n/a'}) — ${guarantor.phone}`);
-    if (incomeRange) paragraph(`Monthly Income Range: ${incomeRange}`);
-    y += 6;
-
-    heading('KYC Attestation', 12);
-    kycItems.forEach(item => paragraph(`✓ Document uploaded: ${item}`, 10));
-    y += 6;
-
-    heading('Terms of Service', 12);
-    legalContent[currentRole].sections.forEach(s => {
-      paragraph(s.title, 11);
-      paragraph(s.body, 10);
-    });
-
-    y += 10;
-    heading('Signature', 12);
-    paragraph(`Digitally signed by: ${signature}`, 11);
-    paragraph(`Signed at: ${signedAt}`, 10);
-    paragraph('By signing, the above party confirms they have read and agreed to the full MainTown Realty Terms of Service and Default Rules.', 9);
-
-    return doc.output('blob');
-  }
-
-  // Small success/status pop-up (used once login + agreement are saved).
-  function showToast(msg) {
-    const toastEl = document.getElementById('toast');
-    document.getElementById('toast-msg').textContent = msg;
-    toastEl.classList.add('show');
-    if (window.lucide) lucide.createIcons();
-    setTimeout(() => toastEl.classList.remove('show'), 3200);
-  }
-
-  createLoginBtn.addEventListener('click', async () => {
-    if (createLoginBtn.disabled) return;
-
-    const statusEl = document.getElementById('sign-status');
-    statusEl.style.display = 'block';
-    statusEl.style.color = '#94a3b8';
-
-    const roleLabel = legalContent[currentRole].label;
-    const name = fullNameInput.value.trim();
-    const occupation = document.getElementById('reg-occupation').value.trim();
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-    const phone = document.getElementById('country-code').value + phoneInput.value.trim();
-    const signature = signatureInput.value.trim();
-    const signedAt = new Date().toISOString();
-    let accountSaved = false;
-
-    createLoginBtn.disabled = true;
-    createLoginBtn.textContent = 'Creating your login…';
-
-    try {
-      // 1. Create the real login — this is what the person signs into once the app is live.
-      const { data: authData, error: authError } = await sb.auth.signUp({ email, password });
-      if (authError) throw new Error(authError.message);
-      const userId = authData.user ? authData.user.id : null;
-      if (!userId) {
-  throw new Error('Could not create the user account. Please try again.');
-}
-
-      // 2. Build the signed agreement as a PDF and upload it to storage.
-      createLoginBtn.textContent = 'Saving your signed agreement…';
-      const pdfBlob = buildAgreementPdf({ name, roleLabel, email, phone, occupation, guarantor: null, incomeRange: null, kycItems: [], signature, signedAt });
-      const pdfPath = `${userId}/agreement-${Date.now()}.pdf`;
-      const { error: uploadError } = await sb.storage.from(ONBOARDING_BUCKET).upload(pdfPath, pdfBlob, { contentType: 'application/pdf', upsert: false });
-      if (uploadError) throw new Error(uploadError.message);
-      
-
-      // 3. Save the login + agreement record so it shows up on the admin panel.
-      // Identity/KYC documents and guarantor details are now collected
-      // manually by the team on WhatsApp, per the operational notice shown
-      // during onboarding — so those fields are intentionally left blank here.
-      createLoginBtn.textContent = 'Finishing setup…';
-      const { error: insertError } = await sb.from('signups').insert({
-        user_id: userId,
-        full_name: name,
-        email, phone, occupation,
-        role: currentRole,
-        guarantor_name: null,
-        guarantor_relationship: null,
-        guarantor_phone: null,
-        income_range: null,
-        kyc_items: [],
-        kyc_documents: [],
-        agreement_pdf_url: pdfPath,
-        signature,
-        signed_at: signedAt,
-        status: 'pending',
-      });
-      if (insertError) throw new Error(insertError.message);
-
-      // 4. If they arrived via a "Rent Now"/"Buy Now"/"Book Now" button,
-      // save that listing against their brand-new account. This is what
-      // the future app reads to show "Your Selected Properties" and
-      // trigger the dashboard/bell notification to schedule inspection —
-      // deliberately non-fatal: a failure here should never stop the
-      // account itself from being created.
-      if (selectedListing.id && currentRole === 'tenant') {
-        const hasDates = !!(selectedListing.checkin && selectedListing.checkout);
-        const baseRow = {
-          user_id: userId,
-          listing_id: selectedListing.id,
-          listing_title: selectedListing.title || null,
-          category: selectedListing.category || null,
-          status: 'pending_inspection',
-        };
-        let { error: selectedListingError } = await sb.from('selected_listings').insert(
-          hasDates ? { ...baseRow, check_in: selectedListing.checkin, check_out: selectedListing.checkout, nights: selectedListing.nights || null } : baseRow
-        );
-        // If the table has no date columns yet, keep the dates anyway by tucking them into the title.
-        if (selectedListingError && hasDates) {
-          const tag = ` [${selectedListing.checkin} to ${selectedListing.checkout}, ${selectedListing.nights} night${selectedListing.nights === 1 ? '' : 's'}]`;
-          ({ error: selectedListingError } = await sb.from('selected_listings').insert({ ...baseRow, listing_title: (selectedListing.title || '') + tag }));
-        }
-        if (selectedListingError) {
-          console.error('Could not save selected listing (account still created fine):', selectedListingError.message);
-        }
-      }
-
-      statusEl.style.display = 'none';
-      accountSaved = true;
-    } catch (err) {
-      console.error(err);
-      statusEl.textContent = 'Could not finish saving your account: ' + err.message + ' — you can still continue on WhatsApp and our team will follow up.';
-      statusEl.style.color = '#f87171';
-      statusEl.style.display = 'block';
-    }
-
-    if (accountSaved) {
-      showToast('Login saved! Continuing to WhatsApp…');
-      await new Promise(resolve => setTimeout(resolve, 1500));
-    }
-
-    let message = `Hello MainTown Realty, I just signed up on the website.\n\nName: ${name}\nRole: ${roleLabel}\nEmail: ${email}\nPhone: ${phone}`;
-    if (occupation) message += `\nOccupation: ${occupation}`;
-    if (selectedListing.title && currentRole === 'tenant') {
+  // ==================================================================
+  // Finishing the signup (after Google returns, or right after email signup)
+  //  1. save the profile + role in ONE atomic database call (RPC)
+  //  2. save the property they picked, if any (non-fatal)
+  //  3. email them a "chat with us on WhatsApp" link (non-fatal)
+  //  4. open WhatsApp with their name and email pre-filled
+  // Every step after the login exists is fail-open: if something fails the
+  // person still lands on WhatsApp and the team follows up manually.
+  // ==================================================================
+  function buildWhatsAppLink(name, email, role) {
+    const roleLabel = legalContent[role].label;
+    let message = `Hello MainTown Realty, I just signed up on the website.\n\nName: ${name}\nRole: ${roleLabel}\nEmail: ${email}`;
+    if (selectedListing.title && role === 'tenant') {
       const actionLabel = { rent: 'renting', land: 'buying', 'short-let': 'booking' }[selectedListing.category] || 'this property';
       message += `\n\nI'm interested in ${actionLabel}: ${selectedListing.title}`;
       if (selectedListing.checkin && selectedListing.checkout) {
         message += `\nCheck-in: ${selectedListing.checkin}\nCheck-out: ${selectedListing.checkout}\nNights: ${selectedListing.nights}`;
       }
     }
-    message += `\n\nI've reviewed and agreed to the Terms of Service. Signed: ${signature}`;
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  }
 
-    const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    document.getElementById('whatsapp-continue-btn').href = waLink;
+  function withTimeout(promise, ms) {
+    return Promise.race([promise, new Promise(resolve => setTimeout(() => resolve({ timedOut: true }), ms))]);
+  }
 
-    createLoginBtn.disabled = false;
-    createLoginBtn.textContent = 'Create Login';
-    clearSavedState();
-    showScreen(screen4, screen5);
-    window.open(waLink, '_blank', 'noopener,noreferrer');
-  });
+  async function finishSignup(user, provider, role, nameOverride, opts) {
+    if (finishing) return;
+    opts = opts || {};
+    const flight = getFlight() || {};
+    const saved = loadState() || {};
+    role = role || currentRole || flight.role || saved.role;
+    if (!['tenant', 'landlord', 'agent'].includes(role)) { promptRoleAfterSignIn(user, provider); return; }
+    finishing = true;
+    currentRole = role;
+    closeJoin();
+    showScreen(screen5);
 
-  // ---- Restore saved progress on page load ----
-  function restoreState() {
-    let saved;
+    const meta = user.user_metadata || {};
+    const email = user.email || meta.email || flight.email || '';
+    const name = String(nameOverride || meta.full_name || meta.name || flight.name || email.split('@')[0] || '').trim();
+    const avatar = meta.avatar_url || meta.picture || null;
+    const statusEl = document.getElementById('done-status');
+    statusEl.style.display = 'block'; statusEl.style.color = '#64748b'; statusEl.textContent = 'Saving your details…';
+    const waLink = buildWhatsAppLink(name, email, role);
+
+    // 1. Profile + role (atomic)
+    let profileSaved = false;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      saved = JSON.parse(raw);
-    } catch (e) { return; }
-    if (!saved || !saved.role) return;
+      const { error } = await sb.rpc('save_waitlist_signup', { p_role: role, p_full_name: name, p_avatar_url: avatar, p_provider: provider });
+      if (error) throw error;
+      profileSaved = true;
+    } catch (err) { console.error('save_waitlist_signup failed (continuing):', err); }
 
-    // A link that names a role ("Rent Now" -> tenant, "I'm a landlord" -> landlord, "I'm an agent" -> agent)
-    // always wins over the last saved choice. Keep the contact details already typed, but start
-    // on Step 1 with the role from the link instead of resuming another role's unfinished signup.
-    // Links with no role (the plain Sign up button) still resume the last saved choice below.
-    const urlRole = (urlParams.get('role') || '').toLowerCase();
-    if (['tenant', 'landlord', 'agent'].includes(urlRole) && saved.role !== urlRole) {
-      if (saved.fullname) fullNameInput.value = saved.fullname;
-      if (saved.countryCode) document.getElementById('country-code').value = saved.countryCode;
-      if (saved.phone) phoneInput.value = saved.phone;
-      if (saved.email) emailInput.value = saved.email;
-      return;
+    // 2. Selected property (tenants) — never blocks anything
+    if (profileSaved && selectedListing.id && role === 'tenant') {
+      try {
+        const hasDates = !!(selectedListing.checkin && selectedListing.checkout);
+        const baseRow = { user_id: user.id, listing_id: selectedListing.id, listing_title: selectedListing.title || null, category: selectedListing.category || null, status: 'pending_inspection' };
+        let { error: slErr } = await sb.from('selected_listings').insert(
+          hasDates ? { ...baseRow, check_in: selectedListing.checkin, check_out: selectedListing.checkout, nights: selectedListing.nights || null } : baseRow);
+        if (slErr && hasDates) {
+          const tag = ` [${selectedListing.checkin} to ${selectedListing.checkout}, ${selectedListing.nights} night${selectedListing.nights === 1 ? '' : 's'}]`;
+          ({ error: slErr } = await sb.from('selected_listings').insert({ ...baseRow, listing_title: (selectedListing.title || '') + tag }));
+        }
+        if (slErr) console.error('Could not save selected listing (account still created):', slErr.message);
+      } catch (err) { console.error(err); }
     }
 
-    const card = document.querySelector(`.role-card[data-role="${saved.role}"]`);
-    if (!card) return;
+    // 3. Follow-up email with a WhatsApp link (non-fatal, never waits more than a few seconds)
+    try {
+      await withTimeout(sb.functions.invoke('send-whatsapp-followup', {
+        body: { role, name, listing_title: selectedListing.title || null, wa_link: waLink }
+      }), 5000);
+    } catch (err) { console.error('follow-up email failed (continuing):', err); }
 
-    roleCards.forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    currentRole = saved.role;
-
-    const occupationField = document.getElementById('reg-occupation-field');
-    const occupationInput = document.getElementById('reg-occupation');
-    if (currentRole === 'tenant') {
-      occupationField.style.display = 'block';
-      occupationInput.required = true;
-      continueBtn.textContent = 'Continue to Create Login';
-    } else {
-      occupationField.style.display = 'none';
-      occupationInput.required = false;
-      continueBtn.textContent = 'Continue to Partnership Benefits →';
+    // 4. WhatsApp
+    document.getElementById('whatsapp-continue-btn').href = waLink;
+    statusEl.style.color = profileSaved ? '#10b981' : '#f59e0b';
+    statusEl.textContent = profileSaved
+      ? 'Signed in as ' + email + '. Opening WhatsApp…'
+      : "We couldn't save everything on our side, but don't worry: continue on WhatsApp and our team will pick it up.";
+    clearSavedState();
+    try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+    if (!opts.noWhatsapp) setTimeout(() => { window.location.href = waLink; }, 1200);
+    else {
+      document.getElementById('done-title').textContent = 'Email confirmed!';
+      statusEl.textContent = 'Your account is ready. You can continue on WhatsApp any time.';
     }
+  }
 
-    if (saved.fullname) fullNameInput.value = saved.fullname;
-    if (saved.occupation) document.getElementById('reg-occupation').value = saved.occupation;
-    if (saved.countryCode) document.getElementById('country-code').value = saved.countryCode;
-    if (saved.phone) phoneInput.value = saved.phone;
-    if (saved.email) emailInput.value = saved.email;
-    // Only restore from storage if this page load didn't already arrive
-    // with its own fresh ?listingId=... — a direct link always wins.
-    if (!selectedListing.id && saved.selectedListing && saved.selectedListing.id) {
-      selectedListing = saved.selectedListing;
-    }
+  // Email signup while "Confirm email" is on in Supabase: there is no session yet, so go to WhatsApp now
+  // and finish saving the profile when they come back from the confirmation email.
+  function finishWithoutSession(name, email) {
+    closeJoin();
+    showScreen(screen5);
+    const waLink = buildWhatsAppLink(name, email, currentRole);
+    document.getElementById('whatsapp-continue-btn').href = waLink;
+    const statusEl = document.getElementById('done-status');
+    statusEl.style.display = 'block'; statusEl.style.color = '#f59e0b';
+    statusEl.textContent = 'Please confirm your email: we sent a link to ' + email + '. Opening WhatsApp…';
+    setTimeout(() => { window.location.href = waLink; }, 1800);
+  }
 
-    updateContinueState();
-    setProgress('progress-wrap-1', 'account');
-
-    if (saved.screen === 'screen-partnership') {
-      populatePartnershipScreen();
-      jumpToScreen('screen-partnership');
-    } else if (saved.screen === 'screen-4') {
-      populateLoginScreen();
-      jumpToScreen('screen-4');
-    }
-    // Password, the agreement checkbox, and the signature always start
-    // blank — those stay a fresh, required step even after a reload.
+  // Signed in with Google but we don't know which role they chose (storage was cleared): ask once, then finish.
+  function promptRoleAfterSignIn(user, provider) {
+    signedInUser = user; signedInProvider = provider || 'google';
+    showScreen(screen1);
+    const b = document.getElementById('join-banner');
+    b.textContent = "You're signed in as " + (user.email || 'your account') + ". Choose how you'll use MainTown to finish signing up.";
+    b.style.display = 'block';
   }
 
   // ---- Header mobile menu (same behaviour as the main site) ----
@@ -1353,17 +1135,46 @@
     });
   }
 
-  restoreState();
+  // ==================================================================
+  // Start-up: (1) did we just come back from Google / an email confirmation link?
+  //           (2) otherwise a normal visit, honouring ?role= deep links from the main site.
+  // ==================================================================
+  (async function init() {
+    const saved = loadState();
+    if (saved && saved.selectedListing && saved.selectedListing.id && !selectedListing.id) selectedListing = saved.selectedListing;
+    renderSelectedListing();
+    if (window.lucide) lucide.createIcons();
 
-  // The main site's "Sign Up" cards can deep-link with ?role=tenant|landlord|agent.
-  const roleParam = (urlParams.get('role') || '').toLowerCase();
-  if (currentScreenKey === 'screen-1' && currentRole !== roleParam && ['tenant', 'landlord', 'agent'].includes(roleParam)) {
-    const preselect = document.querySelector(`.role-card[data-role="${roleParam}"]`);
-    if (preselect) preselect.click();
-  }
+    const flight = getFlight();
+    const qs = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const authError = qs.get('error_description') || hash.get('error_description');
 
-  renderSelectedListing();
-  if (window.lucide) lucide.createIcons();
+    if (flight) {
+      if (authError) {
+        clearFlight();
+        showToast('Sign-in was cancelled or failed. Please try again.');
+        try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+      } else {
+        const getSess = async () => { try { const r = await sb.auth.getSession(); return r.data && r.data.session; } catch (e) { return null; } };
+        let session = await getSess();
+        if (!session) { await new Promise(r => setTimeout(r, 1500)); session = await getSess(); }
+        if (session) {
+          await finishSignup(session.user, flight.provider || 'google', flight.role || (saved && saved.role), undefined, { noWhatsapp: !!flight.noWhatsapp });
+          return;
+        }
+        clearFlight();
+        showToast("Sign-in didn't complete. Please try again.");
+      }
+    }
+
+    // Normal visit: the main site's cards deep-link with ?role=tenant|landlord|agent
+    const roleParam = (qs.get('role') || '').toLowerCase();
+    if (['tenant', 'landlord', 'agent'].includes(roleParam)) {
+      const card = document.querySelector(`.role-card[data-role="${roleParam}"]`);
+      if (card) card.click();
+    }
+  })();
 </script>
 
 </body>
