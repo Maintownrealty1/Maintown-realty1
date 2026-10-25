@@ -1102,12 +1102,12 @@
     const waLink = buildWhatsAppLink(name, email, role);
 
     // 1. Profile + role (atomic)
-    let profileSaved = false;
+    let profileSaved = false, saveErrorMsg = '';
     try {
       const { error } = await sb.rpc('save_waitlist_signup', { p_role: role, p_full_name: name, p_avatar_url: avatar, p_provider: provider });
       if (error) throw error;
       profileSaved = true;
-    } catch (err) { console.error('save_waitlist_signup failed (continuing):', err); }
+    } catch (err) { console.error('save_waitlist_signup failed (continuing):', err); saveErrorMsg = String((err && (err.message || err.details || err.code)) || err || '').slice(0, 160); }
 
     // 2. Selected property (tenants) — never blocks anything
     if (profileSaved && selectedListing.id && role === 'tenant') {
@@ -1136,7 +1136,7 @@
     statusEl.style.color = profileSaved ? '#10b981' : '#f59e0b';
     statusEl.textContent = profileSaved
       ? 'Signed in as ' + email + '. Opening WhatsApp…'
-      : "We couldn't save everything on our side, but don't worry: continue on WhatsApp and our team will pick it up.";
+      : "We couldn't save everything on our side, but don't worry: continue on WhatsApp and our team will pick it up." + (saveErrorMsg ? ' (Reason: ' + saveErrorMsg + ')' : '');
     clearSavedState();
     try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
     if (!opts.noWhatsapp) setTimeout(() => { window.location.href = waLink; }, 1200);
