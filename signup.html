@@ -1064,9 +1064,12 @@
   // Every step after the login exists is fail-open: if something fails the
   // person still lands on WhatsApp and the team follows up manually.
   // ==================================================================
-  function buildWhatsAppLink(name, email, role) {
+  function buildWhatsAppLink(name, email, role, requestedRole) {
     const roleLabel = { tenant: 'Tenant', landlord: 'Landlord', agent: 'Agent' }[role] || legalContent[role].label;
     let message = `Hello MainTown Realty, I just signed up on the website.\n\nName: ${name}\nRole: ${roleLabel}\nEmail: ${email}`;
+    if (requestedRole && requestedRole !== role) {
+      message += `\n\nNote: I tried to sign up as a ${({ tenant: 'Tenant', landlord: 'Landlord', agent: 'Agent' })[requestedRole]}. Please help me with that.`;
+    }
     if (selectedListing.title && role === 'tenant') {
       const actionLabel = { rent: 'renting', land: 'buying', 'short-let': 'booking' }[selectedListing.category] || 'this property';
       message += `\n\nI'm interested in ${actionLabel}: ${selectedListing.title}`;
@@ -1099,14 +1102,20 @@
     const avatar = meta.avatar_url || meta.picture || null;
     const statusEl = document.getElementById('done-status');
     statusEl.style.display = 'block'; statusEl.style.color = '#64748b'; statusEl.textContent = 'Saving your details…';
-    const waLink = buildWhatsAppLink(name, email, role);
+    let waLink = buildWhatsAppLink(name, email, role);
 
     // 1. Profile + role (atomic)
-    let profileSaved = false, saveErrorMsg = '';
+    let profileSaved = false, saveErrorMsg = '', roleKept = null;
     try {
-      const { error } = await sb.rpc('save_waitlist_signup', { p_role: role, p_full_name: name, p_avatar_url: avatar, p_provider: provider });
+      const { data: saveData, error } = await sb.rpc('save_waitlist_signup', { p_role: role, p_full_name: name, p_avatar_url: avatar, p_provider: provider });
       if (error) throw error;
       profileSaved = true;
+      // An existing account keeps the role it first signed up with.
+      if (saveData && saveData.role && saveData.role !== role) {
+        roleKept = saveData.role;
+        waLink = buildWhatsAppLink(name, email, roleKept, role);
+        role = roleKept; currentRole = roleKept;
+      }
     } catch (err) { console.error('save_waitlist_signup failed (continuing):', err); saveErrorMsg = String((err && (err.message || err.details || err.code)) || err || '').slice(0, 160); }
 
     // 2. Selected property (tenants) — never blocks anything
@@ -1133,8 +1142,11 @@
 
     // 4. WhatsApp
     document.getElementById('whatsapp-continue-btn').href = waLink;
-    statusEl.style.color = profileSaved ? '#10b981' : '#f59e0b';
-    statusEl.textContent = profileSaved
+    const roleNames = { tenant: 'a Tenant', landlord: 'a Landlord', agent: 'an Agent' };
+    statusEl.style.color = (profileSaved && !roleKept) ? '#10b981' : '#f59e0b';
+    statusEl.textContent = roleKept
+      ? 'This email is already registered as ' + roleNames[roleKept] + ', and a role cannot be changed here. Continue on WhatsApp and our team will help. Opening WhatsApp…'
+      : profileSaved
       ? 'Signed in as ' + email + '. Opening WhatsApp…'
       : "We couldn't save everything on our side, but don't worry: continue on WhatsApp and our team will pick it up." + (saveErrorMsg ? ' (Reason: ' + saveErrorMsg + ')' : '');
     clearSavedState();
