@@ -479,7 +479,7 @@ for (const file of files) {
       progress.textContent = 'Sending request...';
       const { error } = await sb.from('service_requests').insert({
         service: currentService, name, phone, email, address, description,
-        media: mediaUrls, status: 'new',
+        media: mediaUrls,
       });
       if (error) throw error;
 
