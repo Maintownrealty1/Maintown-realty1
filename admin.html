@@ -3304,14 +3304,15 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const rows = lrFilterRows(lrDocs.map(r => Object.assign({ _st: r.status }, r)), ['pending'], ['approved'], ['declined']);
     const pendingBlock = lrPendingHtml();
     if (!rows.length) { el.innerHTML = pendingBlock || '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">Nothing here. Documents appear as soon as a host or landlord submits them in the app.</div>'; return; }
+    setTimeout(() => lrHydrateMedia(el), 0);
     el.innerHTML = pendingBlock + (pendingBlock ? '<p class="text-sm font-semibold text-white mb-2">Title documents sent for review</p>' : '') + rows.map(r => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white font-medium">${escapeQuickFix(r.listing_title || 'Property')}</span>${lrStatusChip(r.status)}${r.attempt > 1 ? `<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">Resubmission ${r.attempt}</span>` : ''}</div>
         <span class="text-xs text-slate-400">${inspTs(r.created_at)}</span>
       </div>
       <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(r.listing_type || '')} · Owner: ${escapeQuickFix(r.owner_name || 'unknown')} · Sent by ${escapeQuickFix(r.submitted_by_name || 'unknown')} (${escapeQuickFix(r.submitted_by_role || 'host')})${r.agent_name ? ' · Agent: ' + escapeQuickFix(r.agent_name) : ''}</p>
-      ${lrDocButtons(r.documents)}
-      ${lrMediaForDoc(r)}
+      ${lrDocButtons((Array.isArray(r.documents) ? r.documents : []).filter(d => d && d.kind !== 'photo' && d.kind !== 'video'))}
+      ${lrDocMedia(r)}
       ${r.status === 'pending' ? `<div class="flex gap-2 mt-3"><button type="button" class="btn-primary !py-1.5 !text-xs" data-lr-act="approve" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Approve</button><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Decline</button></div>` : ''}
       ${r.status === 'pending' ? lrDecideBox('doc', r.id, LR_DOC_REASONS, 'Decline these documents') : ''}
       ${r.status === 'declined' ? `<p class="text-xs text-red-300 mt-2">Reason sent to the host: ${escapeQuickFix(r.decline_reason || '')}</p>` : ''}
@@ -3369,10 +3370,31 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       + (imgs.length ? '<div class="flex gap-2 overflow-x-auto pb-1">' + imgs.map(u => '<a href="' + escapeQuickFix(u) + '" target="_blank" rel="noopener"><img src="' + escapeQuickFix(u) + '" class="h-24 w-32 object-cover rounded-lg border border-slate-700 flex-none" loading="lazy"></a>').join('') + '</div>' : '')
       + '</div>';
   }
+  // Photos/video sent with the documents (private bucket): shown inline through short-lived signed links.
+  function lrDocMedia(r) {
+    const m = (Array.isArray(r.documents) ? r.documents : []).filter(d => d && (d.kind === 'photo' || d.kind === 'video') && d.path);
+    if (!m.length) return lrMediaForDoc(r);
+    const vids = m.filter(d => d.kind === 'video'), pics = m.filter(d => d.kind === 'photo');
+    return '<div class="mt-2"><p class="text-[11px] text-slate-500 mb-1">Property photos (' + pics.length + ')' + (vids.length ? ' and walkthrough video' : ' · no video') + '</p>'
+      + vids.map(d => '<video controls playsinline preload="metadata" data-lr-sign="' + escapeQuickFix(d.path) + '" class="w-full max-h-72 rounded-lg border border-slate-700 bg-black mb-2"></video>').join('')
+      + (pics.length ? '<div class="flex gap-2 overflow-x-auto pb-1">' + pics.map(d => '<a data-lr-signa target="_blank" rel="noopener"><img data-lr-sign="' + escapeQuickFix(d.path) + '" class="h-24 w-32 object-cover rounded-lg border border-slate-700 flex-none bg-slate-800" alt="' + escapeQuickFix(d.label || 'Photo') + '"></a>').join('') + '</div>' : '')
+      + '</div>';
+  }
+  async function lrHydrateMedia(root) {
+    const nodes = Array.from(root.querySelectorAll('[data-lr-sign]'));
+    await Promise.all(nodes.map(async n => {
+      try {
+        const r = await sb.storage.from('legal-docs').createSignedUrl(n.dataset.lrSign, 900);
+        if (r.error || !r.data) return;
+        n.src = r.data.signedUrl;
+        const a = n.closest('[data-lr-signa]'); if (a) a.href = r.data.signedUrl;
+      } catch (e) {}
+    }));
+  }
   function lrMediaForDoc(r) {
     const hit = r && r.listing_ref ? lrPending.find(x => x.listing && x.listing.prototype_ref === r.listing_ref) : null;
     if (hit) return lrMediaHtml(hit.listing);
-    return r && r.status === 'pending' ? '<p class="text-xs text-slate-500 mt-2">Photos and video appear here once the app has sent the listing. Tap Refresh in a moment.</p>' : '';
+    return r && r.status === 'pending' ? '<p class="text-xs text-amber-300 mt-2">No photos or video came with this submission. Ask the host to submit the listing again from the latest app.</p>' : '';
   }
   function lrPendingHtml() {
     if (lrPendingErr) return '<div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3 text-xs text-amber-200">Could not load listings waiting for approval: ' + escapeQuickFix(lrPendingErr.message) + '. Run 14_legal_listing_review.sql in the Supabase SQL Editor.</div>';
