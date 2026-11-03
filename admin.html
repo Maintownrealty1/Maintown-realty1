@@ -3324,7 +3324,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(r.listing_type || '')} · Owner: ${escapeQuickFix(r.owner_name || 'unknown')} · Sent by ${escapeQuickFix(r.submitted_by_name || 'unknown')} (${escapeQuickFix(r.submitted_by_role || 'host')})${r.agent_name ? ' · Agent: ' + escapeQuickFix(r.agent_name) : ''}</p>
       ${lrChainHtml(r)}
       ${lrDupHtml(r)}
-      ${lrDocButtons((Array.isArray(r.documents) ? r.documents : []).filter(d => d && d.kind !== 'photo' && d.kind !== 'video' && d.kind !== 'meta'))}
+      ${(() => { const dl = (Array.isArray(r.documents) ? r.documents : []).filter(d => d && d.kind !== 'photo' && d.kind !== 'video' && d.kind !== 'meta'); const mm = lrMetaOf(r); return (!dl.length && mm && mm.verified_property) ? '' : lrDocButtons(dl); })()}
       ${lrDocMedia(r)}
       ${r.status === 'pending' ? `<div class="flex gap-2 mt-3"><button type="button" class="btn-primary !py-1.5 !text-xs" data-lr-act="approve" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Approve</button><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Decline</button></div>` : ''}
       ${r.status === 'pending' ? lrDecideBox('doc', r.id, LR_DOC_REASONS, 'Decline these documents') : ''}
@@ -3421,6 +3421,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
         : 'Listed directly by landlord ' + b(ll) + contact(m.landlord) + '.')
         + ' Documents uploaded and approved by ' + b(ll) + (m.landlord_approved_at ? ' on ' + inspTs(m.landlord_approved_at) : '') + '.'
         + (m.address ? ' Property address: ' + escapeQuickFix(m.address) + '.' : '')
+        + (m.verified_property ? '<p class="mt-1 text-emerald-300">Property already verified: same property as “' + escapeQuickFix(m.verified_property.title || 'an earlier listing') + '” (' + escapeQuickFix(m.verified_property.address || '') + '), whose title document was approved earlier. No new document was needed.</p>' : '')
         + lrPayoutLine(m.payout);
     } else if (r.agent_name) {
       body = 'Listed by agent ' + b(r.agent_name) + ' on behalf of landlord ' + b(r.owner_name || 'unknown') + '. Documents sent by ' + b(r.submitted_by_name || r.owner_name || 'unknown') + '.';
