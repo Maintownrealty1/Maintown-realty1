@@ -3322,7 +3322,9 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
         <span class="text-xs text-slate-400">${inspTs(r.created_at)}</span>
       </div>
       <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(r.listing_type || '')} · Owner: ${escapeQuickFix(r.owner_name || 'unknown')} · Sent by ${escapeQuickFix(r.submitted_by_name || 'unknown')} (${escapeQuickFix(r.submitted_by_role || 'host')})${r.agent_name ? ' · Agent: ' + escapeQuickFix(r.agent_name) : ''}</p>
-      ${lrDocButtons((Array.isArray(r.documents) ? r.documents : []).filter(d => d && d.kind !== 'photo' && d.kind !== 'video'))}
+      ${lrChainHtml(r)}
+      ${lrDupHtml(r)}
+      ${lrDocButtons((Array.isArray(r.documents) ? r.documents : []).filter(d => d && d.kind !== 'photo' && d.kind !== 'video' && d.kind !== 'meta'))}
       ${lrDocMedia(r)}
       ${r.status === 'pending' ? `<div class="flex gap-2 mt-3"><button type="button" class="btn-primary !py-1.5 !text-xs" data-lr-act="approve" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Approve</button><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Decline</button></div>` : ''}
       ${r.status === 'pending' ? lrDecideBox('doc', r.id, LR_DOC_REASONS, 'Decline these documents') : ''}
@@ -3346,7 +3348,8 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(r.email || 'No email')} · ${escapeQuickFix(r.phone || 'No phone')}</p>
       <p class="text-xs text-slate-500 mt-1">Address: ${escapeQuickFix(r.address || 'not given')} · BVN ••••${escapeQuickFix(r.bvn_last4 || '----')}${r.nin_last4 ? ' · NIN ••••' + escapeQuickFix(r.nin_last4) : ''} · Bank: ${escapeQuickFix(r.bank_name || '—')}${r.account_last4 ? ' ••••' + escapeQuickFix(r.account_last4) : ''}</p>
       <p class="text-[11px] text-slate-600 mt-1">User agreed to MainTown storing their ID details ${inspTs(r.consent_at)}</p>
-      ${lrDocButtons(r.documents)}
+      ${(() => { const m = lrMetaOf(r); return m && m.payout ? '<div class="text-xs text-slate-300 mt-1">' + lrPayoutLine(m.payout) + '</div>' : ''; })()}
+      ${lrDocButtons((Array.isArray(r.documents) ? r.documents : []).filter(d => d && d.kind !== 'meta'))}
       ${['submitted', 'needs_more'].includes(r.review_status) ? `<div class="flex gap-2 flex-wrap mt-3"><button type="button" class="btn-primary !py-1.5 !text-xs" data-lr-act="approve" data-kind="kyc" data-id="${escapeQuickFix(r.id)}">Mark verified</button><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="kyc" data-id="${escapeQuickFix(r.id)}">Needs more info / decline</button></div>` : ''}
       ${['submitted', 'needs_more'].includes(r.review_status) ? lrDecideBox('kyc', r.id, LR_KYC_REASONS, 'Ask for more info or decline') : ''}
       ${r.review_note ? `<p class="text-xs text-red-300 mt-2">Note: ${escapeQuickFix(r.review_note)}</p>` : ''}
@@ -3389,7 +3392,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const vids = m.filter(d => d.kind === 'video'), pics = m.filter(d => d.kind === 'photo');
     return '<div class="mt-2"><p class="text-[11px] text-slate-500 mb-1">Property photos (' + pics.length + ')' + (vids.length ? ' and walkthrough video' : ' · no video') + '</p>'
       + vids.map(d => '<video controls playsinline preload="metadata" data-lr-sign="' + escapeQuickFix(d.path) + '" class="w-full max-h-72 rounded-lg border border-slate-700 bg-black mb-2"></video>').join('')
-      + (pics.length ? '<div class="flex gap-2 overflow-x-auto pb-1">' + pics.map(d => '<a data-lr-signa target="_blank" rel="noopener"><img data-lr-sign="' + escapeQuickFix(d.path) + '" class="h-24 w-32 object-cover rounded-lg border border-slate-700 flex-none bg-slate-800" alt="' + escapeQuickFix(d.label || 'Photo') + '"></a>').join('') + '</div>' : '')
+      + (pics.length ? '<div class="flex gap-2 overflow-x-auto pb-1">' + pics.map(d => '<div class="flex-none" data-lr-cell><a data-lr-signa target="_blank" rel="noopener"><img data-lr-sign="' + escapeQuickFix(d.path) + '" class="h-24 w-32 object-cover rounded-lg border border-slate-700 bg-slate-800" alt="' + escapeQuickFix(d.label || 'Photo') + '"></a><a data-lr-lens target="_blank" rel="noopener" class="block text-[10px] text-brand-300 mt-0.5">Search the web</a></div>').join('') + '</div>' : '')
       + '</div>';
   }
   async function lrHydrateMedia(root) {
@@ -3400,8 +3403,65 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
         if (r.error || !r.data) return;
         n.src = r.data.signedUrl;
         const a = n.closest('[data-lr-signa]'); if (a) a.href = r.data.signedUrl;
+        const cell = n.closest('[data-lr-cell]'), lens = cell && cell.querySelector('[data-lr-lens]');
+        if (lens) lens.href = 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(r.data.signedUrl);
       } catch (e) {}
     }));
+  }
+  // Who listed it and who approved it: the agent, the landlord, and the landlord's confirmation.
+  function lrChainHtml(r) {
+    const m = (Array.isArray(r.documents) ? r.documents : []).find(d => d && d.kind === 'meta');
+    const b = t => '<span class="text-slate-100 font-medium">' + escapeQuickFix(t) + '</span>';
+    const contact = o => { const c = [o && o.phone, o && o.email].filter(Boolean).map(escapeQuickFix).join(' · '); return c ? ' <span class="text-slate-500">(' + c + ')</span>' : ''; };
+    let body;
+    if (m && m.listed_by && m.landlord) {
+      const ll = m.landlord.name || r.owner_name || 'the landlord';
+      body = (m.listed_by.role === 'agent'
+        ? 'Listed by agent ' + b(m.listed_by.name || r.agent_name || 'an agent') + contact(m.listed_by) + ' on behalf of landlord ' + b(ll) + contact(m.landlord) + '.'
+        : 'Listed directly by landlord ' + b(ll) + contact(m.landlord) + '.')
+        + ' Documents uploaded and approved by ' + b(ll) + (m.landlord_approved_at ? ' on ' + inspTs(m.landlord_approved_at) : '') + '.'
+        + (m.address ? ' Property address: ' + escapeQuickFix(m.address) + '.' : '')
+        + lrPayoutLine(m.payout);
+    } else if (r.agent_name) {
+      body = 'Listed by agent ' + b(r.agent_name) + ' on behalf of landlord ' + b(r.owner_name || 'unknown') + '. Documents sent by ' + b(r.submitted_by_name || r.owner_name || 'unknown') + '.';
+    } else {
+      body = 'Listed directly by landlord ' + b(r.owner_name || r.submitted_by_name || 'unknown') + '. Documents sent by ' + b(r.submitted_by_name || r.owner_name || 'unknown') + '.';
+    }
+    return '<div class="mt-2 text-xs text-slate-300 bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2">' + body + '</div>';
+  }
+  // ---- Fraud signals: same photos / address / phone used by a different landlord ----
+  function lrMetaOf(r) { return (Array.isArray(r.documents) ? r.documents : []).find(d => d && d.kind === 'meta') || null; }
+  function lrOwnerKey(r) { const m = lrMetaOf(r); return String((m && m.landlord && m.landlord.id) || r.submitted_by_id || ''); }
+  function lrHamming(a, b) { let n = 0; for (let i = 0; i < Math.min(a.length, b.length); i++) { let x = parseInt(a[i], 16) ^ parseInt(b[i], 16); while (x) { n += x & 1; x >>= 1; } } return n; }
+  function lrNormAddr(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function lrDupFlags(r) {
+    const me = lrOwnerKey(r), mm = lrMetaOf(r) || {}, mine = (Array.isArray(r.documents) ? r.documents : []).filter(d => d && d.kind === 'photo' && d.hash);
+    const flags = [];
+    lrDocs.forEach(o => {
+      if (String(o.id) === String(r.id) || (me && lrOwnerKey(o) === me)) return;
+      const om = lrMetaOf(o) || {}, theirs = (Array.isArray(o.documents) ? o.documents : []).filter(d => d && d.kind === 'photo' && d.hash);
+      const pics = mine.filter(a => theirs.some(b => lrHamming(a.hash, b.hash) <= 5)).length;
+      const addr = lrNormAddr(mm.address).length >= 8 && lrNormAddr(mm.address) === lrNormAddr(om.address);
+      const phone = mm.landlord && om.landlord && mm.landlord.phone && mm.landlord.phone === om.landlord.phone;
+      if (!pics && !addr && !phone) return;
+      const parts = [];
+      if (pics) parts.push(pics + ' matching photo' + (pics > 1 ? 's' : ''));
+      if (addr) parts.push('same address');
+      if (phone) parts.push('same phone number');
+      flags.push(parts.join(', ') + ' as “' + (o.listing_title || 'a property') + '” sent by ' + (o.submitted_by_name || o.owner_name || 'another landlord') + ' on ' + inspTs(o.created_at) + ' (' + (o.status || 'pending') + ')');
+    });
+    return flags;
+  }
+  function lrDupHtml(r) {
+    const f = lrDupFlags(r);
+    return f.length ? '<div class="mt-2 text-xs text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2"><p class="font-semibold mb-1">Possible duplicate or fake listing: check before approving</p>' + f.map(t => '<p>• ' + escapeQuickFix(t) + '</p>').join('') + '</div>' : '';
+  }
+  function lrPayoutLine(p) {
+    if (!p) return '';
+    const acct = escapeQuickFix((p.bankName || 'Bank') + ' ••••' + (p.last4 || '----'));
+    if (p.status === 'verified') return '<p class="mt-1">Payout account: ' + acct + ' · account name <span class="text-slate-100 font-medium">' + escapeQuickFix(p.accountName || '') + '</span> <span class="text-emerald-300">matches the verified ID</span></p>';
+    if (p.status === 'mismatch') return '<p class="mt-1 text-red-300">Payout account: ' + acct + ' · account name ' + escapeQuickFix(p.accountName || '') + ' DOES NOT MATCH the verified ID (' + escapeQuickFix(p.idName || '') + ')</p>';
+    return '<p class="mt-1 text-amber-300">Payout account: ' + acct + ' · account name not verified (bank name check is not connected yet)</p>';
   }
   function lrMediaForDoc(r) {
     const hit = r && r.listing_ref ? lrPending.find(x => x.listing && x.listing.prototype_ref === r.listing_ref) : null;
@@ -3512,6 +3572,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     if (act === 'cancel') { lrOpenForm = null; renderLegalReview(); return; }
     if (act === 'decline') { lrOpenForm = kind + ':' + id; renderLegalReview(); return; }
     if (act === 'approve') {
+      { const dr = kind === 'doc' ? lrDocs.find(x => String(x.id) === String(id)) : null; if (dr && lrDupFlags(dr).length && !confirm('This listing has possible duplicate flags (see the amber box). Approve anyway?')) return; }
       if (!confirm(kind === 'lst' ? 'Approve this listing? It goes live on the app and the website straight away.' : kind === 'doc' ? 'Approve these documents? The listing will go live.' : 'Mark this person\'s ID as verified?')) return;
       btn.disabled = true;
       if (await lrDecide(kind, id, true, null)) { showToast(kind === 'lst' ? 'Approved. The listing is now live.' : kind === 'doc' ? 'Approved. The listing goes live in the app.' : 'Marked as verified.'); lrOpenForm = null; await loadLegalReview(); } else btn.disabled = false;
