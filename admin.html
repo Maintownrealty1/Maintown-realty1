@@ -3311,6 +3311,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       </div>
       <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(r.listing_type || '')} · Owner: ${escapeQuickFix(r.owner_name || 'unknown')} · Sent by ${escapeQuickFix(r.submitted_by_name || 'unknown')} (${escapeQuickFix(r.submitted_by_role || 'host')})${r.agent_name ? ' · Agent: ' + escapeQuickFix(r.agent_name) : ''}</p>
       ${lrDocButtons(r.documents)}
+      ${lrMediaForDoc(r)}
       ${r.status === 'pending' ? `<div class="flex gap-2 mt-3"><button type="button" class="btn-primary !py-1.5 !text-xs" data-lr-act="approve" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Approve</button><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Decline</button></div>` : ''}
       ${r.status === 'pending' ? lrDecideBox('doc', r.id, LR_DOC_REASONS, 'Decline these documents') : ''}
       ${r.status === 'declined' ? `<p class="text-xs text-red-300 mt-2">Reason sent to the host: ${escapeQuickFix(r.decline_reason || '')}</p>` : ''}
@@ -3357,6 +3358,22 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     if (ids.length) { const sr = await sb.from('listing_submissions').select('*').in('listing_id', ids); subs = sr.error ? [] : sr.data; }
     lrPending = ls.data.map(l => ({ listing: l, submission: subs.find(x => String(x.listing_id) === String(l.id)) || null }));
   }
+  // Photos (tap to enlarge) and video (plays in place) a host uploaded with the listing.
+  function lrMediaHtml(l) {
+    if (!l) return '';
+    const imgs = (Array.isArray(l.images) ? l.images : []).filter(u => typeof u === 'string' && /^https?:/.test(u));
+    const vid = typeof l.video === 'string' && /^https?:/.test(l.video) ? l.video : '';
+    if (!imgs.length && !vid) return '<p class="text-xs text-amber-300 mt-2">No photos or video were uploaded with this listing.</p>';
+    return '<div class="mt-2"><p class="text-[11px] text-slate-500 mb-1">Property photos (' + imgs.length + ')' + (vid ? ' and walkthrough video' : ' · no video') + '</p>'
+      + (vid ? '<video controls playsinline preload="metadata" src="' + escapeQuickFix(vid) + '" class="w-full max-h-72 rounded-lg border border-slate-700 bg-black mb-2"></video>' : '')
+      + (imgs.length ? '<div class="flex gap-2 overflow-x-auto pb-1">' + imgs.map(u => '<a href="' + escapeQuickFix(u) + '" target="_blank" rel="noopener"><img src="' + escapeQuickFix(u) + '" class="h-24 w-32 object-cover rounded-lg border border-slate-700 flex-none" loading="lazy"></a>').join('') + '</div>' : '')
+      + '</div>';
+  }
+  function lrMediaForDoc(r) {
+    const hit = r && r.listing_ref ? lrPending.find(x => x.listing && x.listing.prototype_ref === r.listing_ref) : null;
+    if (hit) return lrMediaHtml(hit.listing);
+    return r && r.status === 'pending' ? '<p class="text-xs text-slate-500 mt-2">Photos and video appear here once the app has sent the listing. Tap Refresh in a moment.</p>' : '';
+  }
   function lrPendingHtml() {
     if (lrPendingErr) return '<div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3 text-xs text-amber-200">Could not load listings waiting for approval: ' + escapeQuickFix(lrPendingErr.message) + '. Run 14_legal_listing_review.sql in the Supabase SQL Editor.</div>';
     const f = (document.getElementById('lrFilter') || {}).value || 'open';
@@ -3373,7 +3390,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       return '<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">'
         + '<div class="flex items-center justify-between gap-2 flex-wrap"><div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white font-medium">' + escapeQuickFix(l.title || 'Listing') + '</span>' + lrStatusChip('pending') + '<span class="text-[11px] text-slate-400">' + escapeQuickFix(cat[l.category] || l.category || '') + '</span></div><span class="text-xs text-slate-400">' + inspTs(l.created_at) + '</span></div>'
         + '<p class="text-xs text-slate-400 mt-1">' + escapeQuickFix(l.location || '') + (l.rent ? ' · ' + escapeQuickFix(l.rent) : '') + (l.beds ? ' · ' + escapeQuickFix(l.beds) + ' bed' : '') + '</p>'
-        + (imgs.length ? '<div class="flex gap-2 mt-2 overflow-x-auto">' + imgs.map(u => '<a href="' + escapeQuickFix(u) + '" target="_blank" rel="noopener"><img src="' + escapeQuickFix(u) + '" class="h-16 w-24 object-cover rounded-lg border border-slate-700" loading="lazy"></a>').join('') + '</div>' : '')
+        + lrMediaHtml(l)
         + (fees.length ? '<div class="mt-2 text-[11px] text-slate-300 grid sm:grid-cols-2 gap-x-4">' + fees.map(t => '<span>' + escapeQuickFix(t) + '</span>').join('') + '</div>' : '')
         + (feats.length ? '<p class="text-[11px] text-slate-500 mt-1">' + feats.map(escapeQuickFix).join(' · ') + '</p>' : '')
         + (hostLines ? '<div class="mt-2 text-xs space-y-0.5">' + hostLines + '</div>' : '')
