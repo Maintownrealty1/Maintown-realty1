@@ -3424,6 +3424,10 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const { data, error } = await q.select();
     if (error) { showToast('Could not save: ' + error.message, true); return false; }
     if (!data || !data.length) { showToast('This item was already decided by someone else. Refresh the list.', true); return false; }
+    if (kind === 'doc' && approve) {   // approving the title documents also takes the matching app listing live
+      const ref = data[0].listing_ref, hit = ref ? lrPending.find(x => x.listing && x.listing.prototype_ref === ref) : null;
+      if (hit) { try { await lrDecideListing(hit.listing.id, true, null); } catch (e) {} }
+    }
     lrLog(kind === 'doc' ? (approve ? 'approve' : 'decline') : (approve ? 'kyc_verified' : 'kyc_declined'), id);
     return true;
   }
