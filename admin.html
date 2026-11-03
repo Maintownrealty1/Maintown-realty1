@@ -951,8 +951,8 @@
          that data is wired into Supabase — see the "Finance data" banner. -->
     <section data-view="finance">
       <h2 class="font-display font-semibold text-lg text-white mb-1">Finance</h2>
-      <p class="text-sm text-slate-500 mb-1">Revenue, held funds, payouts, refunds and reconciliation, built from the ledger the app reports. Money itself moves in the app: decisions here are records, and critical ones are approval requests to the Super Admin.</p>
-      <p class="text-xs text-slate-600 mb-4">Only Finance and the Super Admin can see this tab.</p>
+      <p id="finIntro" class="text-sm text-slate-500 mb-1">Revenue, held funds, payouts, refunds and reconciliation, built from the ledger the app reports. Money itself moves in the app: decisions here are records, and critical ones are approval requests to the Super Admin.</p>
+      <p id="finNote" class="text-xs text-slate-600 mb-4">Only Finance and the Super Admin can see this tab.</p>
       <div id="finTabs" class="flex flex-wrap gap-2 mb-3">
         <button type="button" class="chip active" data-fintab="overview">Overview</button>
         <button type="button" class="chip" data-fintab="transactions">Transactions</button>
@@ -1073,7 +1073,7 @@
   const ROLE_VIEWS = {
     super_admin: ['support', 'supportchat', 'explore', 'listings', 'partners', 'signups', 'legalreview', 'quickfix', 'inspections', 'landlords', 'finance', 'teamchat', 'staff'],
     // Developer: monitors transactions only (read-only, last 7 days, no names, no revenue totals) and has no finance controls.
-    developer:   ['support', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'transactions', 'teamchat'],
+    developer:   ['support', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance', 'teamchat'],
     finance:     ['finance', 'landlords', 'teamchat'],
     // Sales staff follow up inspections and bookings; nothing else.
     sales_staff: ['inspections', 'teamchat'],
@@ -1120,7 +1120,7 @@
     const views = ROLE_VIEWS[currentStaffRole] || [];
     tabsEl.classList.toggle('hidden', views.length <= 1);
     tabsEl.innerHTML = views.map(v =>
-      `<button type="button" class="role-tab-btn chip ${v === currentView ? 'active' : ''}" data-view="${v}">${VIEW_LABELS[v]}</button>`
+      `<button type="button" class="role-tab-btn chip ${v === currentView ? 'active' : ''}" data-view="${v}">${(currentStaffRole === 'developer' && v === 'finance') ? 'Transactions' : VIEW_LABELS[v]}</button>`
     ).join('');
   }
 
@@ -1140,7 +1140,7 @@
     if (view === 'explore') loadExplore();
     if (view === 'quickfix') loadQuickFixRequests();
     if (view === 'inspections') loadInspections();
-    if (view === 'finance') loadFinance();
+    if (view === 'finance') { applyFinanceRoleUi(); loadFinance(); }
     if (view === 'transactions') loadDevTransactions();
     if (view === 'teamchat') loadChat();
     if (view === 'staff') loadStaffUsers();
@@ -1910,7 +1910,9 @@
       const isProto = sourceOf(l) === 'app_prototype';
       const reviewBtn = isProto ? `<button class="review-docs-btn btn-secondary shrink-0" data-id="${l.id}">Host &amp; docs</button>` : '';
       let controls;
-      if (isPending) {
+      if (isPending && isProto && currentStaffRole !== 'super_admin') {
+        controls = `${reviewBtn}<span class="shrink-0 text-[11px] px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">Awaiting legal review</span>`;
+      } else if (isPending) {
         controls = `${reviewBtn}
           <button class="approve-listing-btn shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/30" data-id="${l.id}">Approve</button>
           <button class="decline-listing-btn shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/50 text-rose-300 hover:bg-rose-500/30" data-id="${l.id}" data-title="${escHtml(l.title)}">Decline</button>`;
@@ -2840,7 +2842,8 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
         <select id="finCat" class="!w-auto !py-1.5 !text-xs"><option value="">All types</option>${cats.map(c => `<option value="${c}">${escapeQuickFix(finCatLabel(c))}</option>`).join('')}</select>
         <select id="finPt" class="!w-auto !py-1.5 !text-xs"><option value="">All property types</option>${Object.keys(FIN_PTYPES).map(k => `<option value="${k}">${FIN_PTYPES[k]}</option>`).join('')}</select>
         <select id="finSt" class="!w-auto !py-1.5 !text-xs"><option value="">Any status</option><option value="SUCCESSFUL">Successful</option><option value="PENDING_ESCROW">Held</option><option value="DISPUTED">Disputed</option><option value="REFUNDED">Refunded</option><option value="PENDING">Pending</option></select>
-        <input type="search" id="finQ" placeholder="Search name, reference or property" class="!w-auto !py-1.5 !text-xs">
+        <input type="search" id="finQ" placeholder="${finDev() ? 'Search reference or property' : 'Search name, reference or property'}" class="!w-auto !py-1.5 !text-xs">
+        ${finCanExport() ? '<button type="button" class="btn-secondary !py-1.5 !text-xs" id="finExport">Export CSV</button><button type="button" class="btn-secondary !py-1.5 !text-xs" id="finExportAll">Export all time</button>' : ''}
       </div><div id="finTxnList" class="space-y-2" data-total="${T.length}"></div>`;
   }
   function finRenderTxnList() {
@@ -2848,7 +2851,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const cat = (document.getElementById('finCat') || {}).value || '', pt = (document.getElementById('finPt') || {}).value || '', st = (document.getElementById('finSt') || {}).value || '', q = ((document.getElementById('finQ') || {}).value || '').toLowerCase();
     const rows = finInPeriod().filter(t => (!cat || t.category === cat) && (!pt || t.ptype === pt) && (!st || t.status === st) && (!q || [t.txn_ref, t.party_name, t.property_name, t.title].some(v => String(v || '').toLowerCase().includes(q))));
     if (!rows.length) { el.innerHTML = finEmpty('No transactions match.'); return; }
-    el.innerHTML = `<p class="text-xs text-slate-500">${rows.length} transactions · ${finMoney(finSum(rows))} total value</p>` + rows.slice(0, finShown).map(t => txnCardHtml(t, true)).join('')
+    el.innerHTML = `<p class="text-xs text-slate-500">${rows.length} transactions${finDev() ? '' : ' · ' + finMoney(finSum(rows)) + ' total value'}</p>` + rows.slice(0, finShown).map(t => txnCardHtml(t, !finDev())).join('')
       + (rows.length > finShown ? '<button type="button" class="btn-secondary !text-xs" id="finMore">Show more</button>' : '');
   }
   function finHeld() {
@@ -2981,7 +2984,57 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       ${iAmSuper ? `<p class="text-sm font-semibold text-white mb-2">Waiting for your decision</p><div class="space-y-2 mb-5">${pending.map(m => approvalCardHtml(m, true)).join('') || finEmpty('Nothing waiting.')}</div>` : ''}
       <p class="text-sm font-semibold text-white mb-2">${iAmSuper ? 'All finance requests' : 'My requests'}</p><div class="space-y-2">${(iAmSuper ? chatMsgs.filter(m => m.kind === 'approval_request' && /^finance/i.test(m.area || '')) : mine).slice().reverse().map(m => approvalCardHtml(m, false)).join('') || finEmpty('No requests yet.')}</div>`;
   }
+
+  // ---- Role-limited Finance ----
+  // Finance and Super Admin see everything (overview, charts, revenue, pricing, approvals) and can export CSV.
+  // Developer gets a read-only, limited view for chasing payment and API issues: transactions, held funds, refunds
+  // and reconciliation. No overview, revenue, charts, pricing, approvals or names.
+  const FIN_DEV_HIDDEN_TABS = ['overview', 'payouts', 'controls', 'pricing'];
+  function finDev() { return currentStaffRole === 'developer'; }
+  function finCanExport() { return currentStaffRole === 'finance' || currentStaffRole === 'super_admin'; }
+  function applyFinanceRoleUi() {
+    const dev = finDev();
+    document.querySelectorAll('[data-fintab]').forEach(b => b.classList.toggle('hidden', dev && FIN_DEV_HIDDEN_TABS.includes(b.dataset.fintab)));
+    if (dev && FIN_DEV_HIDDEN_TABS.includes(finTab)) finTab = 'transactions';
+    const intro = document.getElementById('finIntro'), note = document.getElementById('finNote');
+    if (intro && note && dev) {
+      intro.textContent = 'Payments, payouts, held funds, refunds and reconciliation, for following up payment and API issues with the payment partner and banks.';
+      note.textContent = 'Read-only developer view. Revenue, charts, names, pricing and approvals are not shown.';
+    }
+  }
+  function finCsvCell(v) {
+    let t = v == null ? '' : String(v);
+    if (/^[=+\-@]/.test(t)) t = "'" + t;                       // stop spreadsheet formula injection
+    return '"' + t.replace(/"/g, '""') + '"';
+  }
+  function finExportCsv(allTime) {
+    if (!finCanExport()) { showToast('Only Finance and the Super Admin can export.', true); return; }
+    let rows;
+    if (allTime) rows = finTxns.slice();
+    else {
+      const cat = (document.getElementById('finCat') || {}).value || '', pt = (document.getElementById('finPt') || {}).value || '', st = (document.getElementById('finSt') || {}).value || '', q = ((document.getElementById('finQ') || {}).value || '').toLowerCase();
+      rows = finInPeriod().filter(t => (!cat || t.category === cat) && (!pt || t.ptype === pt) && (!st || t.status === st) && (!q || [t.txn_ref, t.party_name, t.property_name, t.title].some(v => String(v || '').toLowerCase().includes(q))));
+    }
+    if (!rows.length) { showToast('Nothing to export for these filters.', true); return; }
+    const head = ['Date', 'Reference', 'Type', 'Property type', 'Title', 'Property', 'Party', 'Party role', 'Direction', 'Amount (NGN)', 'Status', 'Revenue stream', 'Fee type', 'From', 'To'];
+    const lines = [head.map(finCsvCell).join(',')];
+    rows.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(t => {
+      lines.push([
+        t.date ? new Date(t.date).toISOString().replace('T', ' ').slice(0, 19) : '', t.txn_ref, finCatLabel(t.category), FIN_PTYPES[t.ptype] || t.ptype || '',
+        t.title, t.property_name, t.party_name, t.party_role, t.direction, Number(t.amount) || 0, t.status, t.stream, t.fee_type, t.sender, t.recipient
+      ].map(finCsvCell).join(','));
+    });
+    const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });   // BOM so Excel reads the Naira text correctly
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'maintown-transactions-' + (allTime ? 'all-time-' : '') + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    showToast('Exported ' + rows.length + ' transactions. Open the file in Excel or Google Sheets.');
+    try { if (typeof lrLog === 'function') lrLog('export_transactions_csv', (allTime ? 'all' : 'filtered') + ':' + rows.length); } catch (e) {}
+  }
   function finRender() {
+    if (finDev() && FIN_DEV_HIDDEN_TABS.includes(finTab)) finTab = 'transactions';
     document.querySelectorAll('[data-fintab]').forEach(b => b.classList.toggle('active', b.dataset.fintab === finTab));
     const body = document.getElementById('finBody');
     if (finErr) { body.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-300">Could not load the ledger: ${escapeQuickFix(finErr.message)}<p class="text-xs mt-2 text-red-200/80">Run 13_finance_and_team_chat.sql in Supabase SQL Editor if the tables are missing.</p></div>`; return; }
@@ -2989,6 +3042,10 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     body.innerHTML = { overview: finOverview, transactions: finTransactions, held: finHeld, payouts: finPayouts, refunds: finRefunds, recon: finRecon_, controls: finControls }[finTab]();
     if (finTab === 'transactions') finRenderTxnList();
     if (finTab === 'recon') finRefreshInputs();
+    if (finDev()) {   // read-only: strip every control that changes something
+      body.querySelectorAll('[data-fin-request],[data-recon-act],[data-exc-resolve]').forEach(b => b.remove());
+      ['rc-save', 'ex-save'].forEach(id => { const b = document.getElementById(id); const box = b && b.closest('.bg-slate-900'); if (box) box.remove(); });
+    }
     document.getElementById('finStatus').textContent = finLoadedAt ? 'Updated ' + new Date(finLoadedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
   }
   let finMe = '';
@@ -2998,9 +3055,10 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const r = await fetchLedger();
     if (r.error) { finErr = r.error; finRender(); return; }
     finErr = null; finTxns = buildTxns(r.data); finLoadedAt = Date.now();
+    if (finDev()) finTxns = finTxns.filter(t => !t.stream && !/^MAINTOWN_/.test(String(t.category || ''))).map(t => Object.assign({}, t, { party_name: null, party_role: null }));   // no revenue rows, no names
     const rc = await sb.from('finance_reconciliations').select('*').order('prepared_at', { ascending: false }).limit(100); finRecon = rc.error ? [] : rc.data;
     const ex = await sb.from('finance_exceptions').select('*').order('created_at', { ascending: false }).limit(200); finExc = ex.error ? [] : ex.data;
-    await loadChatData();
+    if (!finDev()) await loadChatData();
     finRender();
   }
   document.getElementById('finRefresh').addEventListener('click', loadFinance);
@@ -3011,6 +3069,8 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     if (['rc-date', 'rc-scope', 'rc-provider'].includes(e.target.id)) finRefreshInputs();
   });
   document.getElementById('finBody').addEventListener('click', async (e) => {
+    if (e.target.id === 'finExport') { finExportCsv(false); return; }
+    if (e.target.id === 'finExportAll') { finExportCsv(true); return; }
     if (e.target.id === 'finMore') { finShown += 100; finRenderTxnList(); return; }
     const rq = e.target.closest('[data-fin-request]');
     if (rq) {
@@ -3242,8 +3302,9 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   function renderLrDocs() {
     const el = document.getElementById('lrList');
     const rows = lrFilterRows(lrDocs.map(r => Object.assign({ _st: r.status }, r)), ['pending'], ['approved'], ['declined']);
-    if (!rows.length) { el.innerHTML = '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">Nothing here. Documents appear as soon as a host or landlord submits them in the app.</div>'; return; }
-    el.innerHTML = rows.map(r => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+    const pendingBlock = lrPendingHtml();
+    if (!rows.length) { el.innerHTML = pendingBlock || '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">Nothing here. Documents appear as soon as a host or landlord submits them in the app.</div>'; return; }
+    el.innerHTML = pendingBlock + (pendingBlock ? '<p class="text-sm font-semibold text-white mb-2">Title documents sent for review</p>' : '') + rows.map(r => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white font-medium">${escapeQuickFix(r.listing_title || 'Property')}</span>${lrStatusChip(r.status)}${r.attempt > 1 ? `<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">Resubmission ${r.attempt}</span>` : ''}</div>
         <span class="text-xs text-slate-400">${inspTs(r.created_at)}</span>
@@ -3284,7 +3345,63 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     document.querySelectorAll('[data-lrtab]').forEach(b => b.classList.toggle('active', b.dataset.lrtab === lrTab));
     if (lrTab === 'docs') renderLrDocs(); else renderLrKyc();
   }
+  let lrPending = [], lrPendingErr = null;
+  async function lrLoadPendingListings() {
+    lrPending = []; lrPendingErr = null;
+    const r = await sb.rpc('legal_pending_listings');
+    if (!r.error) { lrPending = Array.isArray(r.data) ? r.data : []; return; }
+    // fallback for roles that can read the tables directly (Super Admin)
+    const ls = await sb.from('listings').select('*').eq('source', 'app_prototype').eq('status', 'pending').order('created_at', { ascending: false });
+    if (ls.error) { lrPendingErr = r.error; return; }
+    const ids = ls.data.map(l => l.id); let subs = [];
+    if (ids.length) { const sr = await sb.from('listing_submissions').select('*').in('listing_id', ids); subs = sr.error ? [] : sr.data; }
+    lrPending = ls.data.map(l => ({ listing: l, submission: subs.find(x => String(x.listing_id) === String(l.id)) || null }));
+  }
+  function lrPendingHtml() {
+    if (lrPendingErr) return '<div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3 text-xs text-amber-200">Could not load listings waiting for approval: ' + escapeQuickFix(lrPendingErr.message) + '. Run 14_legal_listing_review.sql in the Supabase SQL Editor.</div>';
+    const f = (document.getElementById('lrFilter') || {}).value || 'open';
+    if (!(f === 'open' || f === 'all') || !lrPending.length) return '';
+    const cat = { rent: 'Rent', land: 'Land & property', 'short-let': 'Short-let', 'event-center': 'Event center' };
+    return '<p class="text-sm font-semibold text-white mb-2">Listings waiting for approval (' + lrPending.length + ')</p><div class="space-y-3 mb-6">' + lrPending.map(x => {
+      const l = x.listing || {}, sub = x.submission || {}, host = sub.host || {};
+      const imgs = (Array.isArray(l.images) ? l.images : []).filter(u => typeof u === 'string' && /^https?:/.test(u)).slice(0, 4);
+      const fees = (Array.isArray(l.fees) ? l.fees : []).slice(0, 14);
+      const feats = Array.isArray(l.features) ? l.features : [];
+      const hostLines = Object.keys(host).filter(k => typeof host[k] === 'string' && host[k]).map(k => '<p><span class="text-slate-500">' + escapeQuickFix(k.replace(/_/g, ' ')) + ':</span> <span class="text-slate-200">' + escapeQuickFix(host[k]) + '</span></p>').join('');
+      const docs = (Array.isArray(sub.documents) ? sub.documents : []);
+      const docBtns = docs.length ? docs.map(d => '<button type="button" class="btn-secondary !py-1 !text-xs" data-lr-lopen="' + escapeQuickFix(d.path || '') + '">' + escapeQuickFix(d.label || d.name || 'Document') + '</button>').join(' ') : '<span class="text-xs text-amber-300">No documents were uploaded with this listing.</span>';
+      return '<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">'
+        + '<div class="flex items-center justify-between gap-2 flex-wrap"><div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white font-medium">' + escapeQuickFix(l.title || 'Listing') + '</span>' + lrStatusChip('pending') + '<span class="text-[11px] text-slate-400">' + escapeQuickFix(cat[l.category] || l.category || '') + '</span></div><span class="text-xs text-slate-400">' + inspTs(l.created_at) + '</span></div>'
+        + '<p class="text-xs text-slate-400 mt-1">' + escapeQuickFix(l.location || '') + (l.rent ? ' · ' + escapeQuickFix(l.rent) : '') + (l.beds ? ' · ' + escapeQuickFix(l.beds) + ' bed' : '') + '</p>'
+        + (imgs.length ? '<div class="flex gap-2 mt-2 overflow-x-auto">' + imgs.map(u => '<a href="' + escapeQuickFix(u) + '" target="_blank" rel="noopener"><img src="' + escapeQuickFix(u) + '" class="h-16 w-24 object-cover rounded-lg border border-slate-700" loading="lazy"></a>').join('') + '</div>' : '')
+        + (fees.length ? '<div class="mt-2 text-[11px] text-slate-300 grid sm:grid-cols-2 gap-x-4">' + fees.map(t => '<span>' + escapeQuickFix(t) + '</span>').join('') + '</div>' : '')
+        + (feats.length ? '<p class="text-[11px] text-slate-500 mt-1">' + feats.map(escapeQuickFix).join(' · ') + '</p>' : '')
+        + (hostLines ? '<div class="mt-2 text-xs space-y-0.5">' + hostLines + '</div>' : '')
+        + '<div class="mt-2 flex gap-2 flex-wrap">' + docBtns + '</div>'
+        + '<div class="flex gap-2 mt-3"><button type="button" class="btn-primary !py-1.5 !text-xs" data-lr-act="approve" data-kind="lst" data-id="' + escapeQuickFix(l.id) + '">Approve and go live</button><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="lst" data-id="' + escapeQuickFix(l.id) + '">Decline</button></div>'
+        + lrDecideBox('lst', l.id, LR_DOC_REASONS, 'Decline this listing')
+        + '</div>';
+    }).join('') + '</div>';
+  }
+  async function lrDecideListing(id, approve, reason) {
+    let r = await sb.rpc('legal_decide_listing', { p_id: String(id), p_approve: approve, p_note: approve ? null : reason });
+    if (r.error) {   // Super Admin fallback: direct update
+      const patch = approve ? { status: 'available', review_note: null, reviewed_at: new Date().toISOString() } : { status: 'closed', review_note: reason, reviewed_at: new Date().toISOString() };
+      const u = await sb.from('listings').update(patch).eq('id', id).eq('status', 'pending').select();
+      if (u.error) { showToast('Could not save: ' + r.error.message, true); return false; }
+      if (!u.data || !u.data.length) { showToast('This listing was already decided by someone else. Refresh the list.', true); return false; }
+    } else if (!r.data || !r.data.updated) { showToast('This listing was already decided by someone else. Refresh the list.', true); return false; }
+    lrLog(approve ? 'approve_listing' : 'decline_listing', id);
+    return true;
+  }
+  async function lrOpenListingDoc(path) {
+    if (!path) { showToast('This file was not uploaded.', true); return; }
+    const r = await sb.storage.from('listing-docs').createSignedUrl(path, 600);
+    if (r.error || !r.data) { showToast('Could not open the file: ' + (r.error ? r.error.message : 'not found'), true); return; }
+    window.open(r.data.signedUrl, '_blank', 'noopener');
+  }
   async function loadLegalReview() {
+    await lrLoadPendingListings();
     const dl = document.getElementById('lrList'), kl = document.getElementById('kycList');
     dl.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
     const d = await sb.from('legal_reviews').select('*').order('created_at', { ascending: false }).limit(300);
@@ -3297,6 +3414,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   }
   async function lrDecide(kind, id, approve, reason) {
     const now = new Date().toISOString(), who = await lrWho();
+    if (kind === 'lst') return lrDecideListing(id, approve, reason);
     const table = kind === 'doc' ? 'legal_reviews' : 'app_kyc_submissions';
     const patch = kind === 'doc'
       ? { status: approve ? 'approved' : 'declined', decline_reason: approve ? null : reason, reviewed_by: who, reviewed_at: now }
@@ -3313,6 +3431,8 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   document.getElementById('lrFilter').addEventListener('change', renderLegalReview);
   document.querySelectorAll('[data-lrtab]').forEach(b => b.addEventListener('click', () => { lrTab = b.dataset.lrtab; lrOpenForm = null; renderLegalReview(); }));
   async function lrClick(e) {
+    const lopen = e.target.closest('[data-lr-lopen]');
+    if (lopen) { lrOpenListingDoc(lopen.dataset.lrLopen); return; }
     const open = e.target.closest('[data-lr-open]');
     if (open) { lrOpenDocument(open.dataset.lrOpen); return; }
     const btn = e.target.closest('[data-lr-act]'); if (!btn) return;
@@ -3320,9 +3440,9 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     if (act === 'cancel') { lrOpenForm = null; renderLegalReview(); return; }
     if (act === 'decline') { lrOpenForm = kind + ':' + id; renderLegalReview(); return; }
     if (act === 'approve') {
-      if (!confirm(kind === 'doc' ? 'Approve these documents? The listing will go live.' : 'Mark this person\'s ID as verified?')) return;
+      if (!confirm(kind === 'lst' ? 'Approve this listing? It goes live on the app and the website straight away.' : kind === 'doc' ? 'Approve these documents? The listing will go live.' : 'Mark this person\'s ID as verified?')) return;
       btn.disabled = true;
-      if (await lrDecide(kind, id, true, null)) { showToast(kind === 'doc' ? 'Approved. The listing goes live in the app.' : 'Marked as verified.'); lrOpenForm = null; await loadLegalReview(); } else btn.disabled = false;
+      if (await lrDecide(kind, id, true, null)) { showToast(kind === 'lst' ? 'Approved. The listing is now live.' : kind === 'doc' ? 'Approved. The listing goes live in the app.' : 'Marked as verified.'); lrOpenForm = null; await loadLegalReview(); } else btn.disabled = false;
       return;
     }
     if (act === 'confirm') {
