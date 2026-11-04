@@ -1910,12 +1910,8 @@
       const isProto = sourceOf(l) === 'app_prototype';
       const reviewBtn = isProto ? `<button class="review-docs-btn btn-secondary shrink-0" data-id="${l.id}">Host &amp; docs</button>` : '';
       let controls;
-      if (isPending && isProto && currentStaffRole !== 'super_admin') {
-        controls = `${reviewBtn}<span class="shrink-0 text-[11px] px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">Awaiting legal review</span>`;
-      } else if (isPending) {
-        controls = `${reviewBtn}
-          <button class="approve-listing-btn shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/30" data-id="${l.id}">Approve</button>
-          <button class="decline-listing-btn shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/50 text-rose-300 hover:bg-rose-500/30" data-id="${l.id}" data-title="${escHtml(l.title)}">Decline</button>`;
+      if (isPending && isProto) {
+        controls = `${reviewBtn}<span class="shrink-0 text-[11px] px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">Approve in Legal Review</span>`;
       } else if (isClosed) {
         controls = `${reviewBtn}
           <button class="reopen-listing-btn btn-secondary shrink-0" data-id="${l.id}">Re-review</button>
@@ -3316,22 +3312,42 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const pendingBlock = lrPendingHtml();
     if (!rows.length) { el.innerHTML = pendingBlock || '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">Nothing here. Documents appear as soon as a host or landlord submits them in the app.</div>'; return; }
     setTimeout(() => lrHydrateMedia(el), 0);
-    el.innerHTML = pendingBlock + (pendingBlock ? '<p class="text-sm font-semibold text-white mb-2">Title documents sent for review</p>' : '') + rows.map(r => `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
-      <div class="flex items-center justify-between gap-2 flex-wrap">
-        <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white font-medium">${escapeQuickFix(r.listing_title || 'Property')}</span>${lrStatusChip(r.status)}${r.attempt > 1 ? `<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">Resubmission ${r.attempt}</span>` : ''}</div>
-        <span class="text-xs text-slate-400">${inspTs(r.created_at)}</span>
+    const lbl = t => '<p class="text-[10px] uppercase tracking-wider text-slate-500 mb-1">' + t + '</p>';
+    const card = r => {
+      const l = lrListingForDoc(r), m = lrMetaOf(r) || {};
+      const dl = (Array.isArray(r.documents) ? r.documents : []).filter(d => d && d.kind !== 'photo' && d.kind !== 'video' && d.kind !== 'meta');
+      const where = (l && l.location) || m.address || '';
+      const price = l && l.rent ? l.rent : '';
+      const fees = l ? (Array.isArray(l.fees) ? l.fees : []).slice(0, 14) : [];
+      const units = fees.find(t => /^units available/i.test(t));
+      const showDocs = !(!dl.length && m.verified_property);
+      const act = r.status === 'pending'
+        ? `<button type="button" class="btn-primary !py-1.5 !text-xs" data-lr-act="approve" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Approve and go live</button><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Decline</button>`
+        : (r.status === 'approved' && r.listing_ref ? `<button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="reopen" data-id="${escapeQuickFix(r.id)}">Send back for review</button>` : '');
+      return `<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+      <div class="px-4 pt-3 pb-2">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0"><p class="text-sm text-white font-semibold leading-snug">${escapeQuickFix(r.listing_title || 'Property')}</p>
+            <p class="text-xs text-slate-400 mt-0.5">${escapeQuickFix(where)}${price ? ' · <span class="text-slate-200">' + escapeQuickFix(price) + '</span>' : ''}</p></div>
+          <span class="text-[11px] text-slate-500 whitespace-nowrap">${inspTs(r.created_at)}</span>
+        </div>
+        <div class="flex items-center gap-1.5 flex-wrap mt-2">${lrStatusChip(r.status)}<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300 capitalize">${escapeQuickFix(r.listing_type || 'property')}</span>${units ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">' + escapeQuickFix(units) + '</span>' : ''}${r.attempt > 1 ? `<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">Resubmission ${r.attempt}</span>` : ''}</div>
       </div>
-      <p class="text-xs text-slate-500 mt-1">${escapeQuickFix(r.listing_type || '')} · Owner: ${escapeQuickFix(r.owner_name || 'unknown')} · Sent by ${escapeQuickFix(r.submitted_by_name || 'unknown')} (${escapeQuickFix(r.submitted_by_role || 'host')})${r.agent_name ? ' · Agent: ' + escapeQuickFix(r.agent_name) : ''}</p>
-      ${lrChainHtml(r)}
-      ${lrDupHtml(r)}
-      ${(() => { const dl = (Array.isArray(r.documents) ? r.documents : []).filter(d => d && d.kind !== 'photo' && d.kind !== 'video' && d.kind !== 'meta'); const mm = lrMetaOf(r); return (!dl.length && mm && mm.verified_property) ? '' : lrDocButtons(dl); })()}
-      ${lrDocMedia(r)}
-      ${r.status === 'pending' ? `<div class="flex gap-2 mt-3"><button type="button" class="btn-primary !py-1.5 !text-xs" data-lr-act="approve" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Approve</button><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="doc" data-id="${escapeQuickFix(r.id)}">Decline</button></div>` : ''}
-      ${r.status === 'pending' ? lrDecideBox('doc', r.id, LR_DOC_REASONS, 'Decline these documents') : ''}
-      ${r.status === 'approved' && r.listing_ref ? `<div class="mt-3"><button type="button" class="btn-secondary !py-1.5 !text-xs" data-lr-act="decline" data-kind="reopen" data-id="${escapeQuickFix(r.id)}">Send back for review</button></div>${lrDecideBox('reopen', r.id, LR_DOC_REASONS, 'Send back for review')}` : ''}
-      ${r.status === 'declined' ? `<p class="text-xs text-red-300 mt-2">Reason sent to the host: ${escapeQuickFix(r.decline_reason || '')}</p>` : ''}
-      ${r.reviewed_by ? `<p class="text-[11px] text-slate-500 mt-1">Decided by ${escapeQuickFix(r.reviewed_by)} · ${inspTs(r.reviewed_at)}</p>` : ''}
-    </div>`).join('');
+      <div class="px-4 pb-3 space-y-3">
+        ${lrChainHtml(r)}
+        ${lrDupHtml(r)}
+        ${showDocs ? '<div>' + lbl('Title documents') + lrDocButtons(dl).replace('mt-2', 'mt-0') + '</div>' : ''}
+        <div>${lbl('Photos and video')}${lrDocMedia(r).replace('class="mt-2"', '')}</div>
+        ${fees.length ? '<div>' + lbl('Listing terms') + '<div class="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] text-slate-300">' + fees.map(t => '<span>' + escapeQuickFix(t) + '</span>').join('') + '</div></div>' : ''}
+        ${r.status === 'pending' ? lrDecideBox('doc', r.id, LR_DOC_REASONS, 'Decline these documents') : ''}
+        ${r.status === 'approved' && r.listing_ref ? lrDecideBox('reopen', r.id, LR_DOC_REASONS, 'Send back for review') : ''}
+        ${r.status === 'declined' ? `<p class="text-xs text-red-300">Reason sent to the host: ${escapeQuickFix(r.decline_reason || '')}</p>` : ''}
+        ${r.reviewed_by ? `<p class="text-[11px] text-slate-500">Decided by ${escapeQuickFix(r.reviewed_by)} · ${inspTs(r.reviewed_at)}</p>` : ''}
+      </div>
+      ${act ? '<div class="px-4 py-3 border-t border-slate-800 flex gap-2 flex-wrap">' + act + '</div>' : ''}
+    </div>`;
+    };
+    el.innerHTML = '<div class="space-y-4 mb-6">' + rows.map(card).join('') + '</div>' + pendingBlock;
   }
   function renderLrKyc() {
     const el = document.getElementById('kycList');
@@ -3410,25 +3426,28 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   }
   // Who listed it and who approved it: the agent, the landlord, and the landlord's confirmation.
   function lrChainHtml(r) {
-    const m = (Array.isArray(r.documents) ? r.documents : []).find(d => d && d.kind === 'meta');
+    const m = lrMetaOf(r);
     const b = t => '<span class="text-slate-100 font-medium">' + escapeQuickFix(t) + '</span>';
-    const contact = o => { const c = [o && o.phone, o && o.email].filter(Boolean).map(escapeQuickFix).join(' · '); return c ? ' <span class="text-slate-500">(' + c + ')</span>' : ''; };
-    let body;
+    const contact = o => { const c = [o && o.phone, o && o.email].filter(Boolean).map(escapeQuickFix).join(' · '); return c ? '<div class="text-slate-500">' + c + '</div>' : ''; };
+    const rows = [];
     if (m && m.listed_by && m.landlord) {
       const ll = m.landlord.name || r.owner_name || 'the landlord';
-      body = (m.listed_by.role === 'agent'
-        ? 'Listed by agent ' + b(m.listed_by.name || r.agent_name || 'an agent') + contact(m.listed_by) + ' on behalf of landlord ' + b(ll) + contact(m.landlord) + '.'
-        : 'Listed directly by landlord ' + b(ll) + contact(m.landlord) + '.')
-        + ' Documents uploaded and approved by ' + b(ll) + (m.landlord_approved_at ? ' on ' + inspTs(m.landlord_approved_at) : '') + '.'
-        + (m.address ? ' Property address: ' + escapeQuickFix(m.address) + '.' : '')
-        + (m.verified_property ? '<p class="mt-1 text-emerald-300">Property already verified: same property as “' + escapeQuickFix(m.verified_property.title || 'an earlier listing') + '” (' + escapeQuickFix(m.verified_property.address || '') + '), whose title document was approved earlier. No new document was needed.</p>' : '')
-        + lrPayoutLine(m.payout);
+      if (m.listed_by.role === 'agent') rows.push(['Listed by', b(m.listed_by.name || r.agent_name || 'An agent') + ' <span class="text-[10px] px-1.5 py-0.5 rounded border border-sky-500/30 text-sky-300">Agent</span>' + contact(m.listed_by)]);
+      rows.push(['Landlord', b(ll) + (m.listed_by.role === 'agent' ? '' : ' <span class="text-[10px] px-1.5 py-0.5 rounded border border-slate-600 text-slate-300">Listed directly</span>') + contact(m.landlord)]);
+      rows.push(['Documents', 'Uploaded and approved by ' + b(ll) + (m.landlord_approved_at ? ' on ' + inspTs(m.landlord_approved_at) : '')]);
+      if (m.address) rows.push(['Address', escapeQuickFix(m.address)]);
+      if (m.payout) rows.push(['Payout', lrPayoutLine(m.payout).replace(/^<p class="mt-1/, '<p class="').replace(/^Payout account: /, '')]);
+      if (m.verified_property) rows.push(['Verified', '<span class="text-emerald-300">Same property as “' + escapeQuickFix(m.verified_property.title || 'an earlier listing') + '” (' + escapeQuickFix(m.verified_property.address || '') + '), already approved. No new title document was needed.</span>']);
     } else if (r.agent_name) {
-      body = 'Listed by agent ' + b(r.agent_name) + ' on behalf of landlord ' + b(r.owner_name || 'unknown') + '. Documents sent by ' + b(r.submitted_by_name || r.owner_name || 'unknown') + '.';
+      rows.push(['Listed by', b(r.agent_name) + ' <span class="text-[10px] px-1.5 py-0.5 rounded border border-sky-500/30 text-sky-300">Agent</span>']);
+      rows.push(['Landlord', b(r.owner_name || 'unknown')]);
+      rows.push(['Sent by', b(r.submitted_by_name || r.owner_name || 'unknown')]);
     } else {
-      body = 'Listed directly by landlord ' + b(r.owner_name || r.submitted_by_name || 'unknown') + '. Documents sent by ' + b(r.submitted_by_name || r.owner_name || 'unknown') + '.';
+      rows.push(['Landlord', b(r.owner_name || r.submitted_by_name || 'unknown') + ' <span class="text-[10px] px-1.5 py-0.5 rounded border border-slate-600 text-slate-300">Listed directly</span>']);
+      rows.push(['Sent by', b(r.submitted_by_name || r.owner_name || 'unknown')]);
     }
-    return '<div class="mt-2 text-xs text-slate-300 bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2">' + body + '</div>';
+    return '<div><p class="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Who listed and who approved</p><dl class="text-xs text-slate-300 border border-slate-800 rounded-lg divide-y divide-slate-800">'
+      + rows.map(x => '<div class="grid gap-x-3 px-3 py-1.5" style="grid-template-columns:84px 1fr"><dt class="text-slate-500">' + x[0] + '</dt><dd class="min-w-0 break-words">' + x[1] + '</dd></div>').join('') + '</dl></div>';
   }
   // ---- Fraud signals: same photos / address / phone used by a different landlord ----
   function lrMetaOf(r) { return (Array.isArray(r.documents) ? r.documents : []).find(d => d && d.kind === 'meta') || null; }
@@ -3469,12 +3488,21 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     if (hit) return lrMediaHtml(hit.listing);
     return r && r.status === 'pending' ? '<p class="text-xs text-amber-300 mt-2">No photos or video came with this submission. Ask the host to submit the listing again from the latest app.</p>' : '';
   }
+  function lrReviewForListing(l) {
+    if (!l) return null;
+    return lrDocs.find(d => d.listing_ref && l.prototype_ref && String(d.listing_ref) === String(l.prototype_ref)) || null;
+  }
+  function lrListingForDoc(r) {
+    const hit = r && r.listing_ref ? lrPending.find(x => x.listing && String(x.listing.prototype_ref) === String(r.listing_ref)) : null;
+    return hit ? hit.listing : null;
+  }
   function lrPendingHtml() {
     if (lrPendingErr) return '<div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3 text-xs text-amber-200">Could not load listings waiting for approval: ' + escapeQuickFix(lrPendingErr.message) + '. Run 14_legal_listing_review.sql in the Supabase SQL Editor.</div>';
     const f = (document.getElementById('lrFilter') || {}).value || 'open';
-    if (!(f === 'open' || f === 'all') || !lrPending.length) return '';
+    const orphans = lrPending.filter(x => !lrReviewForListing(x.listing));   // listings with a document review are decided from that card only
+    if (!(f === 'open' || f === 'all') || !orphans.length) return '';
     const cat = { rent: 'Rent', land: 'Land & property', 'short-let': 'Short-let', 'event-center': 'Event center' };
-    return '<p class="text-sm font-semibold text-white mb-2">Listings waiting for approval (' + lrPending.length + ')</p><div class="space-y-3 mb-6">' + lrPending.map(x => {
+    return '<p class="text-sm font-semibold text-white mb-1">Listings without a document review (' + orphans.length + ')</p><p class="text-xs text-slate-500 mb-2">These came in with no title-document submission.</p><div class="space-y-3 mb-6">' + orphans.map(x => {
       const l = x.listing || {}, sub = x.submission || {}, host = sub.host || {};
       const imgs = (Array.isArray(l.images) ? l.images : []).filter(u => typeof u === 'string' && /^https?:/.test(u)).slice(0, 4);
       const fees = (Array.isArray(l.fees) ? l.fees : []).slice(0, 14);
@@ -3555,7 +3583,10 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     if (!data || !data.length) { showToast('This item was already decided by someone else. Refresh the list.', true); return false; }
     if (kind === 'doc' && approve) {   // approving the title documents also takes the matching app listing live
       const ref = data[0].listing_ref, hit = ref ? lrPending.find(x => x.listing && x.listing.prototype_ref === ref) : null;
-      if (hit) { try { await lrDecideListing(hit.listing.id, true, null); } catch (e) {} }
+      let live = false;
+      if (hit) { try { live = await lrDecideListing(hit.listing.id, true, null); } catch (e) {} }
+      if (!live && ref) { try { const u = await sb.from('listings').update({ status: 'available', review_note: null, reviewed_at: now }).eq('prototype_ref', ref).eq('status', 'pending').select(); live = !!(u.data && u.data.length); } catch (e) {} }
+      if (live) showToast('Approved. The listing is now live on the feed and website.');
     }
     lrLog(kind === 'doc' ? (approve ? 'approve' : 'decline') : (approve ? 'kyc_verified' : 'kyc_declined'), id);
     return true;
