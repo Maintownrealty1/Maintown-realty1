@@ -214,7 +214,7 @@
     </div>
 
     <div class="flex items-center gap-2 ml-auto">
-      <a href="./signup.html" class="inline-flex items-center justify-center h-10 px-3.5 sm:px-5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-[13px] sm:text-sm font-semibold transition shadow-lg shadow-brand-600/20 whitespace-nowrap">Sign up</a>
+      <a href="./signup.html" id="headerSignup" class="inline-flex items-center justify-center h-10 px-3.5 sm:px-5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-[13px] sm:text-sm font-semibold transition shadow-lg shadow-brand-600/20 whitespace-nowrap">Sign up</a>
       <button type="button" id="currencyToggle" aria-label="Switch currency" title="Switch between naira and US dollars" class="hidden md:inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-base font-semibold hover:bg-white/5 transition">₦</button>
       <button type="button" id="mobileMenuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-white text-xl hover:bg-white/5 transition">
         <span id="mobileMenuIcon">☰</span>
@@ -1945,7 +1945,7 @@
       <div class="story-dots mt-2" aria-hidden="true">${c.imgs.map((_, k) => `<span class="${k === 0 ? 'on' : ''}"></span>`).join('')}</div>
       <span class="mt-2 md:mt-3 text-[10px] sm:text-xs font-semibold text-brand-300 flex items-center gap-1">${c.form ? 'Join Waitlist →' : 'Sign Up →'}</span>`;
     el.addEventListener('click', () => {
-      if (c.form) { openWaitlistModal(c); } else { window.location.href = './signup.html'; }
+      if (c.form) { openWaitlistModal(c); } else if (!(mtMember && mtRoute('./signup.html', mtMember))) { window.location.href = './signup.html'; }
     });
     onboardingGrid.appendChild(el);
     // Crossfading "life" images, staggered per card
@@ -2393,6 +2393,136 @@
       slides[current].classList.add('active');
     }, 5000);
   })();
+
+  // ---------- Signed-in member awareness ----------
+  // Anyone who has already signed up (same Supabase login the sign-up page creates) is
+  // recognised here: no sign-up sheet again, their initial shows in the header, tenants go
+  // straight to WhatsApp, and landlord / agent accounts are reminded they are listing accounts.
+  const MT_CACHE_KEY = 'mt_member_cache';
+  const MT_LISTING_ROLES = ['landlord', 'agent'];
+  const MT_ROLE_LABEL = { tenant: 'Tenant', landlord: 'Landlord', agent: 'Agent', diaspora: 'Diaspora' };
+  let mtMember = null, mtReady = null;
+  try { const c = JSON.parse(localStorage.getItem(MT_CACHE_KEY) || 'null'); if (c && c.id) mtMember = c; } catch (e) {}
+
+  function mtWaLink(text) { return 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text); }
+  function mtFirst(m) { return String((m && m.name) || 'there').trim().split(/\s+/)[0]; }
+  function mtIsListing(m) { return !!m && MT_LISTING_ROLES.includes(String(m.role || '').toLowerCase()); }
+  function mtEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+  async function mtLoadMember() {
+    try {
+      const { data } = await sb.auth.getSession();
+      const u = data && data.session && data.session.user;
+      if (!u) { mtMember = null; try { localStorage.removeItem(MT_CACHE_KEY); } catch (e) {} mtRenderHeader(); return null; }
+      let row = null;
+      try {
+        const r = await sb.from('signups').select('full_name, role').eq('user_id', u.id).order('created_at', { ascending: false }).limit(1);
+        row = r && r.data && r.data[0] ? r.data[0] : null;
+      } catch (e) {}
+      const meta = u.user_metadata || {};
+      mtMember = {
+        id: u.id,
+        email: u.email || '',
+        name: (row && row.full_name) || meta.full_name || meta.name || String(u.email || '').split('@')[0] || 'Member',
+        role: String((row && row.role) || meta.role || (mtMember && mtMember.id === u.id ? mtMember.role : '') || '').toLowerCase()
+      };
+      try { localStorage.setItem(MT_CACHE_KEY, JSON.stringify(mtMember)); } catch (e) {}
+      mtRenderHeader();
+      return mtMember;
+    } catch (e) { return mtMember; }
+  }
+  mtReady = mtLoadMember();
+  try { sb.auth.onAuthStateChange(() => { mtReady = mtLoadMember(); }); } catch (e) {}
+
+  // Header: replace "Sign up" with the member's initial and a small account menu.
+  function mtRenderHeader() {
+    const btn = document.getElementById('headerSignup'); if (!btn) return;
+    let box = document.getElementById('mtAccount');
+    if (!mtMember) { btn.classList.remove('hidden'); if (box) box.remove(); return; }
+    btn.classList.add('hidden');
+    if (!box) { box = document.createElement('div'); box.id = 'mtAccount'; box.className = 'relative'; btn.parentNode.insertBefore(box, btn); }
+    const initial = mtEsc(mtFirst(mtMember).charAt(0).toUpperCase() || 'M');
+    box.innerHTML = '<button type="button" id="mtAccountBtn" aria-label="Your account" aria-haspopup="true" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-brand-600 hover:bg-brand-700 text-white text-base font-bold shadow-lg shadow-brand-600/20 transition">' + initial + '</button>'
+      + '<div id="mtAccountMenu" class="hidden absolute right-0 mt-2 w-60 rounded-xl border border-white/10 bg-slate-900 shadow-2xl p-3 z-[70]">'
+      + '<p class="text-sm font-semibold text-white truncate">' + mtEsc(mtMember.name) + '</p>'
+      + '<p class="text-xs text-slate-400 truncate">' + mtEsc(mtMember.email) + '</p>'
+      + (mtMember.role ? '<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-brand-500/40 text-brand-300">' + mtEsc(MT_ROLE_LABEL[mtMember.role] || mtMember.role) + ' account</span>' : '')
+      + '<button type="button" id="mtSignOut" class="mt-3 w-full text-left text-sm text-slate-200 hover:text-white border-t border-white/10 pt-2">Sign out</button></div>';
+  }
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest && e.target.closest('#mtAccountBtn');
+    const menu = document.getElementById('mtAccountMenu');
+    if (b && menu) { menu.classList.toggle('hidden'); return; }
+    if (e.target.closest && e.target.closest('#mtSignOut')) {
+      try { await sb.auth.signOut(); } catch (err) {}
+      mtMember = null; try { localStorage.removeItem(MT_CACHE_KEY); } catch (err) {}
+      mtRenderHeader(); return;
+    }
+    if (menu && !menu.classList.contains('hidden') && !(e.target.closest && e.target.closest('#mtAccount'))) menu.classList.add('hidden');
+  });
+  document.addEventListener('DOMContentLoaded', mtRenderHeader);
+  mtRenderHeader();
+
+  // Reminder shown to landlord / agent accounts who try to rent, buy or book.
+  function mtListingAccountModal(m) {
+    let el = document.getElementById('mtListingModal'); if (el) el.remove();
+    const role = MT_ROLE_LABEL[m.role] || 'listing';
+    const wa = mtWaLink("Hi MainTown Realty, I'm " + m.name + ' (' + role + " account). I'd like to list a property with you.");
+    el = document.createElement('div'); el.id = 'mtListingModal'; el.className = 'fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4';
+    el.innerHTML = '<div class="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="mtLmTitle">'
+      + '<span class="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full border border-brand-500/40 text-brand-300 bg-brand-500/10">' + mtEsc(role) + ' account</span>'
+      + '<h3 id="mtLmTitle" class="mt-3 text-xl font-bold text-white">This is a listing account</h3>'
+      + '<p class="mt-2 text-sm text-slate-300 leading-relaxed">Hi ' + mtEsc(mtFirst(m)) + ', your MainTown account is a ' + mtEsc(role.toLowerCase()) + ' account, so it can’t be used to rent, buy or book a property.</p>'
+      + '<p class="mt-2 text-sm text-slate-300 leading-relaxed">To list a property, chat with us on WhatsApp and our team will list it for you.</p>'
+      + '<a href="' + wa + '" target="_blank" rel="noopener noreferrer" id="mtLmWa" class="mt-5 flex items-center justify-center gap-2 w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 transition">Chat on WhatsApp to list</a>'
+      + '<button type="button" id="mtLmClose" class="mt-2 w-full rounded-xl border border-white/10 text-slate-200 hover:bg-white/5 font-medium py-3 transition">Close</button></div>';
+    document.body.appendChild(el);
+    const close = () => el.remove();
+    el.addEventListener('click', (ev) => { if (ev.target === el || ev.target.id === 'mtLmClose' || ev.target.id === 'mtLmWa') close(); });
+    document.addEventListener('keydown', function esc(ev) { if (ev.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+  }
+  function mtToast(t) {
+    const n = document.createElement('div'); n.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] max-w-[90vw] rounded-full bg-slate-800 border border-white/10 text-white text-sm px-4 py-2 shadow-xl'; n.textContent = t;
+    document.body.appendChild(n); setTimeout(() => n.remove(), 2600);
+  }
+
+  // Decide what a sign-up link should do for someone who is already signed in.
+  // Returns true when handled (the sign-up page must not open).
+  function mtRoute(href, m) {
+    let u; try { u = new URL(href, location.href); } catch (e) { return false; }
+    if (!/signup\.html$/i.test(u.pathname)) return false;
+    if (!m) return false;
+    const p = u.searchParams, intent = (p.get('role') || '').toLowerCase(), title = p.get('title') || '', cat = p.get('category') || '';
+    const roleLabel = MT_ROLE_LABEL[m.role] || 'Member';
+    if (intent === 'tenant' || p.get('listingId')) {
+      if (mtIsListing(m)) { mtListingAccountModal(m); return true; }
+      const verb = cat === 'land' ? 'buy' : cat === 'short-let' ? 'book' : 'rent';
+      let msg = "Hi MainTown Realty, I'm " + m.name + (m.role ? ' (' + roleLabel + ')' : '') + ". I'd like to " + verb + ' “' + title + '”.';
+      if (p.get('checkin') && p.get('checkout')) msg += ' Dates: ' + p.get('checkin') + ' to ' + p.get('checkout') + (p.get('nights') ? ' (' + p.get('nights') + ' night' + (p.get('nights') === '1' ? '' : 's') + ')' : '') + '.';
+      if (p.get('listingId')) msg += ' Listing ref: ' + p.get('listingId') + '.';
+      window.open(mtWaLink(msg), '_blank', 'noopener');
+      return true;
+    }
+    if (intent === 'landlord' || intent === 'agent') {
+      window.open(mtWaLink("Hi MainTown Realty, I'm " + m.name + (m.role ? ' (' + roleLabel + ' account)' : '') + ". I'd like to list a property with you."), '_blank', 'noopener');
+      return true;
+    }
+    mtToast('You’re already signed in as ' + mtFirst(m) + '.');
+    return true;
+  }
+  // Capture phase so it runs before the listing sheet's own link handling.
+  document.addEventListener('click', async (e) => {
+    const a = e.target.closest && e.target.closest('a[href*="signup.html"]'); if (!a) return;
+    if (e.defaultPrevented || e.button > 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    const href = a.getAttribute('href');
+    if (mtMember) { if (mtRoute(href, mtMember)) { e.preventDefault(); e.stopPropagation(); } return; }
+    // Not known yet: if a stored login might exist, wait for the check, otherwise let the page open.
+    let hasLogin = false; try { hasLogin = Object.keys(localStorage).some(k => /^sb-.*-auth-token$/.test(k)); } catch (err) {}
+    if (!hasLogin) return;
+    e.preventDefault(); e.stopPropagation();
+    const m = await mtReady;
+    if (!(m && mtRoute(href, m))) window.location.href = a.href;
+  }, true);
 </script>
 
 <script>
