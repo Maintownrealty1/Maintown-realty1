@@ -2464,22 +2464,33 @@
   mtRenderHeader();
 
   // Reminder shown to landlord / agent accounts who try to rent, buy or book.
-  function mtListingAccountModal(m) {
+  function mtRestrictModal(o) {
     let el = document.getElementById('mtListingModal'); if (el) el.remove();
-    const role = MT_ROLE_LABEL[m.role] || 'listing';
-    const wa = mtWaLink("Hi MainTown Realty, I'm " + m.name + ' (' + role + " account). I'd like to list a property with you.");
     el = document.createElement('div'); el.id = 'mtListingModal'; el.className = 'fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4';
     el.innerHTML = '<div class="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="mtLmTitle">'
-      + '<span class="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full border border-brand-500/40 text-brand-300 bg-brand-500/10">' + mtEsc(role) + ' account</span>'
-      + '<h3 id="mtLmTitle" class="mt-3 text-xl font-bold text-white">This is a listing account</h3>'
-      + '<p class="mt-2 text-sm text-slate-300 leading-relaxed">Hi ' + mtEsc(mtFirst(m)) + ', your MainTown account is a ' + mtEsc(role.toLowerCase()) + ' account, so it can’t be used to rent, buy or book a property.</p>'
-      + '<p class="mt-2 text-sm text-slate-300 leading-relaxed">To list a property, chat with us on WhatsApp and our team will list it for you.</p>'
-      + '<a href="' + wa + '" target="_blank" rel="noopener noreferrer" id="mtLmWa" class="mt-5 flex items-center justify-center gap-2 w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 transition">Chat on WhatsApp to list</a>'
+      + '<span class="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full border border-brand-500/40 text-brand-300 bg-brand-500/10">' + mtEsc(o.badge) + '</span>'
+      + '<h3 id="mtLmTitle" class="mt-3 text-xl font-bold text-white">' + mtEsc(o.title) + '</h3>'
+      + o.body.map(t => '<p class="mt-2 text-sm text-slate-300 leading-relaxed">' + t + '</p>').join('')
+      + '<a href="' + mtWaLink(o.wa) + '" target="_blank" rel="noopener noreferrer" id="mtLmWa" class="mt-5 flex items-center justify-center gap-2 w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 transition">' + mtEsc(o.cta) + '</a>'
       + '<button type="button" id="mtLmClose" class="mt-2 w-full rounded-xl border border-white/10 text-slate-200 hover:bg-white/5 font-medium py-3 transition">Close</button></div>';
     document.body.appendChild(el);
     const close = () => el.remove();
     el.addEventListener('click', (ev) => { if (ev.target === el || ev.target.id === 'mtLmClose' || ev.target.id === 'mtLmWa') close(); });
     document.addEventListener('keydown', function esc(ev) { if (ev.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+  }
+  // Landlord / agent account trying to rent, buy or book.
+  function mtListingAccountModal(m) {
+    const role = MT_ROLE_LABEL[m.role] || 'listing';
+    mtRestrictModal({ badge: role + ' account', title: 'This is a listing account',
+      body: ['Hi ' + mtEsc(mtFirst(m)) + ', your MainTown account is a ' + mtEsc(role.toLowerCase()) + ' account, so it can\u2019t be used to rent, buy or book a property.', 'To list a property, chat with us on WhatsApp and our team will list it for you.'],
+      wa: "Hi MainTown Realty, I'm " + m.name + ' (' + role + " account). I'd like to list a property with you.", cta: 'Chat on WhatsApp to list' });
+  }
+  // Tenant (or the other listing type) trying to act as a landlord or agent.
+  function mtWrongRoleModal(m, want) {
+    const role = MT_ROLE_LABEL[m.role] || 'Member', wl = MT_ROLE_LABEL[want];
+    mtRestrictModal({ badge: role + ' account', title: 'Not available on your account',
+      body: ['Hi ' + mtEsc(mtFirst(m)) + ', your MainTown account is a ' + mtEsc(role.toLowerCase()) + ' account, so it can\u2019t be used as a ' + mtEsc(wl.toLowerCase()) + ' account.', 'Each role has its own account. To list properties or work as a ' + mtEsc(wl.toLowerCase()) + ', chat with us on WhatsApp and our team will help you.'],
+      wa: "Hi MainTown Realty, I'm " + m.name + ' (' + role + " account). I'd like to join as a " + wl.toLowerCase() + '.', cta: 'Chat on WhatsApp' });
   }
   function mtToast(t) {
     const n = document.createElement('div'); n.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] max-w-[90vw] rounded-full bg-slate-800 border border-white/10 text-white text-sm px-4 py-2 shadow-xl'; n.textContent = t;
@@ -2503,7 +2514,8 @@
       return true;
     }
     if (intent === 'landlord' || intent === 'agent') {
-      window.open(mtWaLink("Hi MainTown Realty, I'm " + m.name + (m.role ? ' (' + roleLabel + ' account)' : '') + ". I'd like to list a property with you."), '_blank', 'noopener');
+      if (m.role && m.role !== intent) { mtWrongRoleModal(m, intent); return true; }
+      window.open(mtWaLink("Hi MainTown Realty, I'm " + m.name + ' (' + roleLabel + " account). I'd like to list a property with you."), '_blank', 'noopener');
       return true;
     }
     mtToast('You’re already signed in as ' + mtFirst(m) + '.');
