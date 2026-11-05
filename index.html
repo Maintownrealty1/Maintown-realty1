@@ -2499,7 +2499,6 @@
       const verb = cat === 'land' ? 'buy' : cat === 'short-let' ? 'book' : 'rent';
       let msg = "Hi MainTown Realty, I'm " + m.name + (m.role ? ' (' + roleLabel + ')' : '') + ". I'd like to " + verb + ' “' + title + '”.';
       if (p.get('checkin') && p.get('checkout')) msg += ' Dates: ' + p.get('checkin') + ' to ' + p.get('checkout') + (p.get('nights') ? ' (' + p.get('nights') + ' night' + (p.get('nights') === '1' ? '' : 's') + ')' : '') + '.';
-      if (p.get('listingId')) msg += ' Listing ref: ' + p.get('listingId') + '.';
       window.open(mtWaLink(msg), '_blank', 'noopener');
       return true;
     }
