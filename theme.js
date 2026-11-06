@@ -9,15 +9,18 @@
   function setMeta(t) {
     var m = document.querySelector('meta[name="theme-color"]');
     if (!m) { m = document.createElement('meta'); m.name = 'theme-color'; (document.head || root).appendChild(m); }
-    m.content = t === 'light' ? '#F8FAFC' : '#0F172A';
+    m.content = t === 'light' ? '#F8FAFC' : '#0E0E10';
   }
   function apply(t) {
     root.setAttribute('data-theme', t);
     setMeta(t);
-    var btns = document.querySelectorAll('#mt-theme .mt-opt');
+    var btns = document.querySelectorAll('.mt-opt');
     for (var i = 0; i < btns.length; i++) btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-mode') === t ? 'true' : 'false');
+    try { document.dispatchEvent(new Event('mt-theme-change')); } catch (e) {}
   }
   apply(read());
+  /* The switcher now lives in the footer (site.js). It calls this. */
+  window.MTTheme = { get: read, set: function (m) { m = m === 'light' ? 'light' : 'dark'; save(m); apply(m); } };
 
   var st = document.createElement('style');
   st.id = 'mt-theme-css';
@@ -29,29 +32,5 @@
   var ICON_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
   var ICON_CHECK = '<svg class="mt-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 
-  function build() {
-    if (document.getElementById('mt-theme')) return;
-    var w = document.createElement('div');
-    w.id = 'mt-theme';
-    w.innerHTML =
-      '<button type="button" id="mt-theme-tab" aria-label="Appearance: choose light or dark mode" aria-expanded="false" aria-controls="mt-theme-panel">' + ICON_TAB + '</button>' +
-      '<div id="mt-theme-panel" role="group" aria-label="Appearance"><p>Appearance</p>' +
-      '<button type="button" class="mt-opt" data-mode="dark" aria-pressed="false">' + ICON_MOON + 'Dark' + ICON_CHECK + '</button>' +
-      '<button type="button" class="mt-opt" data-mode="light" aria-pressed="false">' + ICON_SUN + 'Light' + ICON_CHECK + '</button></div>';
-    document.body.appendChild(w);
-    var tab = document.getElementById('mt-theme-tab');
-    function open(o) { w.classList.toggle('mt-open', o); tab.setAttribute('aria-expanded', o ? 'true' : 'false'); }
-    tab.addEventListener('click', function (e) { e.stopPropagation(); open(!w.classList.contains('mt-open')); });
-    w.addEventListener('click', function (e) {
-      var b = e.target.closest ? e.target.closest('.mt-opt') : null;
-      if (!b) return;
-      var m = b.getAttribute('data-mode'); save(m); apply(m);
-      setTimeout(function () { open(false); }, 350);
-    });
-    document.addEventListener('click', function (e) { if (w.classList.contains('mt-open') && !w.contains(e.target)) open(false); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && w.classList.contains('mt-open')) { open(false); tab.focus(); } });
-    apply(read());
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
   window.addEventListener('storage', function (e) { if (e.key === KEY) apply(read()); });
 })();
