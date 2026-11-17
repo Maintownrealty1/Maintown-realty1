@@ -474,6 +474,9 @@
     <h1 class="title" id="done-title" style="text-align:center;">You're all set!</h1>
     <p class="subtitle" id="done-sub" style="text-align:center;">We're opening WhatsApp so our team can continue with you. We've also emailed you a link to chat with us. Your full onboarding will be completed in the MainTown app when it launches.</p>
     <p id="done-status" class="kyc-note" style="text-align:center; margin:0 0 10px; display:none;"></p>
+    <a id="dashboard-continue-btn" href="./dashboard.html" class="btn-primary" style="display:none; align-items:center; justify-content:center; gap:8px; text-decoration:none; margin-bottom:12px;">
+      <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Open my dashboard
+    </a>
     <a id="whatsapp-continue-btn" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;">
       <i data-lucide="message-circle" class="w-4 h-4"></i> Continue on WhatsApp
     </a>
@@ -1056,15 +1059,23 @@
     // 4. WhatsApp
     document.getElementById('whatsapp-continue-btn').href = waLink;
     const roleNames = { tenant: 'a Tenant', landlord: 'a Landlord', agent: 'an Agent' };
+    // Landlords and agents go straight to their web dashboard; tenants keep the WhatsApp hand-off.
+    const toDashboard = ['landlord', 'agent'].includes(role) && (profileSaved || roleKept);
+    if (toDashboard) {
+      document.getElementById('dashboard-continue-btn').style.display = 'flex';
+      document.getElementById('done-sub').textContent = 'Your dashboard is ready. List properties, manage inspections and track payouts, the same way you will in the MainTown app. You can also chat with our team on WhatsApp any time.';
+      if (window.lucide) lucide.createIcons();
+    }
     statusEl.style.color = (profileSaved && !roleKept) ? '#10b981' : '#f59e0b';
-    statusEl.textContent = roleKept
+    statusEl.textContent = toDashboard && profileSaved && !roleKept ? 'Signed in as ' + email + '. Opening your dashboard…' : roleKept
       ? 'This email is already registered as ' + roleNames[roleKept] + ', and a role cannot be changed here. Continue on WhatsApp and our team will help. Opening WhatsApp…'
       : profileSaved
       ? 'Signed in as ' + email + '. Opening WhatsApp…'
       : "We couldn't save everything on our side, but don't worry: continue on WhatsApp and our team will pick it up." + (saveErrorMsg ? ' (Reason: ' + saveErrorMsg + ')' : '');
     clearSavedState();
     try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
-    if (!opts.noWhatsapp) setTimeout(() => { window.location.href = waLink; }, 1200);
+    if (toDashboard && profileSaved && !roleKept) setTimeout(() => { window.location.href = './dashboard.html'; }, 1200);
+    else if (!opts.noWhatsapp) setTimeout(() => { window.location.href = waLink; }, 1200);
     else {
       document.getElementById('done-title').textContent = 'Email confirmed!';
       statusEl.textContent = 'Your account is ready. You can continue on WhatsApp any time.';

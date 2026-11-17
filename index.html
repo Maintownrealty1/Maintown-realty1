@@ -2359,6 +2359,7 @@
       + '<p class="text-sm font-semibold text-white truncate">' + mtEsc(mtMember.name) + '</p>'
       + '<p class="text-xs text-slate-400 truncate">' + mtEsc(mtMember.email) + '</p>'
       + (mtMember.role ? '<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-brand-500/40 text-brand-300">' + mtEsc(MT_ROLE_LABEL[mtMember.role] || mtMember.role) + ' account</span>' : '')
+      + (mtIsListing(mtMember) ? '<a href="./dashboard.html" class="mt-3 flex items-center justify-center w-full rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2 transition">Open my dashboard</a>' : '')
       + '<button type="button" id="mtSignOut" class="mt-3 w-full text-left text-sm text-slate-200 hover:text-white border-t border-white/10 pt-2">Sign out</button></div>';
   }
   document.addEventListener('click', async (e) => {
@@ -2383,7 +2384,7 @@
       + '<span class="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full border border-brand-500/40 text-brand-300 bg-brand-500/10">' + mtEsc(o.badge) + '</span>'
       + '<h3 id="mtLmTitle" class="mt-3 text-xl font-bold text-white">' + mtEsc(o.title) + '</h3>'
       + o.body.map(t => '<p class="mt-2 text-sm text-slate-300 leading-relaxed">' + t + '</p>').join('')
-      + '<a href="' + mtWaLink(o.wa) + '" target="_blank" rel="noopener noreferrer" id="mtLmWa" class="mt-5 flex items-center justify-center gap-2 w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 transition">' + mtEsc(o.cta) + '</a>'
+      + '<a href="' + (o.href ? mtEsc(o.href) : mtWaLink(o.wa)) + '"' + (o.href ? '' : ' target="_blank" rel="noopener noreferrer"') + ' id="mtLmWa" class="mt-5 flex items-center justify-center gap-2 w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 transition">' + mtEsc(o.cta) + '</a>'
       + '<button type="button" id="mtLmClose" class="mt-2 w-full rounded-xl border border-white/10 text-slate-200 hover:bg-white/5 font-medium py-3 transition">Close</button></div>';
     document.body.appendChild(el);
     const close = () => el.remove();
@@ -2394,8 +2395,8 @@
   function mtListingAccountModal(m) {
     const role = MT_ROLE_LABEL[m.role] || 'listing';
     mtRestrictModal({ badge: role + ' account', title: 'This is a listing account',
-      body: ['Hi ' + mtEsc(mtFirst(m)) + ', your MainTown account is a ' + mtEsc(role.toLowerCase()) + ' account, so it can\u2019t be used to rent, buy or book a property.', 'To list a property, chat with us on WhatsApp and our team will list it for you.'],
-      wa: "Hi MainTown Realty, I'm " + m.name + ' (' + role + " account). I'd like to list a property with you.", cta: 'Chat on WhatsApp to list' });
+      body: ['Hi ' + mtEsc(mtFirst(m)) + ', your MainTown account is a ' + mtEsc(role.toLowerCase()) + ' account, so it can\u2019t be used to rent, buy or book a property.', 'You can list and manage properties from your dashboard.'],
+      wa: "Hi MainTown Realty, I'm " + m.name + ' (' + role + " account). I'd like to list a property with you.", cta: 'Open my dashboard', href: './dashboard.html' });
   }
   // Tenant (or the other listing type) trying to act as a landlord or agent.
   function mtWrongRoleModal(m, want) {
@@ -2427,7 +2428,7 @@
     }
     if (intent === 'landlord' || intent === 'agent') {
       if (m.role && m.role !== intent) { mtWrongRoleModal(m, intent); return true; }
-      window.open(mtWaLink("Hi MainTown Realty, I'm " + m.name + ' (' + roleLabel + " account). I'd like to list a property with you."), '_blank', 'noopener');
+      window.location.href = './dashboard.html';
       return true;
     }
     mtToast('You’re already signed in as ' + mtFirst(m) + '.');

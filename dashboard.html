@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B19N3LX04H"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-B19N3LX04H');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Dashboard — MainTown Realty</title>
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="shortcut icon" href="/favicon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
+<script src="./theme.js?v=4"></script>
+<script src="./site.js?v=1"></script>
+
+<style>
+  /* ------------------------------------------------------------------
+     Design tokens: same charcoal + violet language as the website.
+     Light mode follows html[data-theme="light"] (set by theme.js / the footer switcher).
+     ------------------------------------------------------------------ */
+  :root {
+    --bg: #0E0E10; --bg-2: #08080A; --panel: #151518; --panel-2: #1C1C20; --line: #2A2A30; --line-soft: rgba(255,255,255,.06);
+    --fg: #F4F4F5; --fg-2: #D4D4D8; --muted: #A1A1AA; --faint: #71717A;
+    --brand: #7C3AED; --brand-2: #8B5CF6; --brand-soft: rgba(124,58,237,.14); --brand-text: #C4B5FD;
+    --ok: #34D399; --ok-soft: rgba(52,211,153,.12); --warn: #FBBF24; --warn-soft: rgba(251,191,36,.12);
+    --bad: #F87171; --bad-soft: rgba(248,113,113,.12); --info: #60A5FA; --info-soft: rgba(96,165,250,.12);
+    --shadow: 0 18px 40px rgba(0,0,0,.45);
+  }
+  html[data-theme="light"] {
+    --bg: #F6F6F8; --bg-2: #EDEDF1; --panel: #FFFFFF; --panel-2: #F4F4F7; --line: #E3E3E8; --line-soft: rgba(0,0,0,.06);
+    --fg: #0E0E10; --fg-2: #27272A; --muted: #52525B; --faint: #71717A;
+    --brand-soft: rgba(124,58,237,.09); --brand-text: #6D28D9;
+    --ok: #059669; --ok-soft: rgba(5,150,105,.1); --warn: #B45309; --warn-soft: rgba(180,83,9,.1);
+    --bad: #DC2626; --bad-soft: rgba(220,38,38,.08); --info: #2563EB; --info-soft: rgba(37,99,235,.09);
+    --shadow: 0 18px 40px rgba(15,23,42,.14);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--fg); font: 14px/1.5 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
+  h1, h2, h3, h4 { font-family: "Space Grotesk", Inter, sans-serif; margin: 0; letter-spacing: -.01em; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  svg.lucide { width: 16px; height: 16px; stroke-width: 2; flex: none; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+  .hidden { display: none !important; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+  /* ---------- top bar ---------- */
+  .topbar { position: sticky; top: 0; z-index: 40; height: 60px; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line-soft); }
+  .brand { display: flex; align-items: center; gap: 9px; font: 800 17px "Space Grotesk", Inter, sans-serif; letter-spacing: -.02em; }
+  .brand img { width: 30px; height: 30px; border-radius: 9px; }
+  .brand b { color: var(--brand-2); font-weight: 800; }
+  .tb-sep { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
+  .tb-page { color: var(--muted); font-weight: 500; }
+  .tb-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .icon-btn { position: relative; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--fg-2); }
+  .icon-btn:hover { background: var(--panel-2); }
+  .count-dot { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: #EF4444; color: #fff; font: 700 10.5px/18px Inter; text-align: center; border: 2px solid var(--bg); }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--brand); color: #fff; font: 700 15px Inter; }
+  .menu-toggle { display: none; }
+  .acct-menu { position: absolute; right: 0; top: 46px; width: 250px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 12px; }
+  .acct-menu p { margin: 0; }
+  .acct-menu .row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 6px; border: 0; background: none; border-radius: 8px; text-align: left; color: var(--fg-2); }
+  .acct-menu .row:hover { background: var(--panel-2); }
+
+  /* ---------- shell ---------- */
+  .shell { flex: 1; display: grid; grid-template-columns: 248px minmax(0, 1fr); max-width: 1480px; width: 100%; margin: 0 auto; }
+  .side { position: sticky; top: 60px; align-self: start; height: calc(100vh - 60px); overflow-y: auto; padding: 18px 12px 24px 16px; border-right: 1px solid var(--line-soft); }
+  .side .role-chip { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 14px; border-radius: 12px; background: var(--brand-soft); border: 1px solid rgba(124,58,237,.28); }
+  .role-chip small { display: block; color: var(--brand-text); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  .role-chip strong { display: block; font-size: 13.5px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-group { margin: 16px 10px 6px; font: 600 10.5px Inter; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+  .nav a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; color: var(--muted); font-weight: 500; margin-bottom: 1px; }
+  .nav a:hover { background: var(--panel); color: var(--fg); }
+  .nav a.on { background: var(--panel-2); color: var(--fg); box-shadow: inset 2px 0 0 var(--brand-2); }
+  .nav a .n { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--brand); color: #fff; font: 700 11px/20px Inter; text-align: center; }
+  .nav a .n.warn { background: var(--warn); color: #1c1400; }
+  .main { padding: 26px 28px 56px; min-width: 0; }
+  .scrim { display: none; }
+
+  /* ---------- building blocks ---------- */
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .page-head h1 { font-size: 26px; font-weight: 700; }
+  .page-head p { margin: 4px 0 0; color: var(--muted); max-width: 62ch; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 38px; padding: 0 15px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); font-weight: 600; font-size: 13px; white-space: nowrap; }
+  .btn:hover { background: var(--panel-2); }
+  .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; box-shadow: 0 8px 20px rgba(124,58,237,.25); }
+  .btn.primary:hover { background: #6D28D9; }
+  .btn.ok { background: var(--ok-soft); border-color: rgba(52,211,153,.35); color: var(--ok); }
+  .btn.bad { background: var(--bad-soft); border-color: rgba(248,113,113,.35); color: var(--bad); }
+  .btn.sm { height: 32px; padding: 0 11px; font-size: 12.5px; border-radius: 8px; }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+  .card { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 16px; }
+  .card.pad { padding: 18px; }
+  .card h3 { font-size: 15px; font-weight: 600; }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 0; }
+  .card-head p { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; }
+  .grid { display: grid; gap: 16px; }
+  .g-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .g-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .split { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+  .split.rev { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+  .pill { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 99px; font: 600 11px Inter; letter-spacing: .02em; border: 1px solid transparent; white-space: nowrap; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); border-color: rgba(52,211,153,.25); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); border-color: rgba(251,191,36,.25); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); border-color: rgba(248,113,113,.25); }
+  .pill.info { background: var(--info-soft); color: var(--info); border-color: rgba(96,165,250,.25); }
+  .pill.brand { background: var(--brand-soft); color: var(--brand-text); border-color: rgba(124,58,237,.3); }
+  .pill.mute { background: var(--panel-2); color: var(--muted); border-color: var(--line); }
+  .empty { padding: 38px 20px; text-align: center; color: var(--muted); }
+  .empty svg { width: 30px; height: 30px; color: var(--faint); margin-bottom: 8px; }
+  .empty b { display: block; color: var(--fg-2); font-size: 14px; margin-bottom: 3px; }
+  .notice { display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--info-soft); border: 1px solid rgba(96,165,250,.25); color: var(--fg-2); font-size: 12.5px; margin-bottom: 16px; }
+  .notice.warn { background: var(--warn-soft); border-color: rgba(251,191,36,.3); }
+  .notice svg { margin-top: 2px; color: var(--info); }
+  .notice.warn svg { color: var(--warn); }
+
+  /* hero earnings card */
+  .hero { position: relative; overflow: hidden; padding: 24px; border-radius: 18px; border: 1px solid rgba(124,58,237,.35); background: linear-gradient(135deg, rgba(124,58,237,.2), rgba(124,58,237,.04) 60%), var(--panel); }
+  .hero small { color: var(--brand-text); font: 600 11px Inter; letter-spacing: .1em; text-transform: uppercase; }
+  .hero .big { font: 700 38px "Space Grotesk"; letter-spacing: -.02em; margin: 6px 0 2px; }
+  .hero p { margin: 0; color: var(--muted); }
+  .hero .btn { margin-top: 16px; }
+  .stat { padding: 16px 18px; }
+  .stat small { display: flex; align-items: center; gap: 7px; color: var(--muted); font-weight: 500; }
+  .stat b { display: block; font: 700 26px "Space Grotesk"; margin-top: 6px; }
+  .stat span { color: var(--faint); font-size: 12px; }
+
+  /* quick actions */
+  .qa { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .qa button { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px; text-align: left; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 14px; }
+  .qa button:hover { border-color: rgba(124,58,237,.5); transform: translateY(-1px); }
+  .qa .ic { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; background: var(--brand-soft); color: var(--brand-text); }
+  .qa .ic svg { width: 19px; height: 19px; }
+  .qa b { font-weight: 600; font-size: 13.5px; }
+  .qa .n { position: absolute; top: 10px; right: 10px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--brand); color: #fff; font: 700 11px/20px Inter; text-align: center; }
+
+  /* attention list + rows */
+  .rows { display: flex; flex-direction: column; }
+  .row-item { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-top: 1px solid var(--line-soft); }
+  .row-item:first-child { border-top: 0; }
+  .row-item .lead { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--panel-2); color: var(--muted); flex: none; }
+  .row-item .lead.warn { background: var(--warn-soft); color: var(--warn); }
+  .row-item .lead.ok { background: var(--ok-soft); color: var(--ok); }
+  .row-item .lead.brand { background: var(--brand-soft); color: var(--brand-text); }
+  .row-item .grow { flex: 1; min-width: 0; }
+  .row-item .t { font-weight: 600; }
+  .row-item .s { color: var(--muted); font-size: 12.5px; }
+  .row-item .acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .row-item.unread { background: color-mix(in srgb, var(--brand) 7%, transparent); }
+
+  /* tables */
+  .tbl-wrap { overflow-x: auto; }
+  table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th { text-align: left; padding: 11px 18px; font: 600 11px Inter; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  .tbl td { padding: 14px 18px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .tbl tbody tr:hover td { background: color-mix(in srgb, var(--panel-2) 55%, transparent); }
+  .tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .tbl .sub { color: var(--muted); font-size: 12px; }
+  .tbl .thumb { width: 54px; height: 40px; border-radius: 8px; object-fit: cover; background: var(--panel-2); flex: none; }
+  .tbl .who { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+  .tabs { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line-soft); width: max-content; max-width: 100%; overflow-x: auto; margin-bottom: 16px; }
+  .tabs button { height: 32px; padding: 0 13px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-weight: 600; font-size: 12.5px; white-space: nowrap; }
+  .tabs button.on { background: var(--brand); color: #fff; }
+  .tabs button i { font-style: normal; opacity: .75; margin-left: 5px; }
+
+  /* breakdown */
+  .bd { padding: 4px 18px 16px; display: none; }
+  .bd.open { display: block; }
+  .bd div { display: flex; justify-content: space-between; padding: 6px 0; color: var(--muted); border-bottom: 1px dashed var(--line); }
+  .bd div:last-child { border: 0; color: var(--fg); font-weight: 700; }
+
+  /* progress bar */
+  .bar { height: 6px; border-radius: 9px; background: var(--panel-2); overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--brand-2); border-radius: 9px; }
+
+  /* modal */
+  .modal-wrap { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,.62); backdrop-filter: blur(4px); }
+  .modal { width: 100%; max-width: 560px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+  .modal.wide { max-width: 760px; }
+  .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 12px; }
+  .modal-head h3 { font-size: 18px; }
+  .modal-head p { margin: 3px 0 0; color: var(--muted); font-size: 12.5px; }
+  .modal-body { padding: 4px 20px 18px; overflow-y: auto; }
+  .modal-foot { display: flex; gap: 10px; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--line-soft); }
+
+  /* forms */
+  .f { display: grid; gap: 14px; }
+  .f-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  label.fld { display: block; font-weight: 600; font-size: 12.5px; color: var(--fg-2); }
+  label.fld span.hint { font-weight: 400; color: var(--faint); }
+  .in { display: block; width: 100%; height: 42px; margin-top: 6px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font: 14px Inter; }
+  textarea.in { height: 84px; padding: 10px 12px; resize: vertical; }
+  .in:focus { outline: 2px solid rgba(124,58,237,.55); outline-offset: 1px; border-color: transparent; }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .seg button { height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); font-weight: 600; font-size: 13px; }
+  .seg button.on { border-color: var(--brand-2); background: var(--brand-soft); color: var(--fg); }
+  .steps { display: flex; gap: 8px; margin-bottom: 14px; }
+  .steps span { flex: 1; height: 4px; border-radius: 4px; background: var(--line); }
+  .steps span.on { background: var(--brand-2); }
+  .policy-box { max-height: 240px; overflow-y: auto; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 12.5px; color: var(--muted); }
+  .policy-box h4 { font-size: 12.5px; color: var(--fg); margin: 10px 0 3px; font-family: Inter; }
+  .policy-box h4:first-child { margin-top: 0; }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--fg-2); margin-top: 12px; }
+  .check input { margin-top: 3px; accent-color: var(--brand); width: 16px; height: 16px; }
+
+  /* chat */
+  .chat { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding: 6px 0 10px; }
+  .bub { max-width: 82%; padding: 9px 12px; border-radius: 14px; background: var(--panel-2); font-size: 13px; }
+  .bub.me { align-self: flex-end; background: var(--brand); color: #fff; }
+  .bub small { display: block; opacity: .7; font-size: 10.5px; margin-top: 3px; }
+
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 120; max-width: 92vw; padding: 11px 16px; border-radius: 99px; background: var(--fg); color: var(--bg); font-weight: 600; font-size: 13px; box-shadow: var(--shadow); }
+  .demo-bar { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px; background: var(--warn-soft); color: var(--warn); border-bottom: 1px solid rgba(251,191,36,.25); font-weight: 600; font-size: 12.5px; text-align: center; }
+  .demo-bar a { text-decoration: underline; }
+  .gate { max-width: 560px; margin: 8vh auto; padding: 0 16px; }
+  .gate .card { padding: 30px; text-align: center; }
+  .gate h2 { font-size: 24px; margin: 12px 0 6px; }
+  .gate p { color: var(--muted); margin: 0 0 18px; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1100px) { .g-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .qa { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    .menu-toggle { display: inline-flex; }
+    .tb-page, .tb-sep { display: none; }
+    .side { position: fixed; z-index: 70; top: 0; left: 0; bottom: 0; width: 280px; height: auto; background: var(--bg); transform: translateX(-102%); transition: transform .25s ease; padding-top: 74px; border-right: 1px solid var(--line); }
+    body.nav-open .side { transform: none; }
+    body.nav-open .scrim { display: block; position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.55); }
+    .main { padding: 20px 16px 48px; }
+    .g-2, .g-3, .split, .split.rev { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .qa { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .g-4 { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .page-head h1 { font-size: 22px; }
+    .hero .big { font-size: 30px; }
+    .f-2 { grid-template-columns: 1fr; }
+    .row-item { flex-wrap: wrap; }
+    .row-item .acts { width: 100%; justify-content: flex-start; padding-left: 50px; }
+    .modal-wrap { align-items: flex-end; padding: 0; }
+    .modal { max-width: none; border-radius: 18px 18px 0 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+
+<body>
+<div id="demoBar" class="demo-bar hidden"></div>
+
+<header class="topbar" id="topbar">
+  <button class="icon-btn menu-toggle" id="menuBtn" aria-label="Open menu"><i data-lucide="menu"></i></button>
+  <a href="./index.html" class="brand" aria-label="MainTown Realty home"><img src="/favicon-192.png" alt=""><span>MainTown <b>Realty</b></span></a>
+  <span class="tb-sep"></span><span class="tb-page" id="tbPage">Dashboard</span>
+  <div class="tb-right" id="tbRight"></div>
+</header>
+
+<div id="gate" class="gate hidden"></div>
+
+<div class="shell hidden" id="shell">
+  <aside class="side" id="side"></aside>
+  <main class="main" id="main" tabindex="-1"></main>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div id="mt-footer-root"></div>
+<div id="layer"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ====================================================================
+     MainTown web dashboard (landlords + agents)
+     Same activities and flow as the mobile app, laid out for a wide screen.
+
+     DATA CONTRACT (for the backend developer)
+     Everything the screens show or change goes through the `Api` object in
+     section 2. Reading `listings` works today against the same Supabase
+     table the website already uses. Every other method is wired for demo
+     data only (?demo=landlord or ?demo=agent) and returns "not connected"
+     for real accounts until the matching table / RPC exists:
+       listings.submit / remove / verify   inspections.list / decide
+       deals.list   bookings.list / cancel / message   payouts.list
+       wallet.get / withdraw   assets.list / countersign / dispatch
+       offers.list / respond   notifications.list / read   activation.submit
+     ==================================================================== */
+
+  /* ---------- 1. basics ---------- */
+  const SUPABASE_URL = 'https://obtggomfwvravjcnypid.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_GaTnU4FmPc2slbn8BisXXg_DmxH1vl8';
+  const sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+  const qs = new URLSearchParams(location.search);
+  const DEMO_ROLE = ['landlord', 'agent'].includes(qs.get('demo')) ? qs.get('demo') : null;
+  const DEMO_MANAGED = DEMO_ROLE === 'landlord' && qs.get('managed') === '1';
+  const MEMBER_CACHE = 'mt_member_cache';
+
+  const $ = (s, r) => (r || document).querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const money = n => '₦' + Math.round(Number(n) || 0).toLocaleString('en-NG');
+  const icons = () => { try { window.lucide && lucide.createIcons(); } catch (e) {} };
+  const ico = (n, cls) => '<i data-lucide="' + n + '"' + (cls ? ' class="' + cls + '"' : '') + '></i>';
+  const lagosToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
+  const addDays = (iso, d) => { const t = new Date(iso + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + d); return t.toISOString().slice(0, 10); };
+  const fmtDate = v => { if (!v) return '—'; const d = new Date(v.length === 10 ? v + 'T12:00:00' : v); return isNaN(d) ? String(v) : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
+  const fmtTime = ts => { const d = new Date(ts); const same = d.toDateString() === new Date().toDateString(); return same ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : fmtDate(d.toISOString()); };
+  const first = n => String(n || 'there').trim().split(/\s+/)[0];
+
+  function toast(msg) {
+    const old = $('.toast'); if (old) old.remove();
+    const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 3200);
+  }
+
+  /* ---------- commission rules (identical to the app + signup.html partnership terms) ----------
+     Rentals / short-lets: flat 10%. Agent-listed: 60% Agent / 40% MainTown. Direct-listed: 100% MainTown.
+     Land & Property: two separate 5% halves. Buyer's 5% is billed to the buyer and goes to MainTown.
+     Seller's 5% comes out of the owner's proceeds and goes to the Agent if one listed it, else MainTown. */
+  function split(kind, amount, agentListed) {
+    amount = Number(amount) || 0;
+    if (kind === 'land') {
+      const sellerFee = amount * 0.05;
+      return { fee: sellerFee, feeLabel: "Seller's 5% commission", agent: agentListed ? sellerFee : 0, mt: agentListed ? 0 : sellerFee, net: amount - sellerFee };
+    }
+    const fee = amount * 0.10;
+    return { fee, feeLabel: 'Platform commission (10%)', agent: agentListed ? fee * 0.6 : 0, mt: agentListed ? fee * 0.4 : fee, net: amount - fee };
+  }
+
+  /* ---------- 2. data layer ---------- */
+  let ROLE = null, USER = null, PROFILE = null, S = null, IS_DEMO = false;
+  const NOT_CONNECTED = 'This isn’t connected to the live MainTown backend yet. It works in the preview (?demo) and will switch on once the backend is wired.';
+
+  function emptyState() { return { listings: [], inspections: [], deals: [], bookings: [], payouts: [], wallet: { balance: 0, entries: [] }, assets: [], offers: [], notifications: [], chats: {} }; }
+
+  function seed(role) {
+    const T = lagosToday(); const now = Date.now(); const H = 3600e3, D = 24 * H;
+    const me = role === 'agent' ? 'Demo Agent' : 'Demo Landlord';
+    const img = id => 'https://images.unsplash.com/' + id + '?w=240&h=160&fit=crop&q=70';
+    const L = [
+      { id: 'L1', title: '2-Bed Flat, Lekki Phase 1', category: 'rent', area: 'Lekki Phase 1, Lagos', price: 180000, unit: 'mo', status: 'Live', agentListed: true, agentName: 'Ada Obi', ownerName: 'Frank Hood', img: img('photo-1502672260266-1c1ef2d93688'), bedrooms: 2 },
+      { id: 'L2', title: 'Studio Apartment, Yaba', category: 'rent', area: 'Yaba, Lagos', price: 95000, unit: 'mo', status: 'Rented', agentListed: false, ownerName: 'Frank Hood', img: img('photo-1560448204-e02f11c3d0e2'), bedrooms: 1 },
+      { id: 'L3', title: 'Serviced 1-Bed, Victoria Island', category: 'shortlet', area: 'Victoria Island, Lagos', price: 65000, unit: 'night', status: 'Live', agentListed: role === 'agent', agentName: 'Ada Obi', ownerName: 'Frank Hood', img: img('photo-1522708323590-d24dbb6b0267'), bedrooms: 1 },
+      { id: 'L4', title: '450sqm Land, Ibeju-Lekki', category: 'land', kind: 'Land only', area: 'Ibeju-Lekki, Lagos', price: 8500000, unit: 'total', status: 'Sold', agentListed: true, agentName: 'Ada Obi', ownerName: 'Frank Hood', img: img('photo-1500382017468-9049fed747ef'), paymentMode: 'Outright' },
+      { id: 'L5', title: '3-Bed Bungalow, Epe', category: 'land', kind: 'House / Building', houseType: 'Bungalow', area: 'Epe, Lagos', price: 22000000, unit: 'total', status: 'Live', agentListed: false, ownerName: 'Frank Hood', img: img('photo-1600585154340-be6161a56a0c'), bedrooms: 3, bathrooms: 3, plot: 600, paymentMode: 'Outright / Installment' },
+      { id: 'L6', title: 'Warehouse, Ikeja Industrial Estate', category: 'commercial', area: 'Ikeja, Lagos', price: 4500000, unit: 'yr', status: 'Pending Verification', agentListed: true, agentName: 'Ada Obi', ownerName: 'Frank Hood', img: img('photo-1586528116311-ad8dd3c8310d'), sqm: 600 }
+    ];
+    const I = [
+      { id: 'I1', listingId: 'L5', listingTitle: '3-Bed Bungalow, Epe', person: 'Chidi Okafor', type: 'LAND_SALE', when: addDays(T, 2) + ' · 11:00', status: 'Pending Approval', note: 'Diaspora buyer, will join by live video call.' },
+      { id: 'I2', listingId: 'L1', listingTitle: '2-Bed Flat, Lekki Phase 1', person: 'Tolu Adeyemi', type: 'RENT', when: addDays(T, 1) + ' · 14:30', status: 'Confirmed', note: '' },
+      { id: 'I3', listingId: 'L3', listingTitle: 'Serviced 1-Bed, Victoria Island', person: 'Imani Bello', type: 'RENT', when: addDays(T, 4) + ' · 10:00', status: 'Pending Approval', note: '' },
+      { id: 'I4', listingId: 'L4', listingTitle: '450sqm Land, Ibeju-Lekki', person: 'Ngozi Eze', type: 'LAND_SALE', when: addDays(T, -9) + ' · 12:00', status: 'Conducted', note: '' },
+      { id: 'I5', listingId: 'L2', listingTitle: 'Studio Apartment, Yaba', person: 'Sam Daniels', type: 'RENT', when: addDays(T, -14) + ' · 16:00', status: 'Declined', note: '' }
+    ];
+    const D_ = [
+      { id: 'D1', kind: 'land', person: 'Ngozi Eze', property: '450sqm Land, Ibeju-Lekki', dateLabel: fmtDate(addDays(T, -6)), badge: 'Paid in Full', term: 'Outright / Full Payment' },
+      { id: 'D2', kind: 'rent', person: 'Sam Daniels', property: 'Studio Apartment, Yaba', dateLabel: fmtDate(addDays(T, -40)), badge: 'Move-in Confirmed', term: '12 months' },
+      { id: 'D3', kind: 'land', person: 'Kemi Alabi', property: '3-Bed Bungalow, Epe (plot share)', dateLabel: fmtDate(addDays(T, -75)), badge: 'Installment Active', term: 'Installment (4/12 paid)', paid: 4, total: 12 }
+    ];
+    const B = [
+      { id: 'B1', listingId: 'L3', listingTitle: 'Serviced 1-Bed, Victoria Island', guest: 'Imani Bello', checkIn: addDays(T, 5), checkOut: addDays(T, 8), total: 195000, status: 'ACTIVE' },
+      { id: 'B2', listingId: 'L3', listingTitle: 'Serviced 1-Bed, Victoria Island', guest: 'Jon Mensah', checkIn: addDays(T, -1), checkOut: addDays(T, 2), total: 195000, status: 'ACTIVE' },
+      { id: 'B3', listingId: 'L3', listingTitle: 'Serviced 1-Bed, Victoria Island', guest: 'Amaka Obi', checkIn: addDays(T, -3), checkOut: T, total: 130000, status: 'ACTIVE' },
+      { id: 'B4', listingId: 'L3', listingTitle: 'Serviced 1-Bed, Victoria Island', guest: 'Peter Njoku', checkIn: addDays(T, -22), checkOut: addDays(T, -19), total: 195000, status: 'ACTIVE' },
+      { id: 'B5', listingId: 'L3', listingTitle: 'Serviced 1-Bed, Victoria Island', guest: 'Lola Ade', checkIn: addDays(T, 12), checkOut: addDays(T, 14), total: 130000, status: 'CANCELLED_BY_GUEST' }
+    ];
+    // payouts: computed with the same rules as the app
+    const mk = (id, kind, title, gross, agentListed, daysAgo, label) => {
+      const c = split(kind, gross, agentListed); const mine = role === 'agent' ? c.agent : c.net;
+      return { id, kind, title, label, gross, agentListed, c, amount: mine, bank: 'GTBank •• 4821', status: 'DISBURSED', ts: now - daysAgo * D };
+    };
+    const P = [
+      mk('P1', 'land', '450sqm Land, Ibeju-Lekki', 8500000, true, 6, 'Land sale (outright)'),
+      mk('P2', 'rent', '2-Bed Flat, Lekki Phase 1', 180000, true, 3, 'Rent payment'),
+      mk('P3', 'rent', 'Studio Apartment, Yaba', 95000, false, 31, 'Rent payment')
+    ].filter(p => role === 'agent' ? p.agentListed : true);
+    const A = [
+      { id: 'A1', title: '450sqm Land, Ibeju-Lekki', buyer: 'Ngozi Eze', price: 8500000, state: 'Paid in Full', needsCountersign: true, countersigned: false, agreement: true, dispatch: null },
+      { id: 'A2', title: '3-Bed Bungalow, Epe (plot share)', buyer: 'Kemi Alabi', price: 22000000, state: 'Installment 4/12', needsCountersign: false, countersigned: true, agreement: true, dispatch: null }
+    ];
+    const O = [
+      { id: 'O1', listingTitle: '3-Bed Bungalow, Epe', buyer: 'Chidi Okafor', mode: 'Land & Property · outright payment', ask: 22000000, offer: 20500000, note: 'Ready to pay outright within 7 days of inspection.', status: 'Pending' },
+      { id: 'O2', listingTitle: 'Warehouse, Ikeja Industrial Estate', buyer: 'Bright Logistics Ltd', mode: 'Commercial · annual rent', ask: 4500000, offer: 4100000, note: 'Two-year commitment.', status: 'Pending' }
+    ];
+    const N = [
+      { id: 'N1', title: 'New inspection request', body: 'Chidi Okafor wants to inspect 3-Bed Bungalow, Epe.', ts: now - 2 * H, unread: true, route: 'inspections' },
+      { id: 'N2', title: 'Countersign the Contract of Sale', body: 'Ngozi Eze has paid in full for 450sqm Land, Ibeju-Lekki. Countersign within 24 hours.', ts: now - 5 * H, unread: true, route: 'assets' },
+      { id: 'N3', title: role === 'agent' ? 'Commission paid' : 'Payout disbursed', body: 'Paid instantly to GTBank •• 4821.', ts: now - 3 * D, unread: false, route: 'payouts' },
+      { id: 'N4', title: 'Make an Offer received', body: 'Bright Logistics Ltd offered ' + money(4100000) + ' a year for the Ikeja warehouse.', ts: now - 8 * H, unread: true, route: 'deals' }
+    ];
+    const st = emptyState();
+    if (role === 'agent') {
+      const mine = L.filter(l => l.agentListed).map(l => Object.assign({}, l, { agentName: me }));
+      const ids = mine.map(l => l.id), titles = mine.map(l => l.title);
+      st.listings = mine; st.inspections = I.filter(i => ids.includes(i.listingId));
+      st.deals = D_.filter(d => d.id === 'D1'); st.bookings = B; st.payouts = P;
+      st.offers = O.filter(o => titles.includes(o.listingTitle));
+      st.notifications = [
+        { id: 'N1', title: 'New walkthrough request', body: 'Imani Bello wants to view Serviced 1-Bed, Victoria Island.', ts: now - 2 * H, unread: true, route: 'inspections' },
+        { id: 'N2', title: 'Landlord verification pending', body: 'Frank Hood has not yet verified Warehouse, Ikeja Industrial Estate.', ts: now - 6 * H, unread: true, route: 'listings' },
+        { id: 'N3', title: 'Commission paid', body: 'Paid instantly to GTBank •• 4821.', ts: now - 3 * D, unread: false, route: 'payouts' },
+        { id: 'N4', title: 'Make an Offer received', body: 'Bright Logistics Ltd offered ' + money(4100000) + ' a year for the Ikeja warehouse.', ts: now - 8 * H, unread: true, route: 'deals' }
+      ];
+    } else { st.listings = L.map(l => Object.assign({}, l)); st.inspections = I; st.deals = D_; st.bookings = B; st.payouts = P; st.assets = A; st.offers = O; st.notifications = N; }
+    st.wallet = { balance: 25000, entries: [{ id: 'W1', label: 'Wallet top-up (card)', amount: 25000, ts: now - 10 * D, dir: 'in' }] };
+    st.chats = {
+      B2: [{ me: false, t: 'Hi, we just checked in. The AC remote isn’t working.', ts: now - 20 * H }, { me: true, t: 'Thanks Jon, sending the caretaker now.', ts: now - 19 * H }]
+    };
+    st.profile = { name: me, email: role + '@demo.maintown', bank: 'GTBank •• 4821', kyc: 'Verified', managed: DEMO_MANAGED, activated: !DEMO_MANAGED };
+    return st;
+  }
+
+  const Api = {
+    async load() {
+      if (IS_DEMO) { S = seed(ROLE); return; }
+      S = emptyState();
+      // Listings: same Supabase table the public site reads. Owner/agent columns can vary, so match defensively.
+      try {
+        const r = await sb.from('listings').select('*').order('created_at', { ascending: false });
+        const mine = (r.data || []).filter(l => [l.owner_id, l.agent_id, l.user_id, l.created_by, l.landlord_id].some(v => v && v === USER.id));
+        S.listings = mine.map(l => ({
+          id: l.id, title: l.title || 'Untitled listing', category: l.category || l.type || 'rent', area: l.location || l.area || '',
+          price: Number(l.price || l.amount || 0), unit: l.unit || 'mo', img: l.image || l.img || (Array.isArray(l.photos) ? l.photos[0] : '') || '',
+          status: ({ available: 'Live', sold: 'Sold', rented: 'Rented', booked: 'Booked', pending: 'Under Review', closed: 'Declined', unavailable: 'Unavailable' })[l.status] || (l.status || 'Live'),
+          agentListed: !!l.agent_id && ROLE === 'landlord', ownerName: l.owner_name || '', agentName: l.agent_name || ''
+        }));
+        S.listingsLive = true;
+      } catch (e) { S.listingsLive = false; }
+      S.profile = { name: PROFILE.name, email: PROFILE.email, bank: '', kyc: '', managed: false, activated: true };
+    },
+    live() { return IS_DEMO; },                       // true when write actions work
+    need() { if (!IS_DEMO) { toast(NOT_CONNECTED); return false; } return true; }
+  };
+
+  /* ---------- 3. auth + role gate ---------- */
+  async function boot() {
+    const bar = $('#demoBar');
+    if (DEMO_ROLE) {
+      IS_DEMO = true; ROLE = DEMO_ROLE; USER = { id: 'demo' };
+      PROFILE = { name: ROLE === 'agent' ? 'Demo Agent' : 'Demo Landlord', email: ROLE + '@demo.maintown', role: ROLE };
+      bar.classList.remove('hidden');
+      bar.innerHTML = ico('info') + 'Sample data preview. Nothing here is real or saved.' +
+        '<a href="?demo=landlord">Landlord view</a><a href="?demo=landlord&managed=1">Agent-onboarded landlord</a><a href="?demo=agent">Agent view</a>';
+    } else {
+      let session = null;
+      try { if (sb) { const r = await sb.auth.getSession(); session = r.data && r.data.session; } } catch (e) {}
+      if (!session) return showGate('signin');
+      const u = session.user; let row = null;
+      try { const r = await sb.from('signups').select('full_name, role').eq('user_id', u.id).order('created_at', { ascending: false }).limit(1); row = r.data && r.data[0]; } catch (e) {}
+      let cached = null; try { cached = JSON.parse(localStorage.getItem(MEMBER_CACHE) || 'null'); } catch (e) {}
+      const meta = u.user_metadata || {};
+      const role = String((row && row.role) || meta.role || (cached && cached.id === u.id ? cached.role : '') || '').toLowerCase();
+      USER = u;
+      PROFILE = { name: (row && row.full_name) || meta.full_name || meta.name || String(u.email || '').split('@')[0] || 'Member', email: u.email || '', role };
+      if (!['landlord', 'agent'].includes(role)) return showGate(role === 'tenant' ? 'tenant' : 'norole');
+      ROLE = role; IS_DEMO = false;
+    }
+    await Api.load();
+    TAB = {}; renderChrome(); route();
+    window.addEventListener('hashchange', route);
+  }
+
+  function showGate(kind) {
+    $('#shell').classList.add('hidden'); $('#tbRight').innerHTML = '';
+    const g = $('#gate'); g.classList.remove('hidden');
+    const m = {
+      signin: ['lock', 'Sign in to open your dashboard', 'Landlords and agents manage listings, inspections, bookings and payouts here. Sign in with the account you created on MainTown.', '<a class="btn primary" href="./signup.html?role=landlord">Sign in or sign up as a Landlord</a> <a class="btn" href="./signup.html?role=agent">Agent</a>'],
+      tenant: ['home', 'This dashboard is for landlords and agents', 'Your account is a tenant account. Tenants search, inspect and pay from the listings on the main site and the MainTown app.', '<a class="btn primary" href="./index.html#listings">Browse listings</a>'],
+      norole: ['user', 'Finish choosing your role', 'We couldn’t find a landlord or agent role on your account yet. Choose one to continue.', '<a class="btn primary" href="./signup.html?role=landlord">Landlord</a> <a class="btn primary" href="./signup.html?role=agent">Agent</a>']
+    }[kind];
+    g.innerHTML = '<div class="card"><div class="role-chip" style="display:inline-grid;place-items:center;width:52px;height:52px;border-radius:14px;background:var(--brand-soft);color:var(--brand-text)">' + ico(m[0]) + '</div><h2>' + m[1] + '</h2><p>' + m[2] + '</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' + m[3] + '</div></div>';
+    icons();
+  }
+
+  /* ---------- 4. navigation ---------- */
+  const isAgent = () => ROLE === 'agent';
+  function navDef() {
+    const pend = S.inspections.filter(i => i.status === 'Pending Approval').length;
+    const verify = isAgent() ? 0 : S.listings.filter(l => l.status === 'Pending Verification').length;
+    const offers = S.offers.filter(o => o.status === 'Pending').length;
+    const unreadN = S.notifications.filter(n => n.unread).length;
+    const arr = [
+      ['Workspace'],
+      ['overview', 'layout-dashboard', 'Overview'],
+      ['listings', 'building-2', isAgent() ? 'Listings' : 'Properties', verify, true],
+      ['inspections', 'calendar-check', isAgent() ? 'Walkthroughs' : 'Inspections', pend, true],
+      [isAgent() ? 'clients' : 'tenants', 'users', isAgent() ? 'Clients' : 'Tenants & Buyers'],
+      ['bookings', 'door-open', 'Bookings'],
+      ['Money'],
+      ['payouts', 'banknote', isAgent() ? 'Commission' : 'Payouts'],
+      ['wallet', 'wallet', 'Wallet']
+    ];
+    if (!isAgent()) arr.push(['assets', 'landmark', 'Assets']);
+    arr.push(['deals', 'percent', 'Deals', offers]);
+    arr.push(['Account'], ['notifications', 'bell', 'Notifications', unreadN], ['profile', 'user', 'Profile']);
+    return arr;
+  }
+  let VIEW = 'overview';
+  function renderChrome() {
+    const p = S.profile;
+    $('#shell').classList.remove('hidden'); $('#gate').classList.add('hidden');
+    $('#side').innerHTML = '<div class="role-chip"><div class="avatar" style="width:34px;height:34px;font-size:13px">' + esc(first(p.name).charAt(0).toUpperCase()) + '</div><div><small>' + (isAgent() ? 'Agent' : 'Landlord') + ' account</small><strong>' + esc(p.name) + '</strong></div></div><nav class="nav" id="nav"></nav>';
+    const un = S.notifications.filter(n => n.unread).length;
+    $('#tbRight').innerHTML = '<a class="btn sm" href="./index.html">' + ico('arrow-left') + ' Website</a>' +
+      '<button class="icon-btn" id="bellBtn" aria-label="Notifications">' + ico('bell') + '<span class="count-dot' + (un ? '' : ' hidden') + '" id="bellN">' + un + '</span></button>' +
+      '<div style="position:relative"><button class="avatar" id="avBtn" aria-label="Account menu" aria-haspopup="true">' + esc(first(p.name).charAt(0).toUpperCase()) + '</button><div class="acct-menu hidden" id="acctMenu">' +
+      '<p style="font-weight:600">' + esc(p.name) + '</p><p style="color:var(--muted);font-size:12px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis">' + esc(p.email) + '</p>' +
+      '<button class="row" data-go="profile">' + ico('user') + 'Profile</button>' +
+      (IS_DEMO ? '' : '<button class="row" id="signOutBtn">' + ico('log-out') + 'Sign out</button>') + '</div></div>';
+    refreshNav(); icons();
+  }
+  function refreshNav() {
+    const nav = $('#nav'); if (!nav) return;
+    nav.innerHTML = navDef().map(r => r.length === 1 ? '<div class="nav-group">' + r[0] + '</div>' :
+      '<a href="#/' + r[0] + '" class="' + (VIEW === r[0] ? 'on' : '') + '">' + ico(r[1]) + '<span>' + r[2] + '</span>' + (r[3] ? '<span class="n' + (r[4] ? ' warn' : '') + '">' + r[3] + '</span>' : '') + '</a>').join('');
+    const un = S.notifications.filter(n => n.unread).length, b = $('#bellN');
+    if (b) { b.textContent = un; b.classList.toggle('hidden', !un); }
+    icons();
+  }
+  function go(v) { location.hash = '#/' + v; }
+  function route() {
+    const v = (location.hash.replace(/^#\/?/, '') || 'overview').split('?')[0];
+    const views = viewMap(); VIEW = views[v] ? v : 'overview';
+    document.body.classList.remove('nav-open');
+    const gateNeeded = S.profile.managed && !S.profile.activated && !isAgent();
+    $('#main').innerHTML = gateNeeded ? activationHTML() : views[VIEW]();
+    const nm = navDef().find(r => r[0] === VIEW); $('#tbPage').textContent = nm && nm[2] ? nm[2] : 'Dashboard';
+    refreshNav(); icons(); window.scrollTo(0, 0);
+  }
+  function rerender() { const y = window.scrollY; route(); window.scrollTo(0, y); }
+
+  /* ---------- 5. views ---------- */
+  function viewMap() {
+    return { overview, listings, inspections, tenants: deals, clients: deals, bookings, payouts, wallet, assets, deals: offers, notifications, profile };
+  }
+  const head = (t, sub, actions) => '<div class="page-head"><div><h1>' + t + '</h1>' + (sub ? '<p>' + sub + '</p>' : '') + '</div><div style="display:flex;gap:8px;flex-wrap:wrap">' + (actions || '') + '</div></div>';
+  const emptyBox = (icon, t, s) => '<div class="empty">' + ico(icon) + '<b>' + t + '</b>' + s + '</div>';
+  const notLive = () => IS_DEMO ? '' : '<div class="notice">' + ico('plug') + '<div>Live data for this section is being connected to your account. You’ll see your real activity here once it is switched on.</div></div>';
+
+  /* ---- Overview ---- */
+  function earnings() { return S.payouts.reduce((a, p) => a + p.amount, 0); }
+  function overview() {
+    const p = S.profile; const live = S.listings.filter(l => l.status === 'Live').length;
+    const pendI = S.inspections.filter(i => i.status === 'Pending Approval');
+    const toVerify = isAgent() ? [] : S.listings.filter(l => l.status === 'Pending Verification');
+    const toSign = S.assets.filter(a => a.needsCountersign && !a.countersigned);
+    const pendOffers = S.offers.filter(o => o.status === 'Pending');
+    const upcoming = S.bookings.filter(b => ['upcoming', 'active', 'checkout'].includes(phase(b).key)).length;
+    const closed = S.deals.length;
+    const att = [];
+    pendI.forEach(i => att.push(['calendar-check', 'warn', (isAgent() ? 'Walkthrough' : 'Inspection') + ' request: ' + esc(i.person), esc(i.listingTitle) + ' · ' + esc(i.when), '<button class="btn sm ok" data-act="insp-confirm" data-id="' + i.id + '">Confirm</button><button class="btn sm bad" data-act="insp-decline" data-id="' + i.id + '">Decline</button>']));
+    toVerify.forEach(l => att.push(['shield-check', 'warn', 'Verify listing from ' + esc(l.agentName || 'your agent'), esc(l.title), '<button class="btn sm primary" data-act="verify-open" data-id="' + l.id + '">Review</button>']));
+    toSign.forEach(a => att.push(['pen-line', 'warn', 'Countersign the Contract of Sale', esc(a.title) + ' · ' + esc(a.buyer) + '. Reminders repeat every 5 hours.', '<button class="btn sm primary" data-act="sign-open" data-id="' + a.id + '">Countersign</button>']));
+    pendOffers.forEach(o => att.push(['percent', 'brand', 'Offer: ' + money(o.offer), esc(o.listingTitle) + ' · ' + esc(o.buyer), '<a class="btn sm" href="#/deals">View</a>']));
+    const showStart = S.listings.filter(l => l.status !== 'Draft').length === 0 && !(p.managed);
+    const qa = [
+      ['plus-circle', isAgent() ? 'Add Listing' : 'List Property', 'new-listing'],
+      ['calendar-check', isAgent() ? 'Walkthroughs' : 'Inspections', 'inspections', pendI.length],
+      ['users', isAgent() ? 'Clients' : 'Tenants & Buyers', isAgent() ? 'clients' : 'tenants', closed],
+      ['door-open', 'Bookings', 'bookings', S.bookings.length],
+      ['banknote', isAgent() ? 'Commission' : 'Payouts', 'payouts'],
+      ['wallet', 'Wallet', 'wallet']
+    ];
+    if (!isAgent()) qa.push(['landmark', 'Assets', 'assets']);
+    qa.push(['percent', 'Deals', 'deals', pendOffers.length]);
+    return head('Welcome back, ' + esc(first(p.name)), isAgent() ? 'Your listings, walkthroughs, clients and commission in one place.' : 'Your properties, inspections, tenants and payouts in one place.') + notLive() +
+      '<div class="grid split" style="align-items:stretch">' +
+        '<div class="hero"><small>' + (isAgent() ? 'Commission earned' : 'Portfolio earnings') + '</small><div class="big">' + money(earnings()) + '</div><p>' +
+          (S.payouts.length ? S.payouts.length + ' payment' + (S.payouts.length === 1 ? '' : 's') + ' settled instantly to your bank' : (S.listings.length ? 'Your listings are live. Earnings appear once someone pays.' : (isAgent() ? 'List a property to start earning commission.' : 'Add your first property to start earning.'))) +
+          '</p><a class="btn" href="#/payouts">' + ico('banknote') + ' View ' + (isAgent() ? 'commission' : 'payout') + ' history</a></div>' +
+        '<div class="grid g-2" style="gap:12px;align-content:stretch">' +
+          stat('building-2', 'Live listings', live, S.listings.length + ' total') + stat('calendar-check', 'To confirm', pendI.length, 'inspection requests') +
+          stat('users', isAgent() ? 'Clients' : 'Tenants & buyers', closed, 'closed deals') + stat('door-open', 'Stays', upcoming, 'upcoming or in house') +
+        '</div></div>' +
+      (showStart ? '<div class="card pad" style="margin-top:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;border-color:rgba(124,58,237,.4)"><div style="flex:1;min-width:220px"><h3>Start here: list your first property</h3><p style="margin:4px 0 0;color:var(--muted)">Add photos, a price and a walkthrough video. Once it is live, people can find it, request an inspection and pay.</p></div><button class="btn primary" data-act="new-listing">' + ico('plus-circle') + ' ' + (isAgent() ? 'Add listing' : 'List property') + '</button></div>' : '') +
+      '<div class="grid split" style="margin-top:16px;align-items:start">' +
+        '<div class="card"><div class="card-head"><div><h3>Needs your attention</h3><p>Things waiting on you right now</p></div>' + (att.length ? '<span class="pill warn">' + att.length + '</span>' : '') + '</div><div class="rows" style="margin-top:10px">' +
+          (att.length ? att.map(a => '<div class="row-item"><div class="lead ' + a[1] + '">' + ico(a[0]) + '</div><div class="grow"><div class="t">' + a[2] + '</div><div class="s">' + a[3] + '</div></div><div class="acts">' + a[4] + '</div></div>').join('') : emptyBox('check-circle-2', 'You’re all caught up', 'New requests and reminders will show up here.')) +
+        '</div></div>' +
+        '<div class="card"><div class="card-head"><div><h3>Recent activity</h3><p>From your notifications</p></div><a class="btn sm" href="#/notifications">All</a></div><div class="rows" style="margin-top:10px">' +
+          (S.notifications.length ? S.notifications.slice().sort((a, b) => b.ts - a.ts).slice(0, 4).map(notifRow).join('') : emptyBox('bell', 'No activity yet', 'Inspection requests, payments and reminders appear here.')) +
+        '</div></div>' +
+      '</div>' +
+      '<h3 style="margin:26px 0 12px;font-size:15px">Quick actions</h3><div class="qa">' + qa.map(q => '<button ' + (q[2] === 'new-listing' ? 'data-act="new-listing"' : 'data-go="' + q[2] + '"') + '><span class="ic">' + ico(q[0]) + '</span><b>' + q[1] + '</b>' + (q[3] ? '<span class="n">' + q[3] + '</span>' : '') + '</button>').join('') + '</div>';
+  }
+  const stat = (ic, label, val, sub) => '<div class="card stat"><small>' + ico(ic) + label + '</small><b>' + val + '</b><span>' + sub + '</span></div>';
+
+  /* ---- Listings ---- */
+  const CAT = { rent: 'Rent', shortlet: 'Short-let', land: 'Land & Property', commercial: 'Commercial', event: 'Event Center' };
+  const UNIT = { mo: '/ month', yr: '/ year', night: '/ night', total: '' };
+  let TAB = {};
+  function statusPill(s) {
+    const m = { 'Live': 'ok', 'Sold': 'brand', 'Rented': 'brand', 'Booked': 'brand', 'Pending Verification': 'warn', 'Under Review': 'info', 'Declined': 'bad', 'Unavailable': 'mute', 'Draft': 'mute' };
+    const label = s === 'Pending Verification' && isAgent() ? 'Awaiting landlord' : s;
+    return '<span class="pill ' + (m[s] || 'mute') + '">' + esc(label) + '</span>';
+  }
+  function listings() {
+    const tab = TAB.listings || 'all';
+    const filters = { all: () => true, live: l => l.status === 'Live', pending: l => ['Pending Verification', 'Under Review'].includes(l.status), closed: l => ['Sold', 'Rented', 'Booked'].includes(l.status) };
+    const count = k => S.listings.filter(filters[k]).length;
+    const rows = S.listings.filter(filters[tab]);
+    const queue = isAgent() ? [] : S.listings.filter(l => l.status === 'Pending Verification');
+    return head(isAgent() ? 'Listings' : 'Properties', isAgent() ? 'Everything you uploaded or manage. Landlords verify each listing before it goes to MainTown review.' : 'Your inventory, occupancy and new listings.', '<button class="btn primary" data-act="new-listing">' + ico('plus-circle') + (isAgent() ? ' Add listing' : ' List property') + '</button>') + notLive() +
+      (queue.length ? '<div class="card" style="margin-bottom:16px;border-color:rgba(251,191,36,.35)"><div class="card-head"><div><h3>Awaiting your verification</h3><p>Submitted by your agent. Confirm the details are correct before MainTown reviews them.</p></div><span class="pill warn">' + queue.length + '</span></div><div class="rows" style="margin-top:10px">' +
+        queue.map(l => '<div class="row-item"><img class="thumb" style="width:54px;height:40px;border-radius:8px;object-fit:cover" src="' + esc(l.img) + '" alt=""><div class="grow"><div class="t">' + esc(l.title) + '</div><div class="s">' + esc(l.area) + ' · ' + money(l.price) + ' ' + UNIT[l.unit] + ' · from ' + esc(l.agentName || 'agent') + '</div></div><div class="acts"><button class="btn sm primary" data-act="verify-open" data-id="' + l.id + '">Review</button></div></div>').join('') + '</div></div>' : '') +
+      '<div class="tabs" role="tablist">' + [['all', 'All'], ['live', 'Live'], ['pending', 'In review'], ['closed', 'Sold / Rented / Booked']].map(t => '<button class="' + (tab === t[0] ? 'on' : '') + '" data-tab="listings:' + t[0] + '">' + t[1] + '<i>' + count(t[0]) + '</i></button>').join('') + '</div>' +
+      '<div class="card">' + (rows.length ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Property</th><th>Type</th><th class="num">Price</th><th>Status</th>' + (isAgent() ? '<th>Landlord</th>' : '<th>Listed by</th>') + '<th></th></tr></thead><tbody>' +
+        rows.map(l => '<tr><td><div class="who">' + (l.img ? '<img class="thumb" src="' + esc(l.img) + '" alt="" loading="lazy">' : '<div class="thumb"></div>') + '<div><b>' + esc(l.title) + '</b><div class="sub">' + esc(l.area) + (l.houseType ? ' · ' + esc(l.houseType) : '') + (l.kind === 'Land only' ? ' · Land only' : '') + '</div></div></div></td><td>' + (CAT[l.category] || esc(l.category)) + '</td><td class="num">' + money(l.price) + '<div class="sub">' + UNIT[l.unit] + '</div></td><td>' + statusPill(l.status) + '</td><td>' + (isAgent() ? esc(l.ownerName || '—') : (l.agentListed ? esc(l.agentName || 'Agent') : 'You')) + '</td><td style="text-align:right">' +
+          (l.status === 'Live' ? '<button class="btn sm bad" data-act="del-listing" data-id="' + l.id + '">Delete</button>' : '') + '</td></tr>').join('') + '</tbody></table></div>'
+        : emptyBox('building-2', 'No listings here yet', 'Use “' + (isAgent() ? 'Add listing' : 'List property') + '” to add one.')) + '</div>' +
+      '<p style="color:var(--faint);font-size:12px;margin-top:10px">A listing can only be deleted while it is live. Once someone has paid, it stays on record.</p>';
+  }
+
+  /* ---- Inspections / Walkthroughs ---- */
+  const inspPill = s => ({ 'Pending Approval': ['warn', 'Pending approval'], 'Confirmed': ['ok', 'Confirmed'], 'Declined': ['bad', 'Declined'], 'Conducted': ['brand', 'Conducted'], 'Cancelled By Tenant': ['mute', 'Cancelled'], 'Cancelled - Property Taken': ['mute', 'Property taken'] }[s] || ['mute', s]);
+  function inspections() {
+    const tab = TAB.insp || 'open';
+    const f = { open: i => ['Pending Approval', 'Confirmed'].includes(i.status), done: i => i.status === 'Conducted', other: i => !['Pending Approval', 'Confirmed', 'Conducted'].includes(i.status), all: () => true };
+    const rows = S.inspections.filter(f[tab]);
+    return head(isAgent() ? 'Walkthroughs' : 'Inspections', 'Approve requests, mark visits as conducted and message the person. Chat opens once a request is confirmed.') + notLive() +
+      '<div class="tabs">' + [['open', 'Open'], ['done', 'Conducted'], ['other', 'Declined & cancelled'], ['all', 'All']].map(t => '<button class="' + (tab === t[0] ? 'on' : '') + '" data-tab="insp:' + t[0] + '">' + t[1] + '<i>' + S.inspections.filter(f[t[0]]).length + '</i></button>').join('') + '</div>' +
+      '<div class="card"><div class="rows">' + (rows.length ? rows.map(i => {
+        const pill = inspPill(i.status), word = i.type === 'LAND_SALE' ? 'Client' : 'Tenant', locked = ['Pending Approval', 'Declined'].includes(i.status);
+        return '<div class="row-item"><div class="lead ' + (i.status === 'Pending Approval' ? 'warn' : '') + '">' + ico(i.type === 'LAND_SALE' ? 'landmark' : 'key-round') + '</div><div class="grow"><div class="t">' + esc(i.person) + ' <span class="pill ' + pill[0] + '" style="margin-left:6px">' + pill[1] + '</span></div><div class="s">' + esc(i.listingTitle) + ' · ' + esc(i.when) + '</div>' + (i.note ? '<div class="s" style="margin-top:3px">“' + esc(i.note) + '”</div>' : '') + '</div><div class="acts">' +
+          (i.status === 'Pending Approval' ? '<button class="btn sm ok" data-act="insp-confirm" data-id="' + i.id + '">Confirm</button><button class="btn sm bad" data-act="insp-decline" data-id="' + i.id + '">Decline</button>' : '') +
+          (i.status === 'Confirmed' ? '<button class="btn sm primary" data-act="insp-done" data-id="' + i.id + '">Mark conducted</button>' : '') +
+          '<button class="btn sm" ' + (locked ? 'disabled title="Chat unlocks once the request is confirmed"' : 'data-act="insp-chat" data-id="' + i.id + '"') + '>' + ico(locked ? 'lock' : 'message-square') + ' Message ' + word + '</button></div></div>';
+      }).join('') : emptyBox('calendar-check', 'Nothing here', 'Requests appear when someone asks to inspect one of your listings.')) + '</div></div>';
+  }
+
+  /* ---- Tenants & buyers / Clients ---- */
+  function deals() {
+    return head(isAgent() ? 'Clients' : 'Tenants & Buyers', isAgent() ? 'Closed deals on listings you uploaded or were assigned.' : 'Tenants with completed payment and move-in, and buyers who have paid for your land and property.') + notLive() +
+      '<div class="card">' + (S.deals.length ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>' + (isAgent() ? 'Client' : 'Tenant / buyer') + '</th><th>Property</th><th>Date</th><th>Term</th><th>Settlement</th><th>Status</th></tr></thead><tbody>' +
+        S.deals.map(d => '<tr><td><b>' + esc(d.person) + '</b></td><td>' + esc(d.property) + '</td><td>' + esc(d.dateLabel) + '</td><td>' + esc(d.term) + (d.total ? '<div class="bar" style="margin-top:6px;width:120px"><i style="width:' + Math.round(d.paid / d.total * 100) + '%"></i></div>' : '') + '</td><td>Split at payment</td><td><span class="pill ' + (d.badge === 'Installment Active' ? 'info' : 'ok') + '">' + esc(d.badge) + '</span></td></tr>').join('') + '</tbody></table></div>'
+        : emptyBox('users', 'No closed deals yet', 'This fills in once someone pays for one of your listings.')) + '</div>';
+  }
+
+  /* ---- Bookings (short-let) ---- */
+  function phase(b) {
+    if (b.status === 'CANCELLED_BY_GUEST' || b.status === 'CANCELLED_BY_HOST') return { key: 'cancelled', label: b.status === 'CANCELLED_BY_HOST' ? 'Cancelled by host' : 'Cancelled', cls: 'mute' };
+    const t = lagosToday();
+    if (t < b.checkIn) return { key: 'upcoming', label: 'Upcoming', cls: 'info' };
+    if (t < b.checkOut) return { key: 'active', label: 'Checked in', cls: 'ok' };
+    if (t === b.checkOut) return { key: 'checkout', label: 'Check-out today', cls: 'warn' };
+    return { key: 'completed', label: 'Completed', cls: 'brand' };
+  }
+  const nightsOf = b => Math.max(1, Math.round((new Date(b.checkOut) - new Date(b.checkIn)) / 864e5));
+  function bookings() {
+    const rows = S.bookings.slice().sort((a, b) => b.checkIn.localeCompare(a.checkIn));
+    return head('Bookings', 'Short-let guests staying at your properties. Status follows the check-in and check-out dates (Lagos time).') + notLive() +
+      '<div class="card"><div class="rows">' + (rows.length ? rows.map(b => {
+        const ph = phase(b), live = ['upcoming', 'active', 'checkout'].includes(ph.key);
+        return '<div class="row-item"><div class="lead">' + ico('door-open') + '</div><div class="grow"><div class="t">' + esc(b.guest) + ' <span class="pill ' + ph.cls + '" style="margin-left:6px">' + ph.label + '</span></div><div class="s">' + esc(b.listingTitle) + '</div><div class="s">' + fmtDate(b.checkIn) + ' → ' + fmtDate(b.checkOut) + ' · ' + nightsOf(b) + ' night' + (nightsOf(b) === 1 ? '' : 's') + ' · ' + money(b.total) + '</div></div><div class="acts">' +
+          (live && ph.key !== 'upcoming' ? '<button class="btn sm" data-act="book-chat" data-id="' + b.id + '">' + ico('message-square') + ' Contact guest</button>' : '') +
+          (ph.key === 'upcoming' ? '<button class="btn sm" data-act="book-chat" data-id="' + b.id + '">' + ico('message-square') + ' Contact guest</button><button class="btn sm bad" data-act="book-cancel" data-id="' + b.id + '">Cancel booking</button>' : '<button class="btn sm" data-act="book-view" data-id="' + b.id + '">View details</button>') +
+        '</div></div>';
+      }).join('') : emptyBox('door-open', 'No bookings yet', 'Guests booking your short-lets will appear here.')) + '</div></div>';
+  }
+
+  /* ---- Payouts / Commission ---- */
+  function payouts() {
+    const rows = S.payouts.slice().sort((a, b) => b.ts - a.ts);
+    const total = earnings();
+    return head(isAgent() ? 'Commission' : 'Payouts', isAgent() ? 'Commission paid straight to your bank the moment a client pays.' : 'Rent and sale proceeds paid straight to your bank the moment a client pays.') + notLive() +
+      '<div class="grid g-3" style="margin-bottom:16px">' + stat('banknote', 'Total ' + (isAgent() ? 'commission' : 'received'), money(total), rows.length + ' payment' + (rows.length === 1 ? '' : 's')) + stat('zap', 'Payout speed', 'Instant', 'No holding period') + stat('landmark', 'Paid to', esc((S.profile.bank || '—')), 'your own bank account') + '</div>' +
+      '<div class="card"><div class="card-head"><div><h3>Transaction & payout history</h3><p>Click a row to see the split</p></div></div>' +
+        (rows.length ? '<div class="tbl-wrap" style="margin-top:8px"><table class="tbl"><thead><tr><th>Payment</th><th>Date</th><th>Status</th><th class="num">' + (isAgent() ? 'Your commission' : 'Your net') + '</th></tr></thead><tbody>' +
+          rows.map(p => {
+            const c = p.c; const bd = isAgent()
+              ? '<div><span>Payment received</span><span>' + money(p.gross) + '</span></div><div><span>' + c.feeLabel + '</span><span>' + money(c.fee) + '</span></div><div><span>' + (p.kind === 'land' ? 'Your share (listing agent)' : 'Your 60% share') + '</span><span>' + money(c.agent) + '</span></div>'
+              : '<div><span>Payment received</span><span>' + money(p.gross) + '</span></div><div><span>' + c.feeLabel + (p.agentListed ? ' · to your agent' + (p.kind === 'rent' ? ' (60%) and MainTown (40%)' : '') : ' · to MainTown') + '</span><span>− ' + money(c.fee) + '</span></div><div><span>Paid to ' + esc(p.bank) + '</span><span>' + money(c.net) + '</span></div>';
+            return '<tr data-act="toggle-bd" data-id="' + p.id + '" style="cursor:pointer"><td><b>' + esc(p.title) + '</b><div class="sub">' + esc(p.label) + '</div></td><td>' + fmtDate(new Date(p.ts).toISOString()) + '</td><td><span class="pill ok">Disbursed</span></td><td class="num"><b>' + money(p.amount) + '</b></td></tr><tr><td colspan="4" style="padding:0;border:0"><div class="bd" id="bd-' + p.id + '">' + bd + '</div></td></tr>';
+          }).join('') + '</tbody></table></div>' : emptyBox('banknote', 'No payments yet', 'Your first payout appears here after a client pays for one of your listings.')) + '</div>' +
+      '<div class="card pad" style="margin-top:16px"><h3>How the split works</h3><div class="grid g-2" style="margin-top:10px;color:var(--muted);font-size:13px"><div><b style="color:var(--fg-2)">Rent & short-lets</b><br>Flat 10% commission. When an agent listed it: 60% Agent / 40% MainTown. When the landlord listed it directly: 100% MainTown.</div><div><b style="color:var(--fg-2)">Land & Property sales</b><br>Two separate 5% halves. The Buyer’s 5% is billed to the buyer and goes to MainTown. The Seller’s 5% comes out of the owner’s proceeds and goes to the listing agent, or to MainTown if the owner listed directly.</div></div><p style="margin:10px 0 0;color:var(--faint);font-size:12px">MainTown never holds your money. Every payment is split automatically at the point of charge.</p></div>';
+  }
+
+  /* ---- Wallet ---- */
+  function wallet() {
+    const w = S.wallet;
+    const entries = w.entries.slice().sort((a, b) => b.ts - a.ts);
+    return head('Wallet', 'Your MainTown wallet records payments and withdrawals. Payouts from clients go directly to your bank account.', '<button class="btn primary" data-act="withdraw">' + ico('arrow-up-right') + ' Withdraw to bank</button>') + notLive() +
+      '<div class="grid split rev" style="align-items:start"><div class="hero"><small>Wallet balance</small><div class="big">' + money(w.balance) + '</div><p>Withdrawals go to ' + esc(S.profile.bank || 'your payout account') + ' instantly.</p></div>' +
+      '<div class="card"><div class="card-head"><div><h3>Wallet record</h3></div></div><div class="rows" style="margin-top:8px">' +
+        (entries.length || S.payouts.length ? entries.map(e => '<div class="row-item"><div class="lead ' + (e.dir === 'in' ? 'ok' : '') + '">' + ico(e.dir === 'in' ? 'arrow-down-left' : 'arrow-up-right') + '</div><div class="grow"><div class="t">' + esc(e.label) + '</div><div class="s">' + fmtDate(new Date(e.ts).toISOString()) + '</div></div><b>' + (e.dir === 'in' ? '+' : '−') + money(e.amount) + '</b></div>').join('') +
+          S.payouts.slice(0, 3).map(p => '<div class="row-item"><div class="lead">' + ico('zap') + '</div><div class="grow"><div class="t">' + esc(p.title) + '</div><div class="s">' + (isAgent() ? 'Commission' : 'Payout') + ' sent to bank instantly</div></div><b style="color:var(--muted)">' + money(p.amount) + '</b></div>').join('')
+          : emptyBox('wallet', 'No wallet activity', 'Top-ups, fee payments and withdrawals appear here.')) + '</div></div></div>';
+  }
+
+  /* ---- Assets (landlord) ---- */
+  function assets() {
+    return head('Assets', 'Sold land and property: signed agreements, countersignature and delivery of your physical title documents.') + notLive() +
+      (S.assets.length ? '<div class="grid g-2">' + S.assets.map(a => {
+        const disp = a.dispatch;
+        return '<div class="card pad"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><h3>' + esc(a.title) + '</h3><div style="color:var(--muted);font-size:12.5px;margin-top:2px">Buyer: ' + esc(a.buyer) + ' · ' + money(a.price) + '</div></div><span class="pill ' + (a.state === 'Paid in Full' ? 'ok' : 'info') + '">' + esc(a.state) + '</span></div>' +
+          '<div class="rows" style="margin-top:12px;border-top:1px solid var(--line-soft)">' +
+            '<div class="row-item" style="padding:12px 0"><div class="lead">' + ico('file-text') + '</div><div class="grow"><div class="t">Contract of Sale</div><div class="s">' + (a.needsCountersign && !a.countersigned ? 'Awaiting your countersignature' : 'Signed by both parties') + '</div></div>' + (a.needsCountersign && !a.countersigned ? '<button class="btn sm primary" data-act="sign-open" data-id="' + a.id + '">Countersign</button>' : '<button class="btn sm" data-act="dl-agreement" data-id="' + a.id + '">' + ico('download') + ' Download</button>') + '</div>' +
+            '<div class="row-item" style="padding:12px 0"><div class="lead ' + (disp ? 'ok' : '') + '">' + ico('truck') + '</div><div class="grow"><div class="t">Physical title documents</div><div class="s">' + (disp ? 'Dispatch requested. SmartyHub Logistics will pick up within 24 to 48 hours.' : (a.state === 'Paid in Full' ? 'Free dispatch via SmartyHub Logistics' : 'Available once the buyer has paid in full')) + '</div></div>' + (disp ? '<span class="pill ok">Requested</span>' : '<button class="btn sm" ' + (a.state === 'Paid in Full' && (!a.needsCountersign || a.countersigned) ? 'data-act="dispatch" data-id="' + a.id + '"' : 'disabled') + '>' + ico('package') + ' Request pick-up</button>') + '</div></div></div>';
+      }).join('') + '</div>' : '<div class="card">' + emptyBox('landmark', 'No sold assets yet', 'When a buyer pays for your land or property, the signed agreement and document delivery appear here.') + '</div>');
+  }
+
+  /* ---- Deals (Make an Offer) ---- */
+  function offers() {
+    return head('Deals', 'Offers on commercial annual rents and outright land & property purchases. Installment prices and rentals stay fixed.') + notLive() +
+      '<div class="card"><div class="rows">' + (S.offers.length ? S.offers.map(o => {
+        const pill = { Pending: 'warn', Accepted: 'ok', Declined: 'bad', Countered: 'info' }[o.status] || 'mute';
+        return '<div class="row-item"><div class="lead brand">' + ico('percent') + '</div><div class="grow"><div class="t">' + esc(o.listingTitle) + ' <span class="pill ' + pill + '" style="margin-left:6px">' + o.status + '</span></div><div class="s">' + esc(o.buyer) + ' · ' + esc(o.mode) + '</div><div class="s">Asking ' + money(o.ask) + ' → offer <b style="color:var(--fg)">' + money(o.offer) + '</b>' + (o.counter ? ' · your counter <b style="color:var(--fg)">' + money(o.counter) + '</b>' : '') + '</div>' + (o.note ? '<div class="s" style="margin-top:3px">“' + esc(o.note) + '”</div>' : '') + '</div><div class="acts">' +
+          (o.status === 'Pending' ? '<button class="btn sm ok" data-act="offer-accept" data-id="' + o.id + '">Accept</button><button class="btn sm" data-act="offer-counter" data-id="' + o.id + '">Counter</button><button class="btn sm bad" data-act="offer-decline" data-id="' + o.id + '">Decline</button>' : '') + '</div></div>';
+      }).join('') : emptyBox('percent', 'No offers yet', 'Buyers can make an offer after they have inspected the property.')) + '</div></div>' +
+      '<p style="color:var(--faint);font-size:12px;margin-top:10px">Inspection comes first, then the offer. Diaspora buyers can satisfy the inspection step by live video or through a representative.</p>';
+  }
+
+  /* ---- Notifications ---- */
+  function notifRow(n) {
+    return '<div class="row-item ' + (n.unread ? 'unread' : '') + '" style="cursor:pointer" data-act="notif" data-id="' + n.id + '"><div class="lead ' + (n.unread ? 'brand' : '') + '">' + ico('bell') + '</div><div class="grow"><div class="t">' + esc(n.title) + '</div><div class="s">' + esc(n.body) + '</div></div><span class="s" style="color:var(--faint);font-size:12px;white-space:nowrap">' + fmtTime(n.ts) + '</span></div>';
+  }
+  function notifications() {
+    const n = S.notifications.slice().sort((a, b) => b.ts - a.ts);
+    return head('Notifications', 'The red count only goes down when you open a notification and act on it.') + notLive() + '<div class="card"><div class="rows">' + (n.length ? n.map(notifRow).join('') : emptyBox('bell', 'No notifications', 'Inspection requests, payments and reminders show up here.')) + '</div></div>';
+  }
+
+  /* ---- Profile ---- */
+  function profile() {
+    const p = S.profile;
+    return head('Profile', 'Your account details.') + '<div class="grid g-2"><div class="card pad"><h3>Account</h3><div class="rows" style="margin-top:10px">' +
+      [['Name', p.name], ['Email', p.email], ['Role', isAgent() ? 'Agent' : 'Landlord / Owner'], ['Payout account', p.bank || 'Not set up on the website yet'], ['Identity check', p.kyc || 'Completed in the MainTown app']].map(r => '<div class="row-item" style="padding:11px 0"><div class="grow s">' + r[0] + '</div><b style="font-weight:600;text-align:right">' + esc(r[1]) + '</b></div>').join('') + '</div></div>' +
+      '<div class="card pad"><h3>Need help?</h3><p style="color:var(--muted);margin:8px 0 14px">Our team replies on WhatsApp during business hours.</p><a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/2348066611017?text=' + encodeURIComponent('Hi MainTown Realty, I\'m ' + p.name + ' (' + (isAgent() ? 'Agent' : 'Landlord') + ' account) and need help with my dashboard.') + '">' + ico('message-circle') + ' Chat on WhatsApp</a></div></div>';
+  }
+
+  /* ---- Vendor activation gate (landlords onboarded through an agent) ---- */
+  const POLICY = [{"title":"Section 1: Title, Ownership & Documentation Warranties","body":"Declaration that property titles (C of O, Gazette, Governor's Consent, Excision) or rental authorization rights are authentic, unencumbered, and free of legal dispute. For Land &amp; Property listings, you warrant that all uploaded survey plans, Certificates of Occupancy, or Gazettes are authentic and unencumbered, and you consent to automated digital verification via MainTown's AI inspection engine prior to listing approval."},{"title":"Section 2: Automated Non-Custodial Payment Disbursement","body":"Monthly Rentals &amp; Shortlets — each payment is split automatically at the point of charge, with the Landlord's share paid directly to their own account. Land &amp; Property Sales — each instalment (or outright payment) is split automatically at the point of charge, with the Seller/Developer's share paid directly to their own account. MainTown never holds your funds; each charge is routed directly to your verified payout account, minus platform commissions and legal/deed processing fees. Physical allocation and Deed of Assignment execution follow the payment schedule set out in the listing."},{"title":"Section 3: Contract Countersignature Timing (Land & Property)","body":"Upon a buyer's checkout on a Land &amp; Property sale, you agree to digitally countersign the generated Contract of Sale within 24 hours. Automated platform reminders will trigger every 5 hours until executed."},{"title":"Section 4: Habitability Standards & Repair SLAs","body":"Obligation to maintain functional power, water, structural integrity, and estate amenities. Landlords must address critical repairs within 48 hours. MainTown reserves the right to withhold monthly payout releases until critical repairs are resolved."},{"title":"Section 5: Default, Restructuring, Deed Execution & Physical Delivery","body":"Agreement to MainTown's 30-day grace period and 60-day default policy for installment buyers and monthly renters. Authorizes MainTown to restructure or re-list defaulted inventory. Upon 100% completion of buyer payments for a Land &amp; Property sale, you agree to upload the executed Deed of Assignment and surrender original physical title instruments exclusively to the MainTown Realty Logistics Team for secure buyer delivery. Off-platform physical document transfers are strictly prohibited."},{"title":"Section 6: Shortlet Calendar Accuracy & Caution Deposit Rules","body":"Requirement to maintain accurate shortlet availability. Double-booking results in owner-funded guest relocation fees. Damage claims against caution deposits must be submitted within 24 hours of checkout with photo/video proof."},{"title":"Section 7: Fraud, Dual-Leasing & Zero Tolerance","body":"Immediate account termination, forfeiture of pending payouts, listing removal, and referral to law enforcement for fake listings, fraudulent titles, or executing side-deals/double-leases."},{"title":"Section 8: Verification Walkthroughs & Inspection Access","body":"Agreement to allow scheduled virtual or physical walkthrough inspections by authorized MainTown verification agents prior to and during listing activation. This includes facilitating buyer inspections at checkout — for Land &amp; Property sales, buyer checkout remains locked until the buyer logs an in-app Satisfied status."},{"title":"Section 9: Non-Circumvention & Direct Payment Ban","body":"Strict prohibition against bypassing the platform's payment system to request cash, direct bank transfers, or off-platform renewals from MainTown users. Violations incur platform ban and legal recovery of lost fees."},{"title":"Section 10: Fee Transparency & Collection","body":"MainTown collects the Legal Fee for drafting tenancy agreements directly, for transparency — it is never yours to set or collect. Any Caution Deposit and Service Charge you configure for a rental or shortlet listing (or leave as self-service, with no service charge) are paid directly to you alongside the tenant's rent/shortlet payments. For Land &amp; Property Sales, the Deed of Assignment legal/processing fee (5% or 10%, as you select at listing) is paid directly to you together with the buyer's first installment payment — MainTown does not collect it. A Land &amp; Property sale separately carries a 10% Agency Commission, made up of a Buyer-paid 5% (always to MainTown) and a Seller-paid 5% (to the Agent, if one listed the property on your behalf, or also to MainTown if you listed directly with no agent). Shortlet listings carry a MainTown Platform Fee (5% of the nightly rate) instead of a Legal Fee."}];
+  let GATE = { step: 1, nin: false, selfie: false, bank: '', acct: '', bvn: '', agree: false };
+  function activationHTML() {
+    const g = GATE;
+    return '<div style="max-width:640px;margin:0 auto">' + head('Activate your landlord account', 'Your agent set up your listings. Before you can see payouts and manage them, finish these two quick steps.') +
+      '<div class="steps"><span class="on"></span><span class="' + (g.step === 2 ? 'on' : '') + '"></span></div><div class="card pad">' + (g.step === 1 ?
+        '<h3>Step 1 · Identity and payout account</h3><div class="f" style="margin-top:14px">' +
+        '<label class="fld">National ID / NIN slip<input class="in" type="file" accept="image/*,.pdf" id="gNin"></label>' +
+        '<label class="fld">Selfie (a clear photo of your face)<input class="in" type="file" accept="image/*" capture="user" id="gSelfie"></label>' +
+        '<div class="f-2"><label class="fld">Bank name<input class="in" id="gBank" value="' + esc(g.bank) + '" placeholder="e.g. GTBank"></label><label class="fld">Account number<input class="in mono" id="gAcct" inputmode="numeric" maxlength="10" value="' + esc(g.acct) + '" placeholder="10 digits"></label></div>' +
+        '<label class="fld">BVN or NIN <span class="hint">(used to confirm the account is yours)</span><input class="in mono" id="gBvn" inputmode="numeric" maxlength="11" value="" placeholder="11 digits"></label></div>' +
+        '<div class="modal-foot" style="padding:18px 0 0;border:0"><button class="btn primary" data-act="gate-next">Continue</button></div>'
+        : '<h3>Step 2 · Landlord policy sign-off</h3><div class="policy-box" style="margin-top:12px">' + (POLICY.length ? POLICY.map(s => '<h4>' + esc(s.title) + '</h4><div>' + s.body + '</div>').join('') : 'The full landlord policy appears here.') + '</div>' +
+        '<label class="check"><input type="checkbox" id="gAgree" ' + (g.agree ? 'checked' : '') + '><span>I have read and agree to the full MainTown Landlord / Owner policy.</span></label>' +
+        '<div class="modal-foot" style="padding:18px 0 0;border:0"><button class="btn" data-act="gate-back">Back</button><button class="btn primary" data-act="gate-finish">Activate account</button></div>') + '</div></div>';
+  }
+
+  /* ---------- 6. modals ---------- */
+  function modal(o) {
+    closeModal();
+    const w = document.createElement('div'); w.className = 'modal-wrap'; w.id = 'modal';
+    w.innerHTML = '<div class="modal ' + (o.wide ? 'wide' : '') + '" role="dialog" aria-modal="true" aria-label="' + esc(o.title) + '"><div class="modal-head"><div><h3>' + esc(o.title) + '</h3>' + (o.sub ? '<p>' + esc(o.sub) + '</p>' : '') + '</div><button class="icon-btn" data-act="modal-close" aria-label="Close">' + ico('x') + '</button></div><div class="modal-body">' + o.body + '</div>' + (o.foot ? '<div class="modal-foot">' + o.foot + '</div>' : '') + '</div>';
+    $('#layer').appendChild(w); icons();
+    const f = w.querySelector('input,select,textarea'); if (f) setTimeout(() => f.focus(), 30);
+    return w;
+  }
+  function closeModal() { const m = $('#modal'); if (m) m.remove(); }
+  const getL = id => S.listings.find(l => l.id === id);
+  const getI = id => S.inspections.find(i => i.id === id);
+
+  /* ---- List property / Add listing ---- */
+  const AREAS = {
+    Lagos: { Lagos: ['Lekki Phase 1', 'Ajah', 'Victoria Island', 'Ikoyi', 'Yaba', 'Surulere', 'Ikeja GRA', 'Alimosho', 'Epe', 'Ibeju-Lekki'] },
+    'FCT Abuja': { Abuja: ['Maitama', 'Asokoro', 'Wuse 2', 'Gwarinpa', 'Jabi', 'Lugbe'] },
+    Rivers: { 'Port Harcourt': ['GRA Phase 2', 'Rumuola', 'Trans-Amadi'] },
+    Oyo: { Ibadan: ['Bodija', 'Jericho', 'Ring Road'] }
+  };
+  let LF = null;
+  function newListingForm() {
+    LF = { cat: 'rent', kind: 'Land only', mode: 'existing', state: 'Lagos', city: 'Lagos', area: '', unit: 'mo' };
+    const cats = [['rent', 'Rent'], ['shortlet', 'Short-let'], ['land', 'Land & Property'], ['commercial', 'Commercial']];
+    if (!isAgent()) cats.push(['event', 'Event Center']);
+    const w = modal({ title: isAgent() ? 'Add a listing' : 'List a property', sub: 'It goes to ' + (isAgent() ? 'the landlord for verification, then MainTown review' : 'MainTown review') + ' before it goes live.', wide: true, body: '<div class="f" id="lf">' +
+      '<div><label class="fld">Category</label><div class="seg" id="lfCat">' + cats.map(c => '<button type="button" data-lf-cat="' + c[0] + '" class="' + (c[0] === 'rent' ? 'on' : '') + '">' + c[1] + '</button>').join('') + '</div><div id="lfEventNote" class="hidden" style="margin-top:8px;color:var(--muted);font-size:12.5px">Event centers carry a flat 2% platform service charge on bookings (instead of the residential commission).</div></div>' +
+      '<label class="fld">Title<input class="in" id="lfTitle" placeholder="e.g. 2-Bed Flat, Lekki Phase 1"></label>' +
+      '<div class="f-2"><label class="fld">State<select class="in" id="lfState">' + Object.keys(AREAS).map(s => '<option>' + s + '</option>').join('') + '</select></label><label class="fld">City<select class="in" id="lfCity"></select></label></div>' +
+      '<div class="f-2"><label class="fld">Area<select class="in" id="lfArea"></select></label><label class="fld">Street / estate <span class="hint">(optional)</span><input class="in" id="lfStreet" placeholder="Shown only after booking"></label></div>' +
+      '<div id="lfDyn"></div>' +
+      '<div class="f-2"><label class="fld"><span id="lfPriceLbl">Price (₦ per month)</span><input class="in mono" id="lfPrice" inputmode="numeric" placeholder="e.g. 180000"></label><label class="fld">Photos <span class="hint">(at least 5 recommended)</span><input class="in" type="file" id="lfPhotos" accept="image/*" multiple></label></div>' +
+      '<label class="fld">Walkthrough video link <span class="hint">(optional now, required before it goes live)</span><input class="in" id="lfVideo" placeholder="https://"></label>' +
+      '<label class="fld">Description<textarea class="in" id="lfDesc" placeholder="What makes this property special?"></textarea></label>' +
+      (isAgent() ? '<div style="border-top:1px solid var(--line-soft);padding-top:14px"><label class="fld">Landlord / owner</label><div class="seg" id="lfMode"><button type="button" data-lf-mode="existing" class="on">Existing landlord</button><button type="button" data-lf-mode="new">New landlord</button></div>' +
+        '<div class="f" style="margin-top:12px"><div class="f-2"><label class="fld">Full name<input class="in" id="lfLName"></label><label class="fld">Phone<input class="in" id="lfLPhone" type="tel" placeholder="080X XXX XXXX"></label></div><label class="fld">Email<input class="in" id="lfLEmail" type="email"></label><p style="margin:0;color:var(--faint);font-size:12px">The landlord adds their own payout account and ID when they activate their account. You never enter bank details for them.</p></div></div>' : '') +
+      '</div>', foot: '<button class="btn" data-act="modal-close">Cancel</button><button class="btn primary" data-act="lf-submit">' + (isAgent() ? 'Submit for landlord verification' : 'Submit for review') + '</button>' });
+    fillCities(); dynFields(); return w;
+  }
+  function fillCities() { $('#lfCity').innerHTML = Object.keys(AREAS[$('#lfState').value]).map(c => '<option>' + c + '</option>').join(''); fillAreas(); }
+  function fillAreas() {
+    const st = $('#lfState').value;
+    $('#lfArea').innerHTML = AREAS[st][$('#lfCity').value].map(a => '<option>' + a + '</option>').join('') + '<option>Other</option>';
+  }
+  function dynFields() {
+    const c = LF.cat, el = $('#lfDyn'), lbl = $('#lfPriceLbl');
+    const sel = (id, label, opts) => '<label class="fld">' + label + '<select class="in" id="' + id + '">' + opts.map(o => '<option>' + o + '</option>').join('') + '</select></label>';
+    const num = (id, label, ph) => '<label class="fld">' + label + '<input class="in" id="' + id + '" inputmode="numeric" placeholder="' + (ph || '') + '"></label>';
+    let h = '';
+    if (c === 'rent') { h = '<div class="f-2">' + num('lfBeds', 'Bedrooms', '2') + num('lfBaths', 'Bathrooms', '2') + '</div>' + sel('lfRentPlan', 'Rent plan', ['Monthly rent', 'Annual rent']); lbl.textContent = 'Rent (₦ per month)'; }
+    if (c === 'shortlet') { h = '<div class="f-2">' + num('lfBeds', 'Bedrooms', '1') + num('lfGuests', 'Max guests', '2') + '</div>' + num('lfCaution', 'Caution deposit (₦, optional)', '50000'); lbl.textContent = 'Price (₦ per night)'; }
+    if (c === 'commercial') { h = '<div class="f-2">' + sel('lfCType', 'Type', ['Shop', 'Office', 'Warehouse', 'Plaza unit', 'Other']) + num('lfSqm', 'Size (sqm)', '600') + '</div>'; lbl.textContent = 'Annual rent (₦ per year)'; }
+    if (c === 'event') { h = '<div class="f-2">' + num('lfCap', 'Capacity (guests)', '300') + num('lfParking', 'Parking spaces', '40') + '</div>'; lbl.textContent = 'Price (₦ per event day)'; }
+    if (c === 'land') {
+      h = '<div><label class="fld">What are you selling?</label><div class="seg" id="lfKind"><button type="button" data-lf-kind="Land only" class="' + (LF.kind === 'Land only' ? 'on' : '') + '">Land only</button><button type="button" data-lf-kind="House / Building" class="' + (LF.kind === 'House / Building' ? 'on' : '') + '">House / Building</button></div></div>' +
+        (LF.kind === 'Land only' ? '<div class="f-2">' + num('lfPlot', 'Plot size (sqm)', '450') + sel('lfUse', 'Land use', ['Residential', 'Commercial', 'Mixed use', 'Agricultural']) + '</div>'
+          : sel('lfHType', 'House type', ['Bungalow', 'Duplex', 'Detached duplex', 'Semi-detached', 'Terrace', 'Block of flats']) + '<div class="f-2">' + num('lfBeds', 'Bedrooms', '3') + num('lfBaths', 'Bathrooms', '3') + '</div>' + num('lfPlot', 'Plot size (sqm)', '600')) +
+        sel('lfPay', 'Payment options', ['Outright only', 'Outright or installment']);
+      lbl.textContent = 'Total price (₦)';
+    }
+    el.innerHTML = '<div class="f">' + h + '</div>'; LF.unit = { rent: 'mo', shortlet: 'night', commercial: 'yr', event: 'night', land: 'total' }[c];
+  }
+  function submitListing() {
+    const v = id => { const e = $('#' + id); return e ? e.value.trim() : ''; };
+    const title = v('lfTitle'), price = Number(v('lfPrice').replace(/[^\d]/g, ''));
+    if (title.length < 4) return toast('Add a title for the listing.');
+    if (!price) return toast('Enter a valid price.');
+    if (isAgent() && (v('lfLName').length < 2 || v('lfLPhone').replace(/\D/g, '').length < 10)) return toast('Add the landlord’s name and phone number.');
+    if (!Api.need()) return;
+    const area = (v('lfArea') === 'Other' ? '' : v('lfArea') + ', ') + v('lfCity');
+    const unit = (LF.cat === 'rent' && v('lfRentPlan') === 'Annual rent') ? 'yr' : LF.unit;
+    const l = { id: 'L' + Date.now(), title, category: LF.cat, area, price, unit, status: isAgent() ? 'Pending Verification' : 'Under Review', agentListed: isAgent(), agentName: isAgent() ? S.profile.name : '', ownerName: isAgent() ? v('lfLName') : S.profile.name, img: '', bedrooms: v('lfBeds') || undefined };
+    if (LF.cat === 'land') { l.kind = LF.kind; if (LF.kind === 'House / Building') l.houseType = v('lfHType'); l.paymentMode = v('lfPay'); }
+    S.listings.unshift(l); S.notifications.unshift({ id: 'N' + Date.now(), title: 'Listing submitted', body: title + (isAgent() ? ' is waiting for the landlord’s verification.' : ' is with MainTown for review.'), ts: Date.now(), unread: true, route: 'listings' });
+    closeModal(); toast('Listing submitted.'); TAB.listings = 'pending'; go('listings'); rerender(); refreshNav();
+  }
+
+  /* ---------- 7. actions (event delegation) ---------- */
+  function addNotif(title, body, route) { S.notifications.unshift({ id: 'N' + Date.now() + Math.random().toString(36).slice(2, 5), title, body, ts: Date.now(), unread: true, route }); }
+  function pushChat(id, me, t) { (S.chats[id] = S.chats[id] || []).push({ me, t, ts: Date.now() }); }
+
+  const ACT = {
+    'modal-close': closeModal,
+    'new-listing': () => { if (!S.profile.activated && S.profile.managed && !isAgent()) return toast('Activate your account first.'); newListingForm(); },
+    'lf-submit': submitListing,
+    'del-listing': id => { const l = getL(id); if (!l || l.status !== 'Live') return; modal({ title: 'Delete this listing?', sub: l.title, body: '<p style="color:var(--muted);margin:0">It will be removed from the site. You can only delete a listing while it is live and nobody has paid.</p>', foot: '<button class="btn" data-act="modal-close">Keep it</button><button class="btn bad" data-act="del-confirm" data-id="' + id + '">Delete listing</button>' }); },
+    'del-confirm': id => { if (!Api.need()) return; S.listings = S.listings.filter(l => l.id !== id); closeModal(); toast('Listing deleted.'); rerender(); },
+    'verify-open': id => { const l = getL(id); if (!l) return; modal({ title: 'Verify this listing', sub: 'Submitted by ' + (l.agentName || 'your agent'), body: '<div class="card pad"><b>' + esc(l.title) + '</b><div style="color:var(--muted);margin-top:4px">' + esc(l.area) + ' · ' + CAT[l.category] + '</div><div style="font:700 22px Space Grotesk;margin-top:8px">' + money(l.price) + ' <span style="font:500 13px Inter;color:var(--muted)">' + UNIT[l.unit] + '</span></div></div><p style="color:var(--muted);font-size:12.5px;margin:12px 0 0">Confirm you own this property, the price is right and the agent may list it for you. MainTown reviews it next.</p>', foot: '<button class="btn bad" data-act="verify-decline" data-id="' + id + '">Decline</button><button class="btn primary" data-act="verify-ok" data-id="' + id + '">Yes, verify</button>' }); },
+    'verify-ok': id => { if (!Api.need()) return; const l = getL(id); l.status = 'Under Review'; addNotif('Listing verified', l.title + ' is now with MainTown for review.', 'listings'); closeModal(); toast('Verified. Sent to MainTown review.'); rerender(); },
+    'verify-decline': id => { if (!Api.need()) return; const l = getL(id); l.status = 'Declined'; closeModal(); toast('Listing declined.'); rerender(); },
+    'insp-confirm': id => { if (!Api.need()) return; const i = getI(id); i.status = 'Confirmed'; addNotif('Inspection confirmed', i.person + ' · ' + i.listingTitle, 'inspections'); toast('Confirmed. Chat is now open.'); rerender(); },
+    'insp-decline': id => { if (!Api.need()) return; getI(id).status = 'Declined'; toast('Request declined.'); rerender(); },
+    'insp-done': id => { if (!Api.need()) return; getI(id).status = 'Conducted'; toast('Marked as conducted.'); rerender(); },
+    'insp-chat': id => openChat('i:' + id, getI(id).person, getI(id).listingTitle),
+    'book-chat': id => { const b = S.bookings.find(x => x.id === id); openChat('b:' + id, b.guest, b.listingTitle); },
+    'book-cancel': id => { const b = S.bookings.find(x => x.id === id); modal({ title: 'Cancel this booking?', sub: b.guest + ' · ' + fmtDate(b.checkIn) + ' → ' + fmtDate(b.checkOut), body: '<p style="color:var(--muted);margin:0">Only possible before check-in. The guest is refunded and the dates open up again. Cancelling often can affect your listing’s standing.</p>', foot: '<button class="btn" data-act="modal-close">Keep booking</button><button class="btn bad" data-act="book-cancel-ok" data-id="' + id + '">Cancel booking</button>' }); },
+    'book-cancel-ok': id => { if (!Api.need()) return; const b = S.bookings.find(x => x.id === id); b.status = 'CANCELLED_BY_HOST'; closeModal(); toast('Booking cancelled.'); rerender(); },
+    'book-view': id => { const b = S.bookings.find(x => x.id === id), ph = phase(b); modal({ title: 'Booking details', sub: b.listingTitle, body: '<div class="rows">' + [['Guest', b.guest], ['Status', ph.label], ['Check-in', fmtDate(b.checkIn)], ['Check-out', fmtDate(b.checkOut)], ['Nights', nightsOf(b)], ['Total paid', money(b.total)]].map(r => '<div class="row-item" style="padding:10px 0"><div class="grow s">' + r[0] + '</div><b style="font-weight:600">' + esc(r[1]) + '</b></div>').join('') + '</div>', foot: '<button class="btn primary" data-act="modal-close">Close</button>' }); },
+    'chat-send': () => { const inp = $('#chatIn'); const t = inp.value.trim(); if (!t) return; if (!Api.need()) return; const key = inp.dataset.key; pushChat(key, true, t); inp.value = ''; renderChat(key); },
+    'toggle-bd': id => { const e = $('#bd-' + id); if (e) e.classList.toggle('open'); },
+    withdraw: () => { modal({ title: 'Withdraw to bank', sub: 'Goes to ' + (S.profile.bank || 'your payout account') + ' instantly.', body: '<label class="fld">Amount (₦)<input class="in mono" id="wAmt" inputmode="numeric" placeholder="Up to ' + Math.round(S.wallet.balance).toLocaleString() + '"></label><p style="color:var(--faint);font-size:12px;margin:10px 0 0">Available: ' + money(S.wallet.balance) + '</p>', foot: '<button class="btn" data-act="modal-close">Cancel</button><button class="btn primary" data-act="withdraw-ok">Withdraw</button>' }); },
+    'withdraw-ok': () => { const a = Number(($('#wAmt').value || '').replace(/[^\d]/g, '')); if (!a || a > S.wallet.balance) return toast('Enter an amount within your balance.'); if (!Api.need()) return; S.wallet.balance -= a; S.wallet.entries.push({ id: 'W' + Date.now(), label: 'Withdrawal to bank', amount: a, ts: Date.now(), dir: 'out' }); closeModal(); toast(money(a) + ' sent to your bank.'); rerender(); },
+    'sign-open': id => { const a = S.assets.find(x => x.id === id); modal({ title: 'Countersign the Contract of Sale', sub: a.title + ' · ' + a.buyer, body: '<p style="color:var(--muted);margin:0 0 12px">Type your full legal name to sign. This is legally binding and is recorded with the date and time.</p><label class="fld">Full legal name<input class="in" id="sigName" placeholder="' + esc(S.profile.name) + '"></label>', foot: '<button class="btn" data-act="modal-close">Later</button><button class="btn primary" data-act="sign-ok" data-id="' + id + '">Sign contract</button>' }); },
+    'sign-ok': id => { const n = $('#sigName').value.trim(); if (n.length < 3) return toast('Type your full name to sign.'); if (!Api.need()) return; const a = S.assets.find(x => x.id === id); a.countersigned = true; addNotif('Contract countersigned', a.title + ' is now fully executed. You can request title document dispatch.', 'assets'); closeModal(); toast('Contract signed.'); rerender(); },
+    'dl-agreement': id => { const a = S.assets.find(x => x.id === id); const txt = 'CONTRACT OF SALE (sample)\n\nProperty: ' + a.title + '\nBuyer: ' + a.buyer + '\nPrice: ' + money(a.price) + '\n\nThis is a sample file from the dashboard preview.'; const u = URL.createObjectURL(new Blob([txt], { type: 'text/plain' })); const l = document.createElement('a'); l.href = u; l.download = 'contract-of-sale.txt'; l.click(); setTimeout(() => URL.revokeObjectURL(u), 500); },
+    dispatch: id => { const a = S.assets.find(x => x.id === id); modal({ title: 'Request title document pick-up', sub: 'Free dispatch by SmartyHub Logistics', body: '<div class="f"><label class="fld">Pick-up location<input class="in" id="dpFrom" placeholder="Where the documents are"></label><label class="fld">Delivery location<input class="in" id="dpTo" placeholder="Buyer’s delivery address"></label><label class="fld">Contact phone<input class="in" id="dpPhone" type="tel"></label></div><p style="color:var(--faint);font-size:12px;margin:12px 0 0">Pick-up happens within 24 to 48 hours of your request.</p>', foot: '<button class="btn" data-act="modal-close">Cancel</button><button class="btn primary" data-act="dispatch-ok" data-id="' + id + '">Request pick-up</button>' }); },
+    'dispatch-ok': id => { if (!$('#dpFrom').value.trim() || !$('#dpTo').value.trim() || $('#dpPhone').value.replace(/\D/g, '').length < 10) return toast('Fill in both locations and a phone number.'); if (!Api.need()) return; S.assets.find(x => x.id === id).dispatch = 'requested'; closeModal(); toast('Requested. Pick-up within 24 to 48 hours.'); rerender(); },
+    'offer-accept': id => { if (!Api.need()) return; const o = S.offers.find(x => x.id === id); o.status = 'Accepted'; addNotif('Offer accepted', o.buyer + ' can now pay ' + money(o.offer) + '.', 'deals'); toast('Offer accepted.'); rerender(); },
+    'offer-decline': id => { if (!Api.need()) return; S.offers.find(x => x.id === id).status = 'Declined'; toast('Offer declined.'); rerender(); },
+    'offer-counter': id => { const o = S.offers.find(x => x.id === id); modal({ title: 'Counter offer', sub: o.listingTitle, body: '<label class="fld">Your price (₦)<input class="in mono" id="cAmt" inputmode="numeric" placeholder="Between ' + money(o.offer) + ' and ' + money(o.ask) + '"></label>', foot: '<button class="btn" data-act="modal-close">Cancel</button><button class="btn primary" data-act="offer-counter-ok" data-id="' + id + '">Send counter</button>' }); },
+    'offer-counter-ok': id => { const o = S.offers.find(x => x.id === id), a = Number($('#cAmt').value.replace(/[^\d]/g, '')); if (!a || a < o.offer || a > o.ask) return toast('Counter must sit between the offer and the asking price.'); if (!Api.need()) return; o.status = 'Countered'; o.counter = a; closeModal(); toast('Counter sent.'); rerender(); },
+    notif: id => { const n = S.notifications.find(x => x.id === id); if (!n) return; n.unread = false; const dest = n.route || 'overview', same = (location.hash || '#/overview') === '#/' + dest; if (same) rerender(); else go(dest); refreshNav(); },
+    'gate-next': () => { const g = GATE; g.bank = $('#gBank').value.trim(); g.acct = $('#gAcct').value.replace(/\D/g, ''); g.bvn = $('#gBvn').value.replace(/\D/g, ''); g.nin = !!($('#gNin').files && $('#gNin').files[0]) || g.nin; g.selfie = !!($('#gSelfie').files && $('#gSelfie').files[0]) || g.selfie;
+      if (!g.nin) return toast('Upload your National ID or NIN slip.'); if (!g.selfie) return toast('Add a selfie.'); if (g.bank.length < 2 || g.acct.length !== 10) return toast('Enter your bank name and 10-digit account number.'); if (g.bvn.length !== 11) return toast('Enter your 11-digit BVN or NIN.');
+      g.step = 2; rerender(); },
+    'gate-back': () => { GATE.step = 1; rerender(); },
+    'gate-finish': () => { if (!$('#gAgree').checked) return toast('Tick the box to sign off on the policy.'); if (!Api.need()) return; S.profile.activated = true; S.profile.bank = GATE.bank + ' •• ' + GATE.acct.slice(-4); S.profile.kyc = 'Verified'; GATE.bvn = ''; toast('Account activated.'); renderChrome(); rerender(); }
+  };
+
+  function openChat(key, who, about) {
+    modal({ title: who, sub: about, body: '<div class="chat" id="chatBox"></div><div style="display:flex;gap:8px;margin-top:6px"><input class="in" style="margin:0" id="chatIn" data-key="' + key + '" placeholder="Write a message"><button class="btn primary" data-act="chat-send">Send</button></div>' });
+    renderChat(key);
+    const inp = $('#chatIn'); inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ACT['chat-send'](); } });
+  }
+  function renderChat(key) {
+    const msgs = S.chats[key] || S.chats[key.slice(2)] || [];
+    const box = $('#chatBox'); if (!box) return;
+    box.innerHTML = msgs.length ? msgs.map(m => '<div class="bub ' + (m.me ? 'me' : '') + '">' + esc(m.t) + '<small>' + fmtTime(m.ts || Date.now()) + '</small></div>').join('') : '<div class="empty" style="padding:20px">No messages yet. Say hello.</div>';
+    box.scrollTop = box.scrollHeight;
+  }
+
+  document.addEventListener('click', e => {
+    const t = e.target;
+    const menu = $('#acctMenu');
+    if (t.closest('#avBtn')) { menu.classList.toggle('hidden'); return; }
+    if (menu && !menu.classList.contains('hidden') && !t.closest('#acctMenu')) menu.classList.add('hidden');
+    if (t.closest('#menuBtn')) { document.body.classList.toggle('nav-open'); return; }
+    if (t.closest('#scrim') || t.closest('.nav a')) document.body.classList.remove('nav-open');
+    if (t.closest('#bellBtn')) { go('notifications'); return; }
+    if (t.closest('#signOutBtn')) { (async () => { try { await sb.auth.signOut(); } catch (e) {} try { localStorage.removeItem(MEMBER_CACHE); } catch (e) {} location.href = './index.html'; })(); return; }
+    const goEl = t.closest('[data-go]'); if (goEl) { menu && menu.classList.add('hidden'); go(goEl.dataset.go); return; }
+    const tab = t.closest('[data-tab]'); if (tab) { const [k, v] = tab.dataset.tab.split(':'); TAB[k] = v; rerender(); return; }
+    const m = t.closest('#modal'); if (m && t.id === 'modal' ) { closeModal(); return; }
+    const cat = t.closest('[data-lf-cat]'); if (cat) { LF.cat = cat.dataset.lfCat; document.querySelectorAll('#lfCat button').forEach(b => b.classList.toggle('on', b === cat)); $('#lfEventNote').classList.toggle('hidden', LF.cat !== 'event'); dynFields(); return; }
+    const kind = t.closest('[data-lf-kind]'); if (kind) { LF.kind = kind.dataset.lfKind; dynFields(); return; }
+    const mode = t.closest('[data-lf-mode]'); if (mode) { document.querySelectorAll('#lfMode button').forEach(b => b.classList.toggle('on', b === mode)); return; }
+    const a = t.closest('[data-act]'); if (!a || a.disabled) return;
+    const fn = ACT[a.dataset.act]; if (fn) fn(a.dataset.id);
+  });
+  document.addEventListener('change', e => { if (e.target.id === 'lfState') fillCities(); if (e.target.id === 'lfCity') fillAreas(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  boot();
+})();
+</script>
+</body>
+</html>
