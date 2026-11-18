@@ -19,7 +19,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
 <script src="./theme.js?v=4"></script>
 <script src="./site.js?v=1"></script>
 
@@ -50,7 +49,7 @@
   h1, h2, h3, h4 { font-family: "Space Grotesk", Inter, sans-serif; margin: 0; letter-spacing: -.01em; }
   a { color: inherit; text-decoration: none; }
   button { font: inherit; color: inherit; cursor: pointer; }
-  svg.lucide { width: 16px; height: 16px; stroke-width: 2; flex: none; }
+  svg.lucide { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
   .hidden { display: none !important; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
@@ -205,7 +204,7 @@
   textarea.in { height: 84px; padding: 10px 12px; resize: vertical; }
   .in:focus { outline: 2px solid rgba(124,58,237,.55); outline-offset: 1px; border-color: transparent; }
   .seg { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-  .seg button { height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); font-weight: 600; font-size: 13px; }
+  .seg button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); font-weight: 600; font-size: 13px; }
   .seg button.on { border-color: var(--brand-2); background: var(--brand-soft); color: var(--fg); }
   .steps { display: flex; gap: 8px; margin-bottom: 14px; }
   .steps span { flex: 1; height: 4px; border-radius: 4px; background: var(--line); }
@@ -258,10 +257,11 @@
 </head>
 
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></symbol><symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></symbol><symbol id="i-layout-dashboard" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></symbol><symbol id="i-building-2" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path><path d="M10 6h4"></path><path d="M10 10h4"></path><path d="M10 14h4"></path><path d="M10 18h4"></path></symbol><symbol id="i-calendar-check" viewBox="0 0 24 24"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="m9 16 2 2 4-4"></path></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></symbol><symbol id="i-door-open" viewBox="0 0 24 24"><path d="M13 4h3a2 2 0 0 1 2 2v14"></path><path d="M2 20h3"></path><path d="M13 20h9"></path><path d="M10 12v.01"></path><path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.561Z"></path></symbol><symbol id="i-users-round" viewBox="0 0 24 24"><path d="M18 21a8 8 0 0 0-16 0"></path><circle cx="10" cy="8" r="5"></circle><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></symbol><symbol id="i-banknote" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></symbol><symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></symbol><symbol id="i-landmark" viewBox="0 0 24 24"><line x1="3" x2="21" y1="22" y2="22"></line><line x1="6" x2="6" y1="18" y2="11"></line><line x1="10" x2="10" y1="18" y2="11"></line><line x1="14" x2="14" y1="18" y2="11"></line><line x1="18" x2="18" y1="18" y2="11"></line><polygon points="12 2 20 7 4 7"></polygon></symbol><symbol id="i-percent" viewBox="0 0 24 24"><line x1="19" x2="5" y1="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></symbol><symbol id="i-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></symbol><symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5"></path><path d="M9 8V2"></path><path d="M15 8V2"></path><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"></path></symbol><symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></symbol><symbol id="i-pen-line" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"></path></symbol><symbol id="i-plus-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></symbol><symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></symbol><symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"></path><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle></symbol><symbol id="i-message-square" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></symbol><symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 7h10v10"></path><path d="M7 17 17 7"></path></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></symbol><symbol id="i-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></symbol><symbol id="i-truck" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></symbol><symbol id="i-package" viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></symbol><symbol id="i-message-circle" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></symbol><symbol id="i-file-spreadsheet" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></symbol><symbol id="i-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></symbol><symbol id="i-handshake" viewBox="0 0 24 24"><path d="m11 17 2 2a1 1 0 1 0 3-3"></path><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"></path><path d="m21 3 1 11h-2"></path><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"></path><path d="M3 4h8"></path></symbol><symbol id="i-scale" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="M7 21h10"></path><path d="M12 3v18"></path><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path></symbol><symbol id="i-calculator" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"></rect><line x1="8" x2="16" y1="6" y2="6"></line><line x1="16" x2="16" y1="14" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></symbol><symbol id="i-credit-card" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></symbol><symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></symbol><symbol id="i-arrow-down-left" viewBox="0 0 24 24"><path d="M17 7 7 17"></path><path d="M17 17H7V7"></path></symbol></svg>
 <div id="demoBar" class="demo-bar hidden"></div>
 
 <header class="topbar" id="topbar">
-  <button class="icon-btn menu-toggle" id="menuBtn" aria-label="Open menu"><i data-lucide="menu"></i></button>
+  <button class="icon-btn menu-toggle" id="menuBtn" aria-label="Open menu"><svg class="lucide" aria-hidden="true"><use href="#i-menu"/></svg></button>
   <a href="./index.html" class="brand" aria-label="MainTown Realty home"><img src="/favicon-192.png" alt=""><span>MainTown <b>Realty</b></span></a>
   <span class="tb-sep"></span><span class="tb-page" id="tbPage">Dashboard</span>
   <div class="tb-right" id="tbRight"></div>
@@ -305,13 +305,14 @@
   const qs = new URLSearchParams(location.search);
   const DEMO_ROLE = ['landlord', 'agent'].includes(qs.get('demo')) ? qs.get('demo') : null;
   const DEMO_MANAGED = DEMO_ROLE === 'landlord' && qs.get('managed') === '1';
+  const DEMO_TEAM = !!DEMO_ROLE && qs.get('team') === '1';
   const MEMBER_CACHE = 'mt_member_cache';
 
   const $ = (s, r) => (r || document).querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const money = n => '₦' + Math.round(Number(n) || 0).toLocaleString('en-NG');
-  const icons = () => { try { window.lucide && lucide.createIcons(); } catch (e) {} };
-  const ico = (n, cls) => '<i data-lucide="' + n + '"' + (cls ? ' class="' + cls + '"' : '') + '></i>';
+  const icons = () => {};   // icons are an inline SVG sprite now (no external library to load)
+  const ico = (n, cls) => '<svg class="lucide' + (cls ? ' ' + cls : '') + '" aria-hidden="true"><use href="#i-' + n + '"/></svg>';
   const lagosToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
   const addDays = (iso, d) => { const t = new Date(iso + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + d); return t.toISOString().slice(0, 10); };
   const fmtDate = v => { if (!v) return '—'; const d = new Date(v.length === 10 ? v + 'T12:00:00' : v); return isNaN(d) ? String(v) : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
@@ -417,7 +418,11 @@
     st.chats = {
       B2: [{ me: false, t: 'Hi, we just checked in. The AC remote isn’t working.', ts: now - 20 * H }, { me: true, t: 'Thanks Jon, sending the caretaker now.', ts: now - 19 * H }]
     };
-    st.profile = { name: me, email: role + '@demo.maintown', bank: 'GTBank •• 4821', kyc: 'Verified', managed: DEMO_MANAGED, activated: !DEMO_MANAGED };
+    st.profile = { name: me, email: role + '@demo.maintown', bank: 'GTBank •• 4821', kyc: 'Verified', managed: DEMO_MANAGED, activated: !DEMO_MANAGED,
+      enterprise: DEMO_TEAM ? { kind: role === 'agent' ? 'agency' : 'developer', name: role === 'agent' ? 'Lekki Prime Realtors' : 'Horizon Homes Ltd', cac: 'RC1234567', address: '12 Admiralty Way, Lekki, Lagos', staff: [
+        { id: 'S1', name: 'Tola Bankole', email: 'tola@example.com', phone: '0803 111 2222', role: 'sales', status: 'Active' },
+        { id: 'S2', name: 'Ngozi Amadi', email: 'ngozi@example.com', phone: '0805 333 4444', role: 'finance', status: 'Active' },
+        { id: 'S3', name: 'Yemi Cole', email: 'yemi@example.com', phone: '0807 555 6666', role: 'legal', status: 'Invited' }] } : null };
     return st;
   }
 
@@ -437,7 +442,7 @@
         }));
         S.listingsLive = true;
       } catch (e) { S.listingsLive = false; }
-      S.profile = { name: PROFILE.name, email: PROFILE.email, bank: '', kyc: '', managed: false, activated: true };
+      S.profile = { name: PROFILE.name, email: PROFILE.email, bank: '', kyc: '', managed: false, activated: true, enterprise: null };
     },
     live() { return IS_DEMO; },                       // true when write actions work
     need() { if (!IS_DEMO) { toast(NOT_CONNECTED); return false; } return true; }
@@ -451,7 +456,7 @@
       PROFILE = { name: ROLE === 'agent' ? 'Demo Agent' : 'Demo Landlord', email: ROLE + '@demo.maintown', role: ROLE };
       bar.classList.remove('hidden');
       bar.innerHTML = ico('info') + 'Sample data preview. Nothing here is real or saved.' +
-        '<a href="?demo=landlord">Landlord view</a><a href="?demo=landlord&managed=1">Agent-onboarded landlord</a><a href="?demo=agent">Agent view</a>';
+        '<a href="?demo=landlord">Landlord view</a><a href="?demo=landlord&managed=1">Agent-onboarded landlord</a><a href="?demo=agent">Agent view</a><a href="?demo=landlord&team=1">Landlord with team</a>';
     } else {
       let session = null;
       try { if (sb) { const r = await sb.auth.getSession(); session = r.data && r.data.session; } } catch (e) {}
@@ -497,6 +502,7 @@
       ['inspections', 'calendar-check', isAgent() ? 'Walkthroughs' : 'Inspections', pend, true],
       [isAgent() ? 'clients' : 'tenants', 'users', isAgent() ? 'Clients' : 'Tenants & Buyers'],
       ['bookings', 'door-open', 'Bookings'],
+      ['team', 'users-round', S.profile.enterprise ? 'Team' : 'Upgrade & Team'],
       ['Money'],
       ['payouts', 'banknote', isAgent() ? 'Commission' : 'Payouts'],
       ['wallet', 'wallet', 'Wallet']
@@ -510,10 +516,9 @@
   function renderChrome() {
     const p = S.profile;
     $('#shell').classList.remove('hidden'); $('#gate').classList.add('hidden');
-    $('#side').innerHTML = '<div class="role-chip"><div class="avatar" style="width:34px;height:34px;font-size:13px">' + esc(first(p.name).charAt(0).toUpperCase()) + '</div><div><small>' + (isAgent() ? 'Agent' : 'Landlord') + ' account</small><strong>' + esc(p.name) + '</strong></div></div><nav class="nav" id="nav"></nav>';
+    $('#side').innerHTML = '<div class="role-chip"><div class="avatar" style="width:34px;height:34px;font-size:13px">' + esc(first(p.name).charAt(0).toUpperCase()) + '</div><div><small>' + acctLabel() + '</small><strong>' + esc(p.name) + '</strong></div></div><nav class="nav" id="nav"></nav>';
     const un = S.notifications.filter(n => n.unread).length;
-    $('#tbRight').innerHTML = '<a class="btn sm" href="./index.html">' + ico('arrow-left') + ' Website</a>' +
-      '<button class="icon-btn" id="bellBtn" aria-label="Notifications">' + ico('bell') + '<span class="count-dot' + (un ? '' : ' hidden') + '" id="bellN">' + un + '</span></button>' +
+    $('#tbRight').innerHTML = '<button class="icon-btn" id="bellBtn" aria-label="Notifications">' + ico('bell') + '<span class="count-dot' + (un ? '' : ' hidden') + '" id="bellN">' + un + '</span></button>' +
       '<div style="position:relative"><button class="avatar" id="avBtn" aria-label="Account menu" aria-haspopup="true">' + esc(first(p.name).charAt(0).toUpperCase()) + '</button><div class="acct-menu hidden" id="acctMenu">' +
       '<p style="font-weight:600">' + esc(p.name) + '</p><p style="color:var(--muted);font-size:12px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis">' + esc(p.email) + '</p>' +
       '<button class="row" data-go="profile">' + ico('user') + 'Profile</button>' +
@@ -542,7 +547,7 @@
 
   /* ---------- 5. views ---------- */
   function viewMap() {
-    return { overview, listings, inspections, tenants: deals, clients: deals, bookings, payouts, wallet, assets, deals: offers, notifications, profile };
+    return { overview, listings, inspections, tenants: deals, clients: deals, bookings, team, payouts, wallet, assets, deals: offers, notifications, profile };
   }
   const head = (t, sub, actions) => '<div class="page-head"><div><h1>' + t + '</h1>' + (sub ? '<p>' + sub + '</p>' : '') + '</div><div style="display:flex;gap:8px;flex-wrap:wrap">' + (actions || '') + '</div></div>';
   const emptyBox = (icon, t, s) => '<div class="empty">' + ico(icon) + '<b>' + t + '</b>' + s + '</div>';
@@ -583,6 +588,7 @@
           stat('building-2', 'Live listings', live, S.listings.length + ' total') + stat('calendar-check', 'To confirm', pendI.length, 'inspection requests') +
           stat('users', isAgent() ? 'Clients' : 'Tenants & buyers', closed, 'closed deals') + stat('door-open', 'Stays', upcoming, 'upcoming or in house') +
         '</div></div>' +
+      (!p.enterprise ? '<div class="card pad" style="margin-top:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap"><div style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-text)">' + ico('rocket') + '</div><div style="flex:1;min-width:220px"><h3>' + entCfg().promoTitle + '</h3><p style="margin:4px 0 0;color:var(--muted)">' + entCfg().promoSub + '</p></div><button class="btn" data-act="upgrade-open">' + entCfg().cta + '</button></div>' : '') +
       (showStart ? '<div class="card pad" style="margin-top:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;border-color:rgba(124,58,237,.4)"><div style="flex:1;min-width:220px"><h3>Start here: list your first property</h3><p style="margin:4px 0 0;color:var(--muted)">Add photos, a price and a walkthrough video. Once it is live, people can find it, request an inspection and pay.</p></div><button class="btn primary" data-act="new-listing">' + ico('plus-circle') + ' ' + (isAgent() ? 'Add listing' : 'List property') + '</button></div>' : '') +
       '<div class="grid split" style="margin-top:16px;align-items:start">' +
         '<div class="card"><div class="card-head"><div><h3>Needs your attention</h3><p>Things waiting on you right now</p></div>' + (att.length ? '<span class="pill warn">' + att.length + '</span>' : '') + '</div><div class="rows" style="margin-top:10px">' +
@@ -734,8 +740,78 @@
   function profile() {
     const p = S.profile;
     return head('Profile', 'Your account details.') + '<div class="grid g-2"><div class="card pad"><h3>Account</h3><div class="rows" style="margin-top:10px">' +
-      [['Name', p.name], ['Email', p.email], ['Role', isAgent() ? 'Agent' : 'Landlord / Owner'], ['Payout account', p.bank || 'Not set up on the website yet'], ['Identity check', p.kyc || 'Completed in the MainTown app']].map(r => '<div class="row-item" style="padding:11px 0"><div class="grow s">' + r[0] + '</div><b style="font-weight:600;text-align:right">' + esc(r[1]) + '</b></div>').join('') + '</div></div>' +
+      [['Name', p.name], ['Email', p.email], ['Account type', acctLabel().replace(' account', '')], ['Payout account', p.bank || 'Not set up on the website yet'], ['Identity check', p.kyc || 'Completed in the MainTown app']].map(r => '<div class="row-item" style="padding:11px 0"><div class="grow s">' + r[0] + '</div><b style="font-weight:600;text-align:right">' + esc(r[1]) + '</b></div>').join('') + '</div></div>' +
       '<div class="card pad"><h3>Need help?</h3><p style="color:var(--muted);margin:8px 0 14px">Our team replies on WhatsApp during business hours.</p><a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/2348066611017?text=' + encodeURIComponent('Hi MainTown Realty, I\'m ' + p.name + ' (' + (isAgent() ? 'Agent' : 'Landlord') + ' account) and need help with my dashboard.') + '">' + ico('message-circle') + ' Chat on WhatsApp</a></div></div>';
+  }
+
+
+  /* ---- Upgrade (Scale to Developer / Agency) + Team ---- */
+  const UPGRADE_FEE = 150000;   // one constant, so the pricing model can change in one place (same as the app)
+  const ENT = {
+    developer: { label: 'Enterprise Developer', cta: 'Scale to Developer', title: 'Scale to Developer', sub: 'Unlock team roles, bulk CSV property uploads, and your own branded company listings.', promoTitle: 'Managing many properties? Create a team.', promoSub: 'Upgrade to an Enterprise Developer account. Add sales managers, assign legal and finance staff, and manage self-owned or client properties in one workspace.', nameLabel: 'Company / Business Name', namePh: 'e.g. Horizon Homes Ltd', regLabel: 'CAC / Registration Number', regPh: 'RC1234567', addrLabel: 'Company Address', addrPh: 'Registered office address', salesLabel: 'Sales Manager / Officer' },
+    agency: { label: 'Agency', cta: 'Upgrade to Agency', title: 'Upgrade to Agency', sub: 'Bring sub-agents under your agency name, assign finance and legal support, and manage all your clients’ listings from one workspace.', promoTitle: 'Growing your agency? Add sub-agents.', promoSub: 'Upgrade to an Agency account. Bring sub-agents under your agency name, assign finance and legal support, and manage all your clients’ listings in one place.', nameLabel: 'Agency Name', namePh: 'e.g. Lekki Prime Realtors', regLabel: 'CAC / Business Registration Number', regPh: 'RC1234567 or BN1234567', addrLabel: 'Agency Office Address', addrPh: 'Your office address', salesLabel: 'Sub-agent / Sales Agent' }
+  };
+  const entCfg = () => ENT[isAgent() ? 'agency' : 'developer'];
+  const roleLabel = r => r === 'sales' ? entCfg().salesLabel : (r === 'legal' ? 'Legal Officer' : 'Finance Officer');
+  const acctLabel = () => S.profile.enterprise ? ENT[S.profile.enterprise.kind].label + ' account' : (isAgent() ? 'Agent account' : 'Landlord account');
+  let UP = { src: 'card' };
+  const brandIc = (n, sz) => '<div style="width:' + (sz || 36) + 'px;height:' + (sz || 36) + 'px;border-radius:10px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-text);flex:none">' + ico(n) + '</div>';
+
+  function team() {
+    const c = entCfg(), e = S.profile.enterprise;
+    if (!e) {
+      const perks = [['users-round', 'Team roles', 'Invite ' + (isAgent() ? 'sub-agents' : 'sales managers') + ', legal officers and finance officers, each with their own login.'], ['file-spreadsheet', 'Bulk CSV upload', 'Add many properties at once instead of one by one.'], ['building-2', 'Your own brand', 'Listings show your ' + (isAgent() ? 'agency' : 'company') + ' name and logo.']];
+      return head('Upgrade & Team', c.sub) + notLive() +
+        '<div class="card pad" style="max-width:760px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap"><div><h3 style="font-size:18px">' + c.title + '</h3><p style="margin:4px 0 0;color:var(--muted)">One-time upgrade fee</p></div><div style="font:700 28px Space Grotesk">' + money(UPGRADE_FEE) + '</div></div>' +
+        '<div class="grid g-3" style="margin:18px 0">' + perks.map(p => '<div><div style="margin-bottom:8px">' + brandIc(p[0]) + '</div><b>' + p[1] + '</b><div style="color:var(--muted);font-size:12.5px;margin-top:2px">' + p[2] + '</div></div>').join('') + '</div>' +
+        '<button class="btn primary" data-act="upgrade-open">' + ico('rocket') + ' ' + c.cta + '</button></div>';
+    }
+    const staff = e.staff;
+    return head('Team', 'Everyone working under ' + esc(e.name) + '.', '<button class="btn" data-act="csv-open">' + ico('file-spreadsheet') + ' Bulk CSV import</button><button class="btn primary" data-act="invite-open">' + ico('user-plus') + ' Invite team member</button>') + notLive() +
+      '<div class="card pad" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:16px"><div style="width:48px;height:48px;border-radius:14px;background:var(--brand);color:#fff;display:grid;place-items:center;font:700 20px Space Grotesk">' + esc(e.name.charAt(0).toUpperCase()) + '</div><div style="flex:1;min-width:200px"><h3 style="font-size:17px">' + esc(e.name) + ' <span class="pill brand" style="margin-left:6px">' + ENT[e.kind].label + '</span></h3><div style="color:var(--muted);font-size:12.5px;margin-top:2px">' + esc(e.cac) + ' · ' + esc(e.address) + '</div></div><div style="text-align:right"><b style="font:700 22px Space Grotesk">' + staff.length + '</b><div style="color:var(--muted);font-size:12px">team member' + (staff.length === 1 ? '' : 's') + '</div></div></div>' +
+      '<div class="card">' + (staff.length ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Member</th><th>Role</th><th>Contact</th><th>Status</th><th></th></tr></thead><tbody>' +
+        staff.map(m => '<tr><td><b>' + esc(m.name) + '</b></td><td>' + roleLabel(m.role) + '</td><td>' + esc(m.email) + '<div class="sub">' + esc(m.phone) + '</div></td><td><span class="pill ' + (m.status === 'Active' ? 'ok' : 'warn') + '">' + m.status + '</span></td><td style="text-align:right"><button class="btn sm bad" data-act="staff-remove" data-id="' + m.id + '">Remove</button></td></tr>').join('') + '</tbody></table></div>'
+        : emptyBox('users-round', 'No team members yet', 'Invite your first sales, legal or finance officer.')) + '</div>' +
+      '<div class="grid g-3" style="margin-top:16px">' + [['handshake', c.salesLabel, 'Lists properties under your ' + (isAgent() ? 'agency' : 'company') + ' name, and sees their own clients and bookings.'], ['scale', 'Legal Officer', 'Reviews and prepares sale agreements and title documents.'], ['calculator', 'Finance Officer', 'Follows payouts, commission splits and reports.']].map(r => '<div class="card pad"><div style="display:flex;gap:10px;align-items:center">' + brandIc(r[0], 34) + '<b>' + r[1] + '</b></div><p style="margin:8px 0 0;color:var(--muted);font-size:12.5px">' + r[2] + '</p></div>').join('') + '</div>';
+  }
+
+  function upgradeModal() {
+    const c = entCfg(), low = S.wallet.balance < UPGRADE_FEE;
+    modal({ title: c.title, sub: c.sub, body:
+      '<div class="card pad" style="text-align:center;margin-bottom:14px"><div style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em">One-time upgrade fee</div><div style="font:700 28px Space Grotesk;margin-top:4px">' + money(UPGRADE_FEE) + '</div></div>' +
+      '<div class="seg" style="margin:0 0 12px"><button type="button" class="' + (UP.src === 'wallet' ? 'on' : '') + '" data-act="up-src" data-id="wallet" style="flex:1">' + ico('wallet') + ' MainTown Wallet</button><button type="button" class="' + (UP.src === 'card' ? 'on' : '') + '" data-act="up-src" data-id="card" style="flex:1">' + ico('credit-card') + ' Pay with card</button></div>' +
+      (UP.src === 'wallet' ? '<p style="margin:0;color:var(--muted);font-size:13px">Available balance: <b style="color:var(--fg)">' + money(S.wallet.balance) + '</b></p>' + (low ? '<p style="margin:8px 0 0;color:var(--bad);font-size:12.5px">Your wallet balance is below the upgrade fee. Fund your wallet, or switch to card payment.</p>' : '')
+        : '<p style="margin:0;color:var(--muted);font-size:13px">You’ll finish payment on the secure payment page. Card details are never entered or stored on MainTown.</p>'),
+      foot: '<button class="btn" data-act="modal-close">Cancel</button><button class="btn primary" data-act="up-pay"' + (UP.src === 'wallet' && low ? ' disabled' : '') + '>' + (UP.src === 'wallet' ? 'Pay from wallet' : 'Continue to payment') + '</button>' });
+  }
+  function upgradeSetupModal() {
+    const c = entCfg();
+    modal({ title: 'Payment confirmed', sub: 'Set up your ' + (isAgent() ? 'agency' : 'company') + ' profile to finish upgrading.', body: '<div class="f">' +
+      '<label class="fld">' + c.nameLabel + '<input class="in" id="upName" placeholder="' + esc(c.namePh) + '"></label>' +
+      '<label class="fld">' + (isAgent() ? 'Agency logo' : 'Company logo') + ' <span class="hint">(optional)</span><input class="in" type="file" accept="image/*"></label>' +
+      '<label class="fld">' + c.regLabel + '<input class="in mono" id="upCac" placeholder="' + esc(c.regPh) + '"></label>' +
+      '<label class="fld">' + c.addrLabel + '<input class="in" id="upAddr" placeholder="' + esc(c.addrPh) + '"></label></div>',
+      foot: '<button class="btn primary" data-act="up-finish">Finish upgrade</button>' });
+  }
+  function inviteModal() {
+    const c = entCfg();
+    modal({ title: 'Invite team member', sub: 'They get an invite by email and SMS with a temporary code to claim their account.', body: '<div class="f">' +
+      '<label class="fld">Full name<input class="in" id="ivName" placeholder="Staff member’s full name"></label>' +
+      '<div class="f-2"><label class="fld">Email<input class="in" id="ivEmail" type="email" placeholder="staff@example.com"></label><label class="fld">Phone<input class="in" id="ivPhone" type="tel" placeholder="080X XXX XXXX"></label></div>' +
+      '<label class="fld">Role<select class="in" id="ivRole"><option value="sales">' + c.salesLabel + '</option><option value="legal">Legal Officer</option><option value="finance">Finance Officer</option></select></label></div>',
+      foot: '<button class="btn" data-act="modal-close">Cancel</button><button class="btn primary" data-act="invite-send">Send invite</button>' });
+  }
+  const CSV_COLS = ['Property Title', 'Estate Name', 'Category', 'Price', 'Plot/Unit Count', 'State', 'LGA', 'Address', 'Description', 'Amenities'];
+  function parseCSV(text) {
+    const rows = []; let row = [], cur = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) { if (ch === '"' && text[i + 1] === '"') { cur += '"'; i++; } else if (ch === '"') q = false; else cur += ch; }
+      else if (ch === '"') q = true; else if (ch === ',') { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some(x => x.trim())) rows.push(row); row = []; }
+      else cur += ch;
+    }
+    row.push(cur); if (row.some(x => x.trim())) rows.push(row); return rows;
   }
 
   /* ---- Vendor activation gate (landlords onboarded through an agent) ---- */
@@ -839,6 +915,44 @@
 
   const ACT = {
     'modal-close': closeModal,
+    'upgrade-open': () => { if (S.profile.enterprise) return go('team'); UP = { src: S.wallet.balance >= UPGRADE_FEE ? 'wallet' : 'card' }; upgradeModal(); },
+    'up-src': id => { UP.src = id; upgradeModal(); },
+    'up-pay': () => { if (UP.src === 'wallet' && S.wallet.balance < UPGRADE_FEE) return toast('Wallet balance is below the upgrade fee.'); if (!Api.need()) return; upgradeSetupModal(); },
+    'up-finish': () => {
+      const n = $('#upName').value.trim(), cac = $('#upCac').value.trim(), ad = $('#upAddr').value.trim();
+      if (n.length < 2 || cac.length < 4) return toast('Fill in the name and registration number.'); if (ad.length < 5) return toast('Add the address.');
+      if (!Api.need()) return;
+      if (UP.src === 'wallet') { S.wallet.balance -= UPGRADE_FEE; S.wallet.entries.push({ id: 'W' + Date.now(), label: entCfg().title + ' (upgrade fee)', amount: UPGRADE_FEE, ts: Date.now(), dir: 'out' }); }
+      S.profile.enterprise = { kind: isAgent() ? 'agency' : 'developer', name: n, cac, address: ad, staff: [] };
+      addNotif('You are now ' + (isAgent() ? 'an Agency' : 'an Enterprise Developer'), 'Invite your team from the Team page.', 'team'); closeModal(); toast('Upgrade complete.'); renderChrome(); go('team'); rerender();
+    },
+    'invite-open': inviteModal,
+    'invite-send': () => {
+      const n = $('#ivName').value.trim(), em = $('#ivEmail').value.trim(), ph = $('#ivPhone').value.trim();
+      if (n.length < 2) return toast('Enter the person’s name.'); if (!/^\S+@\S+\.\S+$/.test(em)) return toast('Enter a valid email.'); if (ph.replace(/\D/g, '').length < 10) return toast('Enter a valid phone number.');
+      if (!Api.need()) return;
+      S.profile.enterprise.staff.push({ id: 'S' + Date.now(), name: n, email: em, phone: ph, role: $('#ivRole').value, status: 'Invited' });
+      closeModal(); toast('Invite sent to ' + n + '.'); rerender();
+    },
+    'staff-remove': id => { const m = S.profile.enterprise.staff.find(x => x.id === id); modal({ title: 'Remove ' + m.name + '?', body: '<p style="margin:0;color:var(--muted)">They lose access to the ' + (isAgent() ? 'agency' : 'company') + ' workspace straight away.</p>', foot: '<button class="btn" data-act="modal-close">Keep</button><button class="btn bad" data-act="staff-remove-ok" data-id="' + id + '">Remove</button>' }); },
+    'staff-remove-ok': id => { if (!Api.need()) return; const e = S.profile.enterprise; e.staff = e.staff.filter(x => x.id !== id); closeModal(); toast('Team member removed.'); rerender(); },
+    'csv-open': () => modal({ title: 'Bulk CSV property import', sub: 'Columns: ' + CSV_COLS.join(', ') + '.', body: '<div class="f"><label class="fld">Estate name for this batch <span class="hint">(optional)</span><input class="in" id="csvEstate"></label><label class="fld">CSV file<input class="in" type="file" id="csvFile" accept=".csv,text/csv"></label><button type="button" class="btn sm" data-act="csv-template" style="width:max-content">' + ico('download') + ' Download template</button></div>', foot: '<button class="btn" data-act="modal-close">Cancel</button><button class="btn primary" data-act="csv-import">Import</button>' }),
+    'csv-template': () => { const u = URL.createObjectURL(new Blob([CSV_COLS.join(',') + '\n"3-Bed Terrace","Palm Estate","Rental",4500000,10,"Lagos","Eti-Osa","Lekki","Newly built","Parking;Security"\n'], { type: 'text/csv' })); const l = document.createElement('a'); l.href = u; l.download = 'maintown-listings-template.csv'; l.click(); setTimeout(() => URL.revokeObjectURL(u), 500); },
+    'csv-import': async () => {
+      const f = $('#csvFile').files[0]; if (!f) return toast('Choose a CSV file.'); if (!Api.need()) return;
+      const rows = parseCSV(await f.text()); if (rows.length < 2) return toast('That file has no rows.');
+      const H = rows[0].map(x => x.trim().toLowerCase()), col = n => H.indexOf(n.toLowerCase()), est = $('#csvEstate').value.trim();
+      const ti = col('Property Title'); if (ti < 0) return toast('Missing the “Property Title” column.');
+      let n = 0;
+      rows.slice(1, 201).forEach((r, i) => {
+        const title = (r[ti] || '').trim(); if (!title) return;
+        const cat = (r[col('Category')] || '').toLowerCase(), category = /land/.test(cat) ? 'land' : /short/.test(cat) ? 'shortlet' : 'rent';
+        const estate = est || (r[col('Estate Name')] || '').trim();
+        const area = [estate, r[col('LGA')], r[col('State')]].map(x => (x || '').trim()).filter(Boolean).join(', ');
+        S.listings.unshift({ id: 'L' + Date.now() + i, title, category, area, price: Number(String(r[col('Price')] || '').replace(/[^\d]/g, '')) || 0, unit: category === 'land' ? 'total' : category === 'shortlet' ? 'night' : 'yr', status: 'Under Review', agentListed: false, ownerName: S.profile.enterprise ? S.profile.enterprise.name : S.profile.name, img: '' }); n++;
+      });
+      closeModal(); toast(n + ' listing' + (n === 1 ? '' : 's') + ' imported for review.'); TAB.listings = 'pending'; go('listings'); rerender();
+    },
     'new-listing': () => { if (!S.profile.activated && S.profile.managed && !isAgent()) return toast('Activate your account first.'); newListingForm(); },
     'lf-submit': submitListing,
     'del-listing': id => { const l = getL(id); if (!l || l.status !== 'Live') return; modal({ title: 'Delete this listing?', sub: l.title, body: '<p style="color:var(--muted);margin:0">It will be removed from the site. You can only delete a listing while it is live and nobody has paid.</p>', foot: '<button class="btn" data-act="modal-close">Keep it</button><button class="btn bad" data-act="del-confirm" data-id="' + id + '">Delete listing</button>' }); },
