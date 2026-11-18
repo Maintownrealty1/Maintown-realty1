@@ -430,16 +430,28 @@
     async load() {
       if (IS_DEMO) { S = seed(ROLE); return; }
       S = emptyState();
-      // Listings: same Supabase table the public site reads. Owner/agent columns can vary, so match defensively.
+      // Listings: the same Supabase `listings` table admin.html writes to (columns: title, location, category, rent,
+      // annual_rent, images[], video, status, listed_by_type/name, managed_landlord_id, ...).
+      // owner_id (landlord) and agent_id (agent) link a listing to the signed-in account (see 13b_dashboard_use_existing_owner_columns.sql).
       try {
         const r = await sb.from('listings').select('*').order('created_at', { ascending: false });
-        const mine = (r.data || []).filter(l => [l.owner_id, l.agent_id, l.user_id, l.created_by, l.landlord_id].some(v => v && v === USER.id));
-        S.listings = mine.map(l => ({
-          id: l.id, title: l.title || 'Untitled listing', category: l.category || l.type || 'rent', area: l.location || l.area || '',
-          price: Number(l.price || l.amount || 0), unit: l.unit || 'mo', img: l.image || l.img || (Array.isArray(l.photos) ? l.photos[0] : '') || '',
-          status: ({ available: 'Live', sold: 'Sold', rented: 'Rented', booked: 'Booked', pending: 'Under Review', closed: 'Declined', unavailable: 'Unavailable' })[l.status] || (l.status || 'Live'),
-          agentListed: !!l.agent_id && ROLE === 'landlord', ownerName: l.owner_name || '', agentName: l.agent_name || ''
-        }));
+        if (r.error) throw r.error;
+        // owner_id / agent_id may hold the auth user id or the member's signups.id, so accept both
+        const myIds = new Set([USER.id]);
+        try { const sg = await sb.from('signups').select('id').eq('user_id', USER.id); (sg.data || []).forEach(x => myIds.add(x.id)); } catch (e) {}
+        const mine = (r.data || []).filter(l => [l.owner_id, l.agent_id].some(v => v && myIds.has(v)));
+        const CATMAP = { rent: 'rent', land: 'land', 'short-let': 'shortlet', 'event-center': 'event' };
+        S.listings = mine.map(l => {
+          const cat = CATMAP[l.category] || 'rent';
+          const digits = v => Number(String(v == null ? '' : v).replace(/[^\d]/g, '')) || 0;
+          return {
+            id: l.id, title: l.title || 'Untitled listing', category: cat, area: l.location || '',
+            price: digits(l.annual_rent) || digits(l.rent), unit: cat === 'land' ? 'total' : (cat === 'shortlet' || cat === 'event') ? 'night' : (l.annual_rent ? 'yr' : 'mo'),
+            img: Array.isArray(l.images) ? (l.images[0] || '') : '',
+            status: ({ available: 'Live', sold: 'Sold', rented: 'Rented', booked: 'Booked', pending: 'Under Review', closed: 'Declined' })[l.status] || 'Live',
+            agentListed: ROLE === 'landlord' && !!l.agent_id, note: l.review_note || '', ownerName: l.listed_by_name || '', agentName: ''
+          };
+        });
         S.listingsLive = true;
       } catch (e) { S.listingsLive = false; }
       S.profile = { name: PROFILE.name, email: PROFILE.email, bank: '', kyc: '', managed: false, activated: true, enterprise: null };
@@ -857,18 +869,19 @@
     LF = { cat: 'rent', kind: 'Land only', mode: 'existing', state: 'Lagos', city: 'Lagos', area: '', unit: 'mo' };
     const cats = [['rent', 'Rent'], ['shortlet', 'Short-let'], ['land', 'Land & Property'], ['commercial', 'Commercial']];
     if (!isAgent()) cats.push(['event', 'Event Center']);
-    const w = modal({ title: isAgent() ? 'Add a listing' : 'List a property', sub: 'It goes to ' + (isAgent() ? 'the landlord for verification, then MainTown review' : 'MainTown review') + ' before it goes live.', wide: true, body: '<div class="f" id="lf">' +
+    const w = modal({ title: isAgent() ? 'Add a listing' : 'List a property', sub: 'It goes to ' + ((isAgent() && IS_DEMO) ? 'the landlord for verification, then MainTown review' : 'MainTown for approval') + ' before it goes live.', wide: true, body: '<div class="f" id="lf">' +
       '<div><label class="fld">Category</label><div class="seg" id="lfCat">' + cats.map(c => '<button type="button" data-lf-cat="' + c[0] + '" class="' + (c[0] === 'rent' ? 'on' : '') + '">' + c[1] + '</button>').join('') + '</div><div id="lfEventNote" class="hidden" style="margin-top:8px;color:var(--muted);font-size:12.5px">Event centers carry a flat 2% platform service charge on bookings (instead of the residential commission).</div></div>' +
       '<label class="fld">Title<input class="in" id="lfTitle" placeholder="e.g. 2-Bed Flat, Lekki Phase 1"></label>' +
       '<div class="f-2"><label class="fld">State<select class="in" id="lfState">' + Object.keys(AREAS).map(s => '<option>' + s + '</option>').join('') + '</select></label><label class="fld">City<select class="in" id="lfCity"></select></label></div>' +
       '<div class="f-2"><label class="fld">Area<select class="in" id="lfArea"></select></label><label class="fld">Street / estate <span class="hint">(optional)</span><input class="in" id="lfStreet" placeholder="Shown only after booking"></label></div>' +
+      '<div id="lfPriceWrap" class="f-2"><label class="fld"><span id="lfPriceLbl">Price (₦ per month)</span><input class="in mono" id="lfPrice" inputmode="numeric" placeholder="e.g. 180000"></label><div></div></div>' +
       '<div id="lfDyn"></div>' +
-      '<div class="f-2"><label class="fld"><span id="lfPriceLbl">Price (₦ per month)</span><input class="in mono" id="lfPrice" inputmode="numeric" placeholder="e.g. 180000"></label><label class="fld">Photos <span class="hint">(at least 5 recommended)</span><input class="in" type="file" id="lfPhotos" accept="image/*" multiple></label></div>' +
-      '<label class="fld">Walkthrough video link <span class="hint">(optional now, required before it goes live)</span><input class="in" id="lfVideo" placeholder="https://"></label>' +
-      '<label class="fld">Description<textarea class="in" id="lfDesc" placeholder="What makes this property special?"></textarea></label>' +
+      '<div class="f-2"><label class="fld">Photos <span class="hint">(at least 5 recommended, up to 12)</span><input class="in" type="file" id="lfPhotos" accept="image/*" multiple></label><label class="fld">Walkthrough video <span class="hint">(optional, up to 100 MB)</span><input class="in" type="file" id="lfVideoFile" accept="video/*"></label></div>' +
+      '<label class="fld">Title / ownership documents <span class="hint" id="lfDocHint">(optional, PDF or photo. Shown only to MainTown’s legal team)</span><input class="in" type="file" id="lfDocs" accept="image/*,.pdf" multiple></label>' +
+      '<label class="fld hidden" id="lfAboutWrap"><span id="lfAboutLbl">About this space</span><textarea class="in" id="lfDesc" placeholder="What makes it special?"></textarea></label>' +
       (isAgent() ? '<div style="border-top:1px solid var(--line-soft);padding-top:14px"><label class="fld">Landlord / owner</label><div class="seg" id="lfMode"><button type="button" data-lf-mode="existing" class="on">Existing landlord</button><button type="button" data-lf-mode="new">New landlord</button></div>' +
         '<div class="f" style="margin-top:12px"><div class="f-2"><label class="fld">Full name<input class="in" id="lfLName"></label><label class="fld">Phone<input class="in" id="lfLPhone" type="tel" placeholder="080X XXX XXXX"></label></div><label class="fld">Email<input class="in" id="lfLEmail" type="email"></label><p style="margin:0;color:var(--faint);font-size:12px">The landlord adds their own payout account and ID when they activate their account. You never enter bank details for them.</p></div></div>' : '') +
-      '</div>', foot: '<button class="btn" data-act="modal-close">Cancel</button><button class="btn primary" data-act="lf-submit">' + (isAgent() ? 'Submit for landlord verification' : 'Submit for review') + '</button>' });
+      '</div>', foot: '<button class="btn" data-act="modal-close">Cancel</button><button class="btn primary" data-act="lf-submit">' + 'Submit for review' + '</button>' });
     fillCities(); dynFields(); return w;
   }
   function fillCities() { $('#lfCity').innerHTML = Object.keys(AREAS[$('#lfState').value]).map(c => '<option>' + c + '</option>').join(''); fillAreas(); }
@@ -880,31 +893,116 @@
     const c = LF.cat, el = $('#lfDyn'), lbl = $('#lfPriceLbl');
     const sel = (id, label, opts) => '<label class="fld">' + label + '<select class="in" id="' + id + '">' + opts.map(o => '<option>' + o + '</option>').join('') + '</select></label>';
     const num = (id, label, ph) => '<label class="fld">' + label + '<input class="in" id="' + id + '" inputmode="numeric" placeholder="' + (ph || '') + '"></label>';
+    const POWER = ['Public grid', 'Grid + generator', 'Grid + inverter/solar', 'Generator only'];
     let h = '';
-    if (c === 'rent') { h = '<div class="f-2">' + num('lfBeds', 'Bedrooms', '2') + num('lfBaths', 'Bathrooms', '2') + '</div>' + sel('lfRentPlan', 'Rent plan', ['Monthly rent', 'Annual rent']); lbl.textContent = 'Rent (₦ per month)'; }
-    if (c === 'shortlet') { h = '<div class="f-2">' + num('lfBeds', 'Bedrooms', '1') + num('lfGuests', 'Max guests', '2') + '</div>' + num('lfCaution', 'Caution deposit (₦, optional)', '50000'); lbl.textContent = 'Price (₦ per night)'; }
-    if (c === 'commercial') { h = '<div class="f-2">' + sel('lfCType', 'Type', ['Shop', 'Office', 'Warehouse', 'Plaza unit', 'Other']) + num('lfSqm', 'Size (sqm)', '600') + '</div>'; lbl.textContent = 'Annual rent (₦ per year)'; }
-    if (c === 'event') { h = '<div class="f-2">' + num('lfCap', 'Capacity (guests)', '300') + num('lfParking', 'Parking spaces', '40') + '</div>'; lbl.textContent = 'Price (₦ per event day)'; }
+    $('#lfAboutWrap').classList.toggle('hidden', !(c === 'shortlet' || c === 'event'));
+    $('#lfAboutLbl').textContent = c === 'event' ? 'About this venue' : 'About this space';
+    $('#lfPriceWrap').classList.toggle('hidden', c === 'land' && false);
+    if (c === 'rent') { h = '<div class="f-2">' + num('lfBeds', 'Bedrooms', '2') + num('lfAnnual', 'Annual rent (₦, optional)', '') + '</div><div class="f-2">' + num('lfCaution', 'Caution fee (₦, optional)', '') + num('lfSvc', 'Service charge (₦, optional)', '') + '</div>' + sel('lfSvcFreq', 'Service charge is paid', ['Yearly', 'Monthly']); lbl.textContent = 'Rent (₦ per month)'; }
+    if (c === 'shortlet') { h = '<div class="f-2">' + num('lfBeds', 'Bedrooms', '1') + num('lfMinStay', 'Minimum stay (nights)', '1') + '</div><div class="f-2">' + num('lfClean', 'Cleaning fee (₦, optional)', '') + num('lfCaution', 'Caution fee (₦, optional)', '') + '</div>'; lbl.textContent = 'Nightly rate (₦)'; }
+    if (c === 'commercial') { h = '<div class="f-2">' + sel('lfCType', 'Type', ['Shop', 'Office', 'Warehouse', 'Event Hall']) + num('lfSqm', 'Size (sqm)', '600') + '</div><div class="f-2">' + num('lfPark', 'Parking spaces', '') + sel('lfPower', 'Power supply', POWER) + '</div>'; lbl.textContent = 'Annual rent (₦, paid in full upfront)'; }
+    if (c === 'event') { h = '<div class="f-2">' + sel('lfVenue', 'Venue type', ['Banquet / Event Hall', 'Conference Hall', 'Outdoor Garden / Lawn', 'Rooftop / Terrace', 'Hotel Ballroom', 'Multi-purpose Hall']) + num('lfCap', 'Maximum guests', '300') + '</div><div class="f-2">' + num('lfPark', 'Parking spaces', '') + sel('lfPower', 'Power supply', POWER) + '</div>'; lbl.textContent = 'Base price per hour (₦)'; }
     if (c === 'land') {
-      h = '<div><label class="fld">What are you selling?</label><div class="seg" id="lfKind"><button type="button" data-lf-kind="Land only" class="' + (LF.kind === 'Land only' ? 'on' : '') + '">Land only</button><button type="button" data-lf-kind="House / Building" class="' + (LF.kind === 'House / Building' ? 'on' : '') + '">House / Building</button></div></div>' +
-        (LF.kind === 'Land only' ? '<div class="f-2">' + num('lfPlot', 'Plot size (sqm)', '450') + sel('lfUse', 'Land use', ['Residential', 'Commercial', 'Mixed use', 'Agricultural']) + '</div>'
-          : sel('lfHType', 'House type', ['Bungalow', 'Duplex', 'Detached duplex', 'Semi-detached', 'Terrace', 'Block of flats']) + '<div class="f-2">' + num('lfBeds', 'Bedrooms', '3') + num('lfBaths', 'Bathrooms', '3') + '</div>' + num('lfPlot', 'Plot size (sqm)', '600')) +
-        sel('lfPay', 'Payment options', ['Outright only', 'Outright or installment']);
-      lbl.textContent = 'Total price (₦)';
+      const house = LF.kind === 'House / Building';
+      h = '<div><label class="fld">What are you selling?</label><div class="seg" id="lfKind"><button type="button" data-lf-kind="Land only" class="' + (!house ? 'on' : '') + '">Land only</button><button type="button" data-lf-kind="House / Building" class="' + (house ? 'on' : '') + '">House / Building</button></div></div>' +
+        (house ? sel('lfHType', 'House type', ['Duplex', 'Bungalow', 'Detached House', 'Semi-Detached Duplex', 'Terrace', 'Block of Flats', 'Mansion']) + '<div class="f-2">' + num('lfBeds', 'Bedrooms', '3') + num('lfBaths', 'Bathrooms', '3') + '</div><div class="f-2">' + num('lfToilets', 'Toilets', '') + num('lfPark', 'Parking spaces', '') + '</div>' : '') +
+        '<div class="f-2">' + '<label class="fld">Plot size<input class="in" id="lfPlot" placeholder="e.g. 450 sqm"></label>' + sel('lfUse', 'Land use', ['Residential', 'Commercial', 'Mixed-Use', 'Agricultural']) + '</div>' +
+        sel('lfTitleDoc', 'Title document', ['Certificate of Occupancy (C of O)', "Governor's Consent", 'Excision', 'Gazette', 'Registered Survey', 'Deed of Assignment']) +
+        '<label class="check" style="margin:0"><input type="checkbox" id="lfInst"><span>Offer an installment plan</span></label>' +
+        '<div class="f-2" id="lfInstWrap" style="display:none">' + num('lfInstPrice', 'Installment price (₦)', '') + num('lfInstMonths', 'Duration (months)', '12') + num('lfInstDep', 'Initial deposit (₦)', '') + '</div>' +
+        sel('lfLegal', 'Deed of Assignment legal fee (paid to the owner)', ['5%', '10%']);
+      lbl.textContent = 'Outright price (₦)';
     }
-    el.innerHTML = '<div class="f">' + h + '</div>'; LF.unit = { rent: 'mo', shortlet: 'night', commercial: 'yr', event: 'night', land: 'total' }[c];
+    el.innerHTML = '<div class="f">' + h + '</div>'; LF.unit = { rent: 'mo', shortlet: 'night', commercial: 'yr', event: 'hr', land: 'total' }[c];
+    const hint = $('#lfDocHint'); if (hint) hint.textContent = c === 'land' ? '(needed for land and property. PDF or photo, shown only to MainTown’s legal team)' : '(optional, PDF or photo. Shown only to MainTown’s legal team)';
   }
-  function submitListing() {
-    const v = id => { const e = $('#' + id); return e ? e.value.trim() : ''; };
-    const title = v('lfTitle'), price = Number(v('lfPrice').replace(/[^\d]/g, ''));
+
+  // Builds the exact text format admin.html uses (rent text, fees lines), so the listing looks right on the public site.
+  const n$ = x => '₦' + Math.round(Number(x)).toLocaleString('en-US');
+  const int = id => { const e = $('#' + id); const v = e ? parseInt(String(e.value).replace(/[^\d]/g, ''), 10) : NaN; return isNaN(v) ? 0 : v; };
+  const txt = id => { const e = $('#' + id); return e ? e.value.trim() : ''; };
+  function buildFormat() {
+    const c = LF.cat, price = int('lfPrice'), fees = []; let rent = '', annual = null, beds = 0, db = c;
+    if (!price) return { err: 'Enter a valid price.' };
+    if (c === 'rent') {
+      beds = int('lfBeds'); rent = n$(price) + '/mo'; annual = int('lfAnnual') || null;
+      if (int('lfCaution')) fees.push('Caution Fee: ' + n$(int('lfCaution')));
+      if (int('lfSvc')) fees.push('Service Charge: ' + n$(int('lfSvc')) + '/' + txt('lfSvcFreq'));
+    } else if (c === 'commercial') {
+      db = 'rent'; rent = n$(price) + '/yr'; annual = price;
+      fees.push('Usage: Commercial', 'Commercial Type: ' + txt('lfCType'));
+      const sq = parseFloat(txt('lfSqm')); if (sq > 0) fees.push('Commercial Size: ' + sq + ' sqm');
+      if ($('#lfPark').value !== '') fees.push('Commercial Parking: ' + int('lfPark'));
+      fees.push('Power Supply: ' + txt('lfPower'), 'Payment Terms: Annual, paid in full upfront');
+    } else if (c === 'shortlet') {
+      db = 'short-let'; beds = int('lfBeds'); rent = n$(price) + '/night';
+      if (int('lfMinStay')) fees.push('Minimum Stay: ' + int('lfMinStay') + ' night' + (int('lfMinStay') > 1 ? 's' : ''));
+      if (int('lfClean')) fees.push('Cleaning Fee: ' + n$(int('lfClean')));
+      if (int('lfCaution')) fees.push('Caution Fee: ' + n$(int('lfCaution')));
+      const ab = txt('lfDesc').replace(/\s+/g, ' '); if (ab) fees.push('About This Space: ' + ab);
+    } else if (c === 'event') {
+      db = 'event-center'; rent = n$(price) + '/hour';
+      if (int('lfCap') < 1) return { err: 'Enter the maximum number of guests.' };
+      fees.push('Price Per Hour: ' + n$(price), 'Venue Type: ' + txt('lfVenue'), 'Capacity: ' + int('lfCap') + ' guests');
+      if ($('#lfPark').value !== '') fees.push('Parking Spaces: ' + int('lfPark'));
+      fees.push('Power Supply: ' + txt('lfPower'), 'MainTown Service Charge: 2% of hire fee (paid by the booker)');
+      const ab = txt('lfDesc').replace(/\s+/g, ' '); if (ab) fees.push('About This Venue: ' + ab);
+    } else if (c === 'land') {
+      db = 'land'; rent = n$(price); const house = LF.kind === 'House / Building';
+      const inst = $('#lfInst') && $('#lfInst').checked, ip = int('lfInstPrice'), im = int('lfInstMonths') || 12, idp = int('lfInstDep');
+      if (inst && !ip) return { err: 'Enter the installment price, or untick the installment plan.' };
+      if (inst && ip < price) return { err: 'The installment price cannot be lower than the outright price.' };
+      if (inst && idp >= ip) return { err: 'The initial deposit must be less than the installment price.' };
+      if (house) { beds = int('lfBeds'); if (int('lfBaths')) fees.push('Bathrooms: ' + int('lfBaths')); if (int('lfToilets')) fees.push('Toilets: ' + int('lfToilets')); if ($('#lfPark').value !== '') fees.push('Parking Spaces: ' + int('lfPark')); }
+      fees.push('Property Type: ' + (house ? txt('lfHType') : 'Land (Plot)'), 'Outright Price: ' + n$(price));
+      if (inst) { fees.push('Installment Price: ' + n$(ip), 'Installment Duration: ' + im + ' months'); if (idp) fees.push('Initial Deposit: ' + n$(idp)); }
+      const pct = parseInt(txt('lfLegal'), 10) || 5; fees.push('Legal Fee: ' + pct + '% (' + n$(price * pct / 100) + ')');
+      if (txt('lfPlot')) fees.push('Plot Size: ' + txt('lfPlot'));
+      fees.push('Title Document: ' + txt('lfTitleDoc'), 'Land Use: ' + txt('lfUse'));
+    }
+    return { rent, annual, beds, fees, db };
+  }
+
+  // Shrinks a photo in the browser before upload (same idea as the admin panel): max 1600px, JPEG.
+  function compressImage(file) {
+    return new Promise(res => {
+      if (!/^image\//.test(file.type) || file.size < 400 * 1024) return res(file);
+      const img = new Image(), u = URL.createObjectURL(file);
+      img.onload = () => { const k = Math.min(1, 1600 / Math.max(img.width, img.height)), cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); URL.revokeObjectURL(u); cv.toBlob(b => res(b ? new File([b], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : file), 'image/jpeg', 0.82); };
+      img.onerror = () => { URL.revokeObjectURL(u); res(file); }; img.src = u;
+    });
+  }
+  const safeName = n => String(n).replace(/[^a-zA-Z0-9.\-_]/g, '-').slice(-80);
+
+  async function submitListing() {
+    const title = txt('lfTitle');
     if (title.length < 4) return toast('Add a title for the listing.');
-    if (!price) return toast('Enter a valid price.');
-    if (isAgent() && (v('lfLName').length < 2 || v('lfLPhone').replace(/\D/g, '').length < 10)) return toast('Add the landlord’s name and phone number.');
-    if (!Api.need()) return;
-    const area = (v('lfArea') === 'Other' ? '' : v('lfArea') + ', ') + v('lfCity');
-    const unit = (LF.cat === 'rent' && v('lfRentPlan') === 'Annual rent') ? 'yr' : LF.unit;
-    const l = { id: 'L' + Date.now(), title, category: LF.cat, area, price, unit, status: isAgent() ? 'Pending Verification' : 'Under Review', agentListed: isAgent(), agentName: isAgent() ? S.profile.name : '', ownerName: isAgent() ? v('lfLName') : S.profile.name, img: '', bedrooms: v('lfBeds') || undefined };
-    if (LF.cat === 'land') { l.kind = LF.kind; if (LF.kind === 'House / Building') l.houseType = v('lfHType'); l.paymentMode = v('lfPay'); }
+    const f = buildFormat(); if (f.err) return toast(f.err);
+    if (isAgent() && (txt('lfLName').length < 2 || txt('lfLPhone').replace(/\D/g, '').length < 10)) return toast('Add the landlord’s name and phone number.');
+    const photos = Array.from($('#lfPhotos').files || []), docs = Array.from($('#lfDocs').files || []), vid = ($('#lfVideoFile').files || [])[0];
+    if (photos.length > 12) return toast('Choose up to 12 photos.');
+    if (vid && vid.size > 100 * 1024 * 1024) return toast('The video is over 100 MB. Choose a shorter clip.');
+    const area = (txt('lfArea') === 'Other' ? '' : txt('lfArea') + ', ') + txt('lfCity');
+    const btn = $('[data-act="lf-submit"]'), setBusy = m => { if (btn) { btn.disabled = !!m; btn.textContent = m || (isAgent() ? 'Submit for review' : 'Submit for review'); } };
+
+    if (!IS_DEMO) {
+      // Real account: photos/docs go to storage, then ONE call creates the listing as "pending" for admin approval.
+      try {
+        const uid = USER.id, stamp = Date.now(), images = [], documents = []; let video = null;
+        for (let i = 0; i < photos.length; i++) { setBusy('Uploading photo ' + (i + 1) + ' of ' + photos.length + '…'); const ph = await compressImage(photos[i]), path = 'host/' + uid + '/' + stamp + '-' + i + '-' + safeName(ph.name); const up = await sb.storage.from('listing-media').upload(path, ph, { cacheControl: '31536000', upsert: false }); if (up.error) throw up.error; images.push(sb.storage.from('listing-media').getPublicUrl(path).data.publicUrl); }
+        if (vid) { setBusy('Uploading video…'); const path = 'host/' + uid + '/' + stamp + '-v-' + safeName(vid.name); const up = await sb.storage.from('listing-media').upload(path, vid, { cacheControl: '31536000', upsert: false }); if (up.error) throw up.error; video = sb.storage.from('listing-media').getPublicUrl(path).data.publicUrl; }
+        for (let i = 0; i < docs.length; i++) { setBusy('Uploading document ' + (i + 1) + ' of ' + docs.length + '…'); const path = uid + '/' + stamp + '-d' + i + '-' + safeName(docs[i].name); const up = await sb.storage.from('listing-docs').upload(path, docs[i], { upsert: false }); if (up.error) throw up.error; documents.push({ label: LF.cat === 'land' ? 'Title / ownership document' : 'Ownership document', name: docs[i].name, path, kind: 'document' }); }
+        setBusy('Submitting…');
+        const host = isAgent() ? { name: txt('lfLName'), phone: txt('lfLPhone'), email: txt('lfLEmail') } : { name: S.profile.name, phone: '', email: S.profile.email };
+        const r = await sb.rpc('dashboard_submit_listing', { p: { category: f.db, title, location: area, city: txt('lfCity'), beds: f.beds, rent: f.rent, annual_rent: f.annual, fees: f.fees, features: [], images, video, documents, host } });
+        if (r.error) throw r.error;
+        closeModal(); toast('Submitted. It goes live once MainTown approves it.'); await Api.load(); TAB.listings = 'pending'; go('listings'); rerender(); refreshNav();
+      } catch (e) { setBusy(null); toast('Could not submit: ' + (e && e.message ? e.message : 'please try again')); }
+      return;
+    }
+    // Sample preview: local only
+    const l = { id: 'L' + Date.now(), title, category: LF.cat, area, price: int('lfPrice'), unit: LF.unit === 'hr' ? 'night' : LF.unit, status: isAgent() ? 'Pending Verification' : 'Under Review', agentListed: isAgent(), agentName: isAgent() ? S.profile.name : '', ownerName: isAgent() ? txt('lfLName') : S.profile.name, img: '' };
+    if (LF.cat === 'land') { l.kind = LF.kind; if (LF.kind === 'House / Building') l.houseType = txt('lfHType'); }
     S.listings.unshift(l); S.notifications.unshift({ id: 'N' + Date.now(), title: 'Listing submitted', body: title + (isAgent() ? ' is waiting for the landlord’s verification.' : ' is with MainTown for review.'), ts: Date.now(), unread: true, route: 'listings' });
     closeModal(); toast('Listing submitted.'); TAB.listings = 'pending'; go('listings'); rerender(); refreshNav();
   }
@@ -956,7 +1054,11 @@
     'new-listing': () => { if (!S.profile.activated && S.profile.managed && !isAgent()) return toast('Activate your account first.'); newListingForm(); },
     'lf-submit': submitListing,
     'del-listing': id => { const l = getL(id); if (!l || l.status !== 'Live') return; modal({ title: 'Delete this listing?', sub: l.title, body: '<p style="color:var(--muted);margin:0">It will be removed from the site. You can only delete a listing while it is live and nobody has paid.</p>', foot: '<button class="btn" data-act="modal-close">Keep it</button><button class="btn bad" data-act="del-confirm" data-id="' + id + '">Delete listing</button>' }); },
-    'del-confirm': id => { if (!Api.need()) return; S.listings = S.listings.filter(l => l.id !== id); closeModal(); toast('Listing deleted.'); rerender(); },
+    'del-confirm': async id => {
+      if (IS_DEMO) { S.listings = S.listings.filter(l => l.id !== id); closeModal(); toast('Listing deleted.'); return rerender(); }
+      try { const r = await sb.rpc('dashboard_delete_listing', { p_id: id }); if (r.error) throw r.error; if (!r.data) { closeModal(); return toast('It can’t be deleted now. Only live listings with no payment in progress can be removed.'); } await Api.load(); closeModal(); toast('Listing deleted.'); rerender(); }
+      catch (e) { toast('Could not delete: ' + (e && e.message || 'try again')); }
+    },
     'verify-open': id => { const l = getL(id); if (!l) return; modal({ title: 'Verify this listing', sub: 'Submitted by ' + (l.agentName || 'your agent'), body: '<div class="card pad"><b>' + esc(l.title) + '</b><div style="color:var(--muted);margin-top:4px">' + esc(l.area) + ' · ' + CAT[l.category] + '</div><div style="font:700 22px Space Grotesk;margin-top:8px">' + money(l.price) + ' <span style="font:500 13px Inter;color:var(--muted)">' + UNIT[l.unit] + '</span></div></div><p style="color:var(--muted);font-size:12.5px;margin:12px 0 0">Confirm you own this property, the price is right and the agent may list it for you. MainTown reviews it next.</p>', foot: '<button class="btn bad" data-act="verify-decline" data-id="' + id + '">Decline</button><button class="btn primary" data-act="verify-ok" data-id="' + id + '">Yes, verify</button>' }); },
     'verify-ok': id => { if (!Api.need()) return; const l = getL(id); l.status = 'Under Review'; addNotif('Listing verified', l.title + ' is now with MainTown for review.', 'listings'); closeModal(); toast('Verified. Sent to MainTown review.'); rerender(); },
     'verify-decline': id => { if (!Api.need()) return; const l = getL(id); l.status = 'Declined'; closeModal(); toast('Listing declined.'); rerender(); },
@@ -1019,7 +1121,7 @@
     const a = t.closest('[data-act]'); if (!a || a.disabled) return;
     const fn = ACT[a.dataset.act]; if (fn) fn(a.dataset.id);
   });
-  document.addEventListener('change', e => { if (e.target.id === 'lfState') fillCities(); if (e.target.id === 'lfCity') fillAreas(); });
+  document.addEventListener('change', e => { if (e.target.id === 'lfInst') $('#lfInstWrap').style.display = e.target.checked ? '' : 'none'; if (e.target.id === 'lfState') fillCities(); if (e.target.id === 'lfCity') fillAreas(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
   boot();
