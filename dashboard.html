@@ -454,6 +454,13 @@
         });
         S.listingsLive = true;
       } catch (e) { S.listingsLive = false; }
+      // Inspections: same inspection_events the app reports into (see 16_dashboard_inspections_read.sql). Read-only for now.
+      try {
+        const ri = await sb.rpc('dashboard_my_inspections');
+        if (ri.error) throw ri.error;
+        S.inspections = Array.isArray(ri.data) ? ri.data : [];
+        S.inspectionsLive = true;
+      } catch (e) { S.inspectionsLive = false; }
       S.profile = { name: PROFILE.name, email: PROFILE.email, bank: '', kyc: '', managed: false, activated: true, enterprise: null };
     },
     live() { return IS_DEMO; },                       // true when write actions work
@@ -646,7 +653,7 @@
     const tab = TAB.insp || 'open';
     const f = { open: i => ['Pending Approval', 'Confirmed'].includes(i.status), done: i => i.status === 'Conducted', other: i => !['Pending Approval', 'Confirmed', 'Conducted'].includes(i.status), all: () => true };
     const rows = S.inspections.filter(f[tab]);
-    return head(isAgent() ? 'Walkthroughs' : 'Inspections', 'Approve requests, mark visits as conducted and message the person. Chat opens once a request is confirmed.') + notLive() +
+    return head(isAgent() ? 'Walkthroughs' : 'Inspections', 'Approve requests, mark visits as conducted and message the person. Chat opens once a request is confirmed.') + (IS_DEMO || S.inspectionsLive ? (IS_DEMO ? '' : '<div class="notice">' + ico('info') + '<div>Showing the requests from your app activity. You can confirm or decline here and the app updates too. Marking a visit as conducted and chat are being switched on next.</div></div>') : notLive()) +
       '<div class="tabs">' + [['open', 'Open'], ['done', 'Conducted'], ['other', 'Declined & cancelled'], ['all', 'All']].map(t => '<button class="' + (tab === t[0] ? 'on' : '') + '" data-tab="insp:' + t[0] + '">' + t[1] + '<i>' + S.inspections.filter(f[t[0]]).length + '</i></button>').join('') + '</div>' +
       '<div class="card"><div class="rows">' + (rows.length ? rows.map(i => {
         const pill = inspPill(i.status), word = i.type === 'LAND_SALE' ? 'Client' : 'Tenant', locked = ['Pending Approval', 'Declined'].includes(i.status);
@@ -1062,8 +1069,20 @@
     'verify-open': id => { const l = getL(id); if (!l) return; modal({ title: 'Verify this listing', sub: 'Submitted by ' + (l.agentName || 'your agent'), body: '<div class="card pad"><b>' + esc(l.title) + '</b><div style="color:var(--muted);margin-top:4px">' + esc(l.area) + ' · ' + CAT[l.category] + '</div><div style="font:700 22px Space Grotesk;margin-top:8px">' + money(l.price) + ' <span style="font:500 13px Inter;color:var(--muted)">' + UNIT[l.unit] + '</span></div></div><p style="color:var(--muted);font-size:12.5px;margin:12px 0 0">Confirm you own this property, the price is right and the agent may list it for you. MainTown reviews it next.</p>', foot: '<button class="btn bad" data-act="verify-decline" data-id="' + id + '">Decline</button><button class="btn primary" data-act="verify-ok" data-id="' + id + '">Yes, verify</button>' }); },
     'verify-ok': id => { if (!Api.need()) return; const l = getL(id); l.status = 'Under Review'; addNotif('Listing verified', l.title + ' is now with MainTown for review.', 'listings'); closeModal(); toast('Verified. Sent to MainTown review.'); rerender(); },
     'verify-decline': id => { if (!Api.need()) return; const l = getL(id); l.status = 'Declined'; closeModal(); toast('Listing declined.'); rerender(); },
-    'insp-confirm': id => { if (!Api.need()) return; const i = getI(id); i.status = 'Confirmed'; addNotif('Inspection confirmed', i.person + ' · ' + i.listingTitle, 'inspections'); toast('Confirmed. Chat is now open.'); rerender(); },
-    'insp-decline': id => { if (!Api.need()) return; getI(id).status = 'Declined'; toast('Request declined.'); rerender(); },
+    'insp-confirm': async id => {
+      const i = getI(id);
+      if (IS_DEMO) { i.status = 'Confirmed'; addNotif('Inspection confirmed', i.person + ' · ' + i.listingTitle, 'inspections'); toast('Confirmed. Chat is now open.'); rerender(); return; }
+      if (!S.inspectionsLive) return Api.need();
+      try { const r = await sb.rpc('dashboard_decide_inspection', { p_entity: id, p_decision: 'confirm' }); if (r.error) throw r.error; i.status = 'Confirmed'; toast('Confirmed. It will show in your app too.'); rerender(); }
+      catch (e) { toast('Could not confirm: ' + (e && e.message || 'try again')); }
+    },
+    'insp-decline': async id => {
+      const i = getI(id);
+      if (IS_DEMO) { i.status = 'Declined'; toast('Request declined.'); rerender(); return; }
+      if (!S.inspectionsLive) return Api.need();
+      try { const r = await sb.rpc('dashboard_decide_inspection', { p_entity: id, p_decision: 'decline' }); if (r.error) throw r.error; i.status = 'Declined'; toast('Request declined.'); rerender(); }
+      catch (e) { toast('Could not decline: ' + (e && e.message || 'try again')); }
+    },
     'insp-done': id => { if (!Api.need()) return; getI(id).status = 'Conducted'; toast('Marked as conducted.'); rerender(); },
     'insp-chat': id => openChat('i:' + id, getI(id).person, getI(id).listingTitle),
     'book-chat': id => { const b = S.bookings.find(x => x.id === id); openChat('b:' + id, b.guest, b.listingTitle); },
