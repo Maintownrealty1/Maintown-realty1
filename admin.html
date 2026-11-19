@@ -1841,6 +1841,12 @@
   };
   let listingSourceFilter = 'all';
   const sourceOf = l => (l && l.source === 'app_prototype') ? 'app_prototype' : 'web_manual';
+  // Listings a host submits from the website dashboard keep source 'web_manual' but carry a reference: Agt-19001 (agent) or LnLd-19002 (landlord).
+  // They go through Legal Review exactly like app listings.
+  const WEB_HOST_REF = /^(Agt|LnLd)-\d+$/;
+  const isWebHostRef = l => !!(l && l.source !== 'app_prototype' && WEB_HOST_REF.test(String(l.prototype_ref || '')));
+  const refChip = ref => WEB_HOST_REF.test(String(ref || ''))
+    ? `<span class="ml-1 text-[10px] font-mono font-bold border px-1.5 py-0.5 rounded text-emerald-300 bg-emerald-500/10 border-emerald-500/30" title="Reference of a listing submitted from the website dashboard">${String(ref).replace(/[<>&"]/g, '')}</span>` : '';
   const escHtml = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   // Only real, public http(s) URLs can ever render on the live site. blob:/data:/file: URLs are
   // device-local and are the reason media looked "uploaded" here but never showed on the feed.
@@ -1907,8 +1913,8 @@
         : `<div class="w-12 h-12 rounded-lg shrink-0 bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-500 text-center leading-tight">${siteFiles ? 'Site file' : 'No img'}</div>`;
       const hidden = ['unavailable', 'closed'].includes(l.status);
       const isPending = l.status === 'pending', isClosed = l.status === 'closed';
-      const isProto = sourceOf(l) === 'app_prototype';
-      const reviewBtn = isProto ? `<button class="review-docs-btn btn-secondary shrink-0" data-id="${l.id}">Host &amp; docs</button>` : '';
+      const isProto = sourceOf(l) === 'app_prototype' || isWebHostRef(l);   // submitted by a host (app or website): only the host edits, Legal Review approves
+      const reviewBtn = '';   // host and document records live in Legal Review only, not in this feed
       let controls;
       if (isPending && isProto) {
         controls = `${reviewBtn}<span class="shrink-0 text-[11px] px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">Approve in Legal Review</span>`;
@@ -1938,7 +1944,7 @@
           <p class="text-sm font-semibold text-white truncate">
             ${escHtml(l.title)}
             <span class="ml-2 text-[10px] font-mono font-bold uppercase text-brand-300 bg-brand-500/10 border border-brand-500/30 px-1.5 py-0.5 rounded">${categoryLabel}</span>
-            <span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded ${src.cls}" title="Where this listing was created">${src.label}</span>
+            <span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded ${src.cls}" title="Where this listing was created">${src.label}</span>${refChip(l.prototype_ref)}
             ${st ? `<span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded ${st.cls}">${st.label}</span>` : ''}
             ${(l.payment_hold_until && new Date(l.payment_hold_until).getTime() > Date.now()) ? `<span class="ml-1 text-[10px] font-mono font-bold uppercase border px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border-amber-500/30" title="A guest is completing checkout. 15-minute hold, held by ${escHtml(l.held_by_user_id || 'a guest')}">Checkout hold · ${Math.max(1, Math.ceil((new Date(l.payment_hold_until).getTime() - Date.now()) / 60000))}m</span>` : ''}
           </p>
@@ -2143,7 +2149,7 @@
     const editBtn = e.target.closest('.edit-listing-btn');
     if (editBtn) {
       const listing = listingsCache.find(l => String(l.id) === String(editBtn.dataset.id));
-      if (listing && sourceOf(listing) === 'app_prototype') { showToast('Listings from the app can only be changed by the host. Use "Send back for review" instead.', true); return; }
+      if (listing && (sourceOf(listing) === 'app_prototype' || isWebHostRef(listing))) { showToast('Listings submitted by hosts can only be changed by the host. Use "Send back for review" instead.', true); return; }
       if (listing) startEdit(listing);
       return;
     }
@@ -3331,7 +3337,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
             <p class="text-xs text-slate-400 mt-0.5">${escapeQuickFix(where)}${price ? ' · <span class="text-slate-200">' + escapeQuickFix(price) + '</span>' : ''}</p></div>
           <span class="text-[11px] text-slate-500 whitespace-nowrap">${inspTs(r.created_at)}</span>
         </div>
-        <div class="flex items-center gap-1.5 flex-wrap mt-2">${lrStatusChip(r.status)}<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300 capitalize">${escapeQuickFix(r.listing_type || 'property')}</span>${units ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">' + escapeQuickFix(units) + '</span>' : ''}${r.attempt > 1 ? `<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">Resubmission ${r.attempt}</span>` : ''}</div>
+        <div class="flex items-center gap-1.5 flex-wrap mt-2">${lrStatusChip(r.status)}${refChip(r.listing_ref)}<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300 capitalize">${escapeQuickFix(r.listing_type || 'property')}</span>${units ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">' + escapeQuickFix(units) + '</span>' : ''}${r.attempt > 1 ? `<span class="text-[11px] px-2 py-0.5 rounded-full border border-slate-600/50 text-slate-300">Resubmission ${r.attempt}</span>` : ''}</div>
       </div>
       <div class="px-4 pb-3 space-y-3">
         ${lrChainHtml(r)}
@@ -3511,7 +3517,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       const docs = (Array.isArray(sub.documents) ? sub.documents : []);
       const docBtns = docs.length ? docs.map(d => '<button type="button" class="btn-secondary !py-1 !text-xs" data-lr-lopen="' + escapeQuickFix(d.path || '') + '">' + escapeQuickFix(d.label || d.name || 'Document') + '</button>').join(' ') : '<span class="text-xs text-amber-300">No documents were uploaded with this listing.</span>';
       return '<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">'
-        + '<div class="flex items-center justify-between gap-2 flex-wrap"><div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white font-medium">' + escapeQuickFix(l.title || 'Listing') + '</span>' + lrStatusChip('pending') + '<span class="text-[11px] text-slate-400">' + escapeQuickFix(cat[l.category] || l.category || '') + '</span></div><span class="text-xs text-slate-400">' + inspTs(l.created_at) + '</span></div>'
+        + '<div class="flex items-center justify-between gap-2 flex-wrap"><div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-white font-medium">' + escapeQuickFix(l.title || 'Listing') + '</span>' + lrStatusChip('pending') + refChip(l.prototype_ref) + '<span class="text-[11px] text-slate-400">' + escapeQuickFix(cat[l.category] || l.category || '') + '</span></div><span class="text-xs text-slate-400">' + inspTs(l.created_at) + '</span></div>'
         + '<p class="text-xs text-slate-400 mt-1">' + escapeQuickFix(l.location || '') + (l.rent ? ' · ' + escapeQuickFix(l.rent) : '') + (l.beds ? ' · ' + escapeQuickFix(l.beds) + ' bed' : '') + '</p>'
         + lrMediaHtml(l)
         + (fees.length ? '<div class="mt-2 text-[11px] text-slate-300 grid sm:grid-cols-2 gap-x-4">' + fees.map(t => '<span>' + escapeQuickFix(t) + '</span>').join('') + '</div>' : '')
