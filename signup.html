@@ -542,7 +542,7 @@
   // ==================================================================
   const SUPABASE_URL = 'https://obtggomfwvravjcnypid.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_GaTnU4FmPc2slbn8BisXXg_DmxH1vl8';
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
   const ONBOARDING_BUCKET = 'onboarding-media';
 
   const kycContent = {
@@ -1173,5 +1173,7 @@
   })();
 </script>
 
+<script src="./mt-member.js"></script>
+<script>try{if(window.MtMember&&typeof sb!=='undefined')MtMember.init(sb)}catch(e){}</script>
 </body>
 </html>
