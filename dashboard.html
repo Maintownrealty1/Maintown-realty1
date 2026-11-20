@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <script src="./mt-member.js"></script>
+<script src="./mt-partner.js"></script>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-B19N3LX04H"></script>
 <script>
@@ -537,6 +538,7 @@
       PROFILE = { name: (row && row.full_name) || meta.full_name || meta.name || String(u.email || '').split('@')[0] || 'Member', email: u.email || '', role, avatar: (row && row.avatar_url) || '', phone: (row && row.phone) || '' };
       if (!['landlord', 'agent'].includes(role)) return showGate(role === 'tenant' ? 'tenant' : 'norole');
       ROLE = role; IS_DEMO = false;
+      try { const cr = await sb.rpc('get_my_profile_card'); if (!cr.error && cr.data && cr.data.onboarding_completed === false) return showOnboarding(role); } catch (e) {}
       try { localStorage.setItem(MEMBER_CACHE, JSON.stringify({ id: u.id, email: u.email || '', name: PROFILE.name, role, avatar: PROFILE.avatar || '' })); } catch (e) {}
       if (sb) mtKeepAlive(sb);
       setTimeout(() => { try { refreshThreads(); } catch (e) {} }, 2500); setInterval(() => { if (document.visibilityState === 'visible') { try { refreshThreads(); } catch (e) {} } }, 30000);
@@ -546,6 +548,58 @@
     TAB = {}; renderChrome(); route();
     window.addEventListener('hashchange', route);
   }
+
+  /* New hosts who signed up on the website finish onboarding here before the dashboard opens. Hosts already onboarded in the app never see this. */
+  let ONB = { step: 1, a1: false, a2: false, selfie: null };
+  function showOnboarding(role) {
+    ONB.role = role;
+    $('#shell').classList.add('hidden'); $('#tbRight').innerHTML = '';
+    const g = $('#gate'); g.classList.remove('hidden');
+    const k = role === 'agent' ? 'agent' : 'landlord', C = window.MT_CONTENT, step = ONB.step;
+    const bar = [1, 2, 3].map(n => '<span style="flex:1;height:4px;border-radius:4px;background:' + (n <= step ? 'var(--brand)' : 'var(--line, #e5e7eb)') + '"></span>').join('');
+    let title, body, foot;
+    if (step === 1) {
+      title = 'Partnership benefits & terms';
+      body = '<p style="color:var(--muted);margin:0 0 12px">How you earn on MainTown as ' + (k === 'agent' ? 'an agent' : 'a landlord') + '.</p>' + partnerHtml(k) + '<label style="display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-size:13px"><input type="checkbox" id="onbA1" ' + (ONB.a1 ? 'checked' : '') + ' style="margin-top:3px"><span>I have read and understood the benefits and the commission terms.</span></label>';
+      foot = '<button class="btn primary" data-act="onb-next" ' + (ONB.a1 ? '' : 'disabled') + '>Continue</button>';
+    } else if (step === 2) {
+      title = 'MainTown ' + (k === 'agent' ? 'agent' : 'landlord') + ' agreement';
+      body = '<div style="max-height:300px;overflow:auto;border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:12px;font-size:13px;line-height:1.55">' + C.legal[k].sections.map(s => '<h4 style="margin:10px 0 4px;font-size:13.5px">' + s.title + '</h4><p style="margin:0;color:var(--muted)">' + s.body + '</p>').join('') + '</div><label style="display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-size:13px"><input type="checkbox" id="onbA2" ' + (ONB.a2 ? 'checked' : '') + ' style="margin-top:3px"><span>I agree to the MainTown ' + (k === 'agent' ? 'Agent' : 'Landlord') + ' Agreement above.</span></label>';
+      foot = '<button class="btn" data-act="onb-back">Back</button> <button class="btn primary" data-act="onb-next" ' + (ONB.a2 ? '' : 'disabled') + '>Continue</button>';
+    } else {
+      title = 'Verify your identity';
+      body = '<p style="color:var(--muted);margin:0 0 12px">One quick check. We keep only the last 4 digits of your NIN.</p><label class="fld">NIN (National Identification Number)<input class="in" id="onbNin" inputmode="numeric" maxlength="11" placeholder="11-digit NIN" autocomplete="off"><span class="hint">Dial *346# on your registered phone to get your NIN.</span></label>' +
+        '<label class="fld" style="margin-top:12px">Live selfie<input type="file" id="onbSelfie" accept="image/*" capture="user"><span class="hint">Take a clear photo of your face. It is only seen by MainTown’s verification team.</span></label><div id="onbPrev" style="margin-top:8px"></div>';
+      foot = '<button class="btn" data-act="onb-back">Back</button> <button class="btn primary" data-act="onb-finish">Finish and open my dashboard</button>';
+    }
+    g.innerHTML = '<div class="card" style="max-width:560px;text-align:left"><div style="display:flex;gap:6px;margin-bottom:14px">' + bar + '</div><div style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em">Step ' + step + ' of 3</div><h2 style="margin:4px 0 14px">' + title + '</h2>' + body + '<div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">' + foot + '</div></div>';
+    icons();
+  }
+  document.addEventListener('change', e => {
+    if (e.target.id === 'onbA1') { ONB.a1 = e.target.checked; const b = $('[data-act="onb-next"]'); if (b) b.disabled = !ONB.a1; }
+    if (e.target.id === 'onbA2') { ONB.a2 = e.target.checked; const b = $('[data-act="onb-next"]'); if (b) b.disabled = !ONB.a2; }
+    if (e.target.id === 'onbSelfie') { const f = (e.target.files || [])[0]; ONB.selfie = f || null; const pv = $('#onbPrev'); if (pv) pv.innerHTML = f ? '<img alt="" style="width:84px;height:84px;object-fit:cover;border-radius:50%" src="' + URL.createObjectURL(f) + '">' : ''; }
+  });
+  document.addEventListener('input', e => { if (e.target.id === 'onbNin') e.target.value = e.target.value.replace(/\D/g, '').slice(0, 11); });
+  document.addEventListener('click', async e => {
+    const b = e.target.closest && e.target.closest('[data-act^="onb-"]'); if (!b) return;
+    const a = b.dataset.act;
+    if (a === 'onb-next') { ONB.step = Math.min(3, ONB.step + 1); showOnboarding(ONB.role); }
+    else if (a === 'onb-back') { ONB.step = Math.max(1, ONB.step - 1); showOnboarding(ONB.role); }
+    else if (a === 'onb-finish') {
+      const nin = ($('#onbNin').value || '').trim();
+      if (!/^\d{11}$/.test(nin)) return toast('Enter your 11-digit NIN.');
+      if (!ONB.selfie) return toast('Take your live selfie.');
+      b.disabled = true; b.textContent = 'Saving…';
+      try {
+        const small = await new Promise((res, rej) => { const im = new Image(), u = URL.createObjectURL(ONB.selfie); im.onload = () => { const k = Math.min(1, 900 / Math.max(im.width, im.height)), cv = document.createElement('canvas'); cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k); cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); URL.revokeObjectURL(u); cv.toBlob(x => x ? res(x) : rej(new Error('Could not read that photo.')), 'image/jpeg', 0.85); }; im.onerror = () => rej(new Error('Could not read that photo.')); im.src = u; });
+        const sess = await mtGetSession(sb), uid = sess.user.id, path = uid + '/kyc-selfie-' + Date.now() + '.jpg';
+        const up = await sb.storage.from('listing-docs').upload(path, small, { contentType: 'image/jpeg', upsert: false }); if (up.error) throw up.error;
+        const r = await sb.rpc('dashboard_complete_onboarding', { p_nin: nin, p_selfie_path: path }); if (r.error) throw r.error;
+        location.reload();
+      } catch (err) { b.disabled = false; b.textContent = 'Finish and open my dashboard'; toast((err && err.message) || 'Could not finish. Please try again.'); }
+    }
+  });
 
   function showGate(kind) {
     $('#shell').classList.add('hidden'); $('#tbRight').innerHTML = '';
@@ -588,7 +642,7 @@
   function renderChrome() {
     const p = S.profile;
     $('#shell').classList.remove('hidden'); $('#gate').classList.add('hidden');
-    $('#side').innerHTML = '<div class="role-chip"><div class="avatar" style="width:34px;height:34px;font-size:13px">' + esc(first(p.name).charAt(0).toUpperCase()) + '</div><div><small>' + acctLabel() + '</small><strong>' + esc(p.name) + '</strong></div></div><nav class="nav" id="nav"></nav>';
+    $('#side').innerHTML = '<div class="role-chip"><div class="avatar" style="width:34px;height:34px;font-size:13px">' + avIn(p) + '</div><div><small>' + acctLabel() + '</small><strong>' + esc(p.name) + '</strong></div></div><nav class="nav" id="nav"></nav>';
     const un = S.notifications.filter(n => n.unread).length;
     $('#tbRight').innerHTML = '<button class="icon-btn" id="bellBtn" aria-label="Notifications">' + ico('bell') + '<span class="count-dot' + (un ? '' : ' hidden') + '" id="bellN">' + un + '</span></button>' +
       '<div style="position:relative"><button class="avatar" id="avBtn" aria-label="Account menu" aria-haspopup="true">' + avIn(p) + '</button><div class="acct-menu hidden" id="acctMenu">' +
@@ -845,10 +899,16 @@
 
   /* ---- Profile ---- */
   function avIn(p) { return p.avatar ? '<img alt="" src="' + esc(p.avatar) + '" referrerpolicy="no-referrer">' : esc(first(p.name).charAt(0).toUpperCase()); }
+  function partnerHtml(k) {
+    const c = window.MT_CONTENT.partner[k];
+    return '<div style="display:grid;gap:10px;margin-bottom:14px">' + c.perks.map(x => '<div style="display:flex;gap:10px;align-items:flex-start"><div style="width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-text);flex:none">' + ico(x.icon) + '</div><p style="margin:0;font-size:13.5px;line-height:1.5">' + x.text + '</p></div>').join('') + '</div>' +
+      '<h3 style="font-size:14px;margin:0 0 6px">Commission &amp; fee structure</h3><ul style="margin:0;padding-left:18px;display:grid;gap:6px;font-size:13px;line-height:1.5">' + c.terms.map(t => '<li><b>' + t.label + ':</b> ' + t.body + '</li>').join('') + '</ul>';
+  }
   function profile() {
     const p = S.profile;
     return head('Profile', 'Your account details.') + '<div class="card pad" style="margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap"><div class="avatar" style="width:72px;height:72px;font-size:26px">' + avIn(p) + '</div><div class="grow"><b>' + esc(p.name) + '</b><div class="s" style="color:var(--muted)">This photo is the same in the MainTown app.</div></div><input type="file" id="pfPhoto" accept="image/*" hidden><button class="btn" data-act="photo-pick">Change photo</button><button class="btn" data-act="prof-edit">Edit name &amp; phone</button></div><div class="grid g-2"><div class="card pad"><h3>Account</h3><div class="rows" style="margin-top:10px">' +
       [['Name', p.name], ['Email', p.email], ['Phone', p.phone || 'Not added yet'], ['Account type', acctLabel().replace(' account', '')], ['Payout account', p.bank || 'Not set up on the website yet'], ['Identity check', p.kyc || 'Completed in the MainTown app']].map(r => '<div class="row-item" style="padding:11px 0"><div class="grow s">' + r[0] + '</div><b style="font-weight:600;text-align:right">' + esc(r[1]) + '</b></div>').join('') + '</div></div>' +
+      '<div class="card pad" style="margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap"><div class="grow"><h3>Partnership benefits &amp; terms</h3><p style="color:var(--muted);margin:4px 0 0">Your commission split, payouts and what MainTown always collects.</p></div><button class="btn" data-act="partner-open">Read again</button></div>' +
       '<div class="card pad"><h3>Need help?</h3><p style="color:var(--muted);margin:8px 0 14px">Our team replies on WhatsApp during business hours.</p><a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/2348066611017?text=' + encodeURIComponent('Hi MainTown Realty, I\'m ' + p.name + ' (' + (isAgent() ? 'Agent' : 'Landlord') + ' account) and need help with my dashboard.') + '">' + ico('message-circle') + ' Chat on WhatsApp</a></div></div>';
   }
 
@@ -1201,6 +1261,7 @@
         closeModal(); toast('Saved. The app will show the same details.'); renderChrome(); rerender();
       } catch (e) { toast('Could not save: ' + (e && e.message ? e.message : 'please try again')); }
     },
+    'partner-open': () => { const c = (window.MT_CONTENT || {}).partner, k = isAgent() ? 'agent' : 'landlord'; if (!c) return; modal({ title: 'Partnership benefits & terms', sub: isAgent() ? 'Real Estate Agent / Broker' : 'Landlord / Property Owner', body: partnerHtml(k), foot: '<button class="btn primary" data-act="modal-close">Close</button>' }); },
     'photo-pick': () => { const f = $('#pfPhoto'); if (f) f.click(); },
     'del-listing': id => { const l = getL(id); if (!l || l.status !== 'Live') return; modal({ title: 'Delete this listing?', sub: l.title, body: '<p style="color:var(--muted);margin:0">It will be removed from the site. You can only delete a listing while it is live and nobody has paid.</p>', foot: '<button class="btn" data-act="modal-close">Keep it</button><button class="btn bad" data-act="del-confirm" data-id="' + id + '">Delete listing</button>' }); },
     'del-confirm': async id => {
