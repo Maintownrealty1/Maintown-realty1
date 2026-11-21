@@ -1272,9 +1272,9 @@
       if (n.length < 2) return toast('Enter the person’s name.'); if (!/^\S+@\S+\.\S+$/.test(em)) return toast('Enter a valid email.'); if (ph.replace(/\D/g, '').length < 10) return toast('Enter a valid phone number.');
       const pw = ($('#ivPass').value || '').trim(); if (pw.length < 8) return toast('The temporary password needs at least 8 characters.');
       if (IS_DEMO) { S.profile.enterprise.staff.push({ id: 'S' + Date.now(), name: n, email: em, phone: ph, role: $('#ivRole').value, status: 'Invited' }); closeModal(); toast('Added (sample preview).'); rerender(); return; }
-      const bt = $('[data-act="invite-send"]'); if (bt) bt.disabled = true;
+      const bt = $('[data-act="invite-send"]'); if (bt) bt.disabled = true; { const er0 = $('#ivErr'); if (er0) er0.remove(); }
       try { await staffCall({ action: 'create', name: n, email: em, phone: ph, role: $('#ivRole').value, password: pw }); closeModal(); credsModal('Login created', n, em.toLowerCase(), pw); await Api.load(); rerender(); }
-      catch (e) { if (bt) bt.disabled = false; toast(e.message); }
+      catch (e) { if (bt) bt.disabled = false; toast(e.message); let er = $('#ivErr'); if (!er) { er = document.createElement('div'); er.id = 'ivErr'; er.style.cssText = 'margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(248,113,113,.12);color:#b91c1c;font-size:13px;font-weight:600'; const f = $('#ivPass'); if (f && f.closest('.f')) f.closest('.f').appendChild(er); } if (er) er.textContent = (/Failed to send|non-2xx|NetworkError|Failed to fetch/i.test(e.message) ? 'Could not reach the team service. It may not be deployed yet. ' : '') + e.message; }
     },
     'staff-remove': id => { const m = S.profile.enterprise.staff.find(x => x.id === id); modal({ title: 'Remove ' + m.name + '?', body: '<p style="margin:0;color:var(--muted)">They lose access to the ' + (isAgent() ? 'agency' : 'company') + ' workspace straight away.</p>', foot: '<button class="btn" data-act="modal-close">Keep</button><button class="btn bad" data-act="staff-remove-ok" data-id="' + id + '">Remove</button>' }); },
     'staff-remove-ok': async id => {
