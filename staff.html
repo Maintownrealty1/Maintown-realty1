@@ -25,11 +25,12 @@
   .row { display:flex; justify-content:space-between; margin-top:14px; }
   .brand { display:flex; align-items:center; gap:8px; margin-bottom:16px; font:700 15px 'Space Grotesk', sans-serif; }
   .brand i { width:26px; height:26px; border-radius:8px; background:var(--brand); display:inline-block; }
+  .brand img{width:28px;height:28px;object-fit:contain;border-radius:6px;flex-shrink:0}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="brand"><i></i>MainTown Realty</div>
+  <div class="brand"><img src="./logo.webp" alt="MainTown Realty" onerror="this.outerHTML='<i></i>'">MainTown Realty</div>
   <div id="v-login">
     <h1>Team sign in</h1>
     <p class="sub">For sales, legal and finance team members. Use the email and password your employer gave you.</p>
