@@ -420,7 +420,6 @@
     <h2 class="join-title" id="join-title">Continue as a Tenant</h2>
     <p class="join-sub" id="join-sub"></p>
     <div class="selected-listing-slot"></div>
-    <button type="button" id="join-benefits-btn" class="join-link" style="display:none; margin-bottom:8px;">See partnership benefits</button>
 
     <button type="button" id="join-notice-toggle" class="notice-box" style="width:100%; cursor:pointer; font:inherit; text-align:left; margin:0 0 12px;">
       <i data-lucide="message-circle" class="w-4 h-4"></i>
@@ -758,7 +757,6 @@
     document.getElementById('join-role-badge').innerHTML = `<i data-lucide="${data.roleIcon}" class="w-4 h-4"></i><span>${data.label}</span>`;
     document.getElementById('join-title').textContent = 'Continue as ' + ROLE_META[role].short;
     document.getElementById('join-sub').textContent = ROLE_META[role].sub;
-    document.getElementById('join-benefits-btn').style.display = (role === 'landlord' || role === 'agent') ? 'inline-block' : 'none';
     document.getElementById('join-email-form').style.display = 'none';
     document.getElementById('join-email-toggle').style.display = '';
     joinGoogleBtn.disabled = false;
@@ -934,9 +932,6 @@
       <ul>${content.terms.map(t => `<li><b>${t.label}:</b> ${t.body}</li>`).join('')}</ul>`;
     if (window.lucide) lucide.createIcons();
   }
-  document.getElementById('join-benefits-btn').addEventListener('click', () => {
-    closeJoin(); populatePartnershipScreen(); showScreen(screenPartnership);
-  });
   document.getElementById('partnership-continue-btn').addEventListener('click', () => { showScreen(screen1); openJoin(currentRole); });
   document.getElementById('partnership-back-btn').addEventListener('click', () => showScreen(screen1));
 
@@ -1024,7 +1019,13 @@
     // 1. Profile + role (atomic)
     let profileSaved = false, saveErrorMsg = '', roleKept = null;
     try {
-      const { data: saveData, error } = await sb.rpc('save_waitlist_signup', { p_role: role, p_full_name: name, p_avatar_url: avatar, p_provider: provider });
+      // One email = one account. If this account already exists (made by password OR Google), keep exactly what it was first saved with:
+      // same name, same photo, and the way it was FIRST created (a password account is never relabelled "google").
+      let prior = null;
+      try { const q = await sb.from('signups').select('full_name, avatar_url').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1); prior = q.data && q.data[0]; } catch (e) {}
+      const origProvider = (user.app_metadata && user.app_metadata.provider) || provider;
+      const { data: saveData, error } = await sb.rpc('save_waitlist_signup', { p_role: role, p_full_name: (prior && prior.full_name) || name, p_avatar_url: (prior && prior.avatar_url) || avatar, p_provider: origProvider === 'email' ? 'email' : (origProvider || provider) });
+      try { sb.rpc('member_mark_source', { p_source: 'website' }).then(() => {}, () => {}); } catch (e) {}
       if (error) throw error;
       profileSaved = true;
       // An existing account keeps the role it first signed up with.

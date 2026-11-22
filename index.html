@@ -2385,7 +2385,7 @@
   function mtRenderHeader() {
     const btn = document.getElementById('headerSignup'); if (!btn) return;
     let box = document.getElementById('mtAccount');
-    if (!mtMember) { btn.classList.remove('hidden'); if (box) box.remove(); return; }
+    if (!mtMember) { try { document.documentElement.classList.remove('mt-in'); } catch (e) {} btn.classList.remove('hidden'); if (box) box.remove(); return; }
     btn.classList.add('hidden');
     if (!box) { box = document.createElement('div'); box.id = 'mtAccount'; box.className = 'relative'; btn.parentNode.insertBefore(box, btn); }
     const initial = mtEsc(mtFirst(mtMember).charAt(0).toUpperCase() || 'M');
@@ -2403,7 +2403,7 @@
     if (b && menu) { menu.classList.toggle('hidden'); return; }
     if (e.target.closest && e.target.closest('#mtSignOut')) {
       try { await sb.auth.signOut(); } catch (err) {}
-      mtMember = null; try { localStorage.removeItem(MT_CACHE_KEY); } catch (err) {}
+      mtMember = null; try { localStorage.removeItem(MT_CACHE_KEY); localStorage.removeItem('mt_member_cache'); } catch (err) {}
       mtRenderHeader(); return;
     }
     if (menu && !menu.classList.contains('hidden') && !(e.target.closest && e.target.closest('#mtAccount'))) menu.classList.add('hidden');

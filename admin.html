@@ -907,10 +907,26 @@
       <p class="text-sm text-slate-500 mb-3">Hosts who upgraded to Developer or Agency, and hosts who finished onboarding on the website. Only the last 4 digits of a NIN are stored.</p>
       <div class="flex flex-wrap items-center gap-2 mb-3">
         <button type="button" class="chip active" data-mbtab="upgrades">Upgrades</button>
-        <button type="button" class="chip" data-mbtab="onboarding">Website onboarding</button>
+        <button type="button" class="chip" data-mbtab="onboarding" id="mbOnbTab">KYC reports (NIN + selfie)</button>
         <button type="button" id="mbRefresh" class="btn-secondary !py-1.5 !text-xs ml-auto">Refresh</button>
       </div>
       <div id="mbList" class="space-y-3"></div>
+    </section>
+
+    <!-- ---- All Users: every signup (app and website). Super Admin sees full KYC detail; Customer Service, Legal and Developer see name, Host ID, role and where they signed up only. See 41_kyc_reporting_and_all_users.sql. -->
+    <section data-view="users">
+      <h2 class="font-display font-semibold text-lg text-white mb-1">All Users</h2>
+      <p id="auSub" class="text-sm text-slate-500 mb-3"></p>
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <input type="search" id="auSearch" placeholder="Search name or Host ID" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white w-56">
+        <button type="button" class="chip active" data-aufilter="all">All</button>
+        <button type="button" class="chip" data-aufilter="app">App</button>
+        <button type="button" class="chip" data-aufilter="website">Website</button>
+        <select id="auRole" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white"><option value="">All roles</option><option value="landlord">Landlord</option><option value="agent">Agent</option><option value="tenant">Tenant / Customer</option></select>
+        <span id="auCount" class="text-xs text-slate-500"></span>
+        <button type="button" id="auRefresh" class="btn-secondary !py-1.5 !text-xs ml-auto">Refresh</button>
+      </div>
+      <div id="auList" class="space-y-2"></div>
     </section>
 
     <!-- ---- Managed Landlords (Super Admin / Finance) ----
@@ -1083,21 +1099,21 @@
   // Which dashboard tabs each role gets. Edit these arrays to change who
   // sees what — the tab bar and every data load below all key off this.
   const ROLE_VIEWS = {
-    super_admin: ['support', 'supportchat', 'explore', 'listings', 'partners', 'signups', 'legalreview', 'members', 'quickfix', 'inspections', 'landlords', 'finance', 'teamchat', 'staff'],
+    super_admin: ['support', 'supportchat', 'explore', 'listings', 'partners', 'signups', 'users', 'legalreview', 'members', 'quickfix', 'inspections', 'landlords', 'finance', 'teamchat', 'staff'],
     // Developer: monitors transactions only (read-only, last 7 days, no names, no revenue totals) and has no finance controls.
-    developer:   ['support', 'explore', 'listings', 'partners', 'signups', 'quickfix', 'inspections', 'finance', 'teamchat'],
+    developer:   ['support', 'explore', 'listings', 'partners', 'signups', 'users', 'quickfix', 'inspections', 'finance', 'teamchat'],
     finance:     ['finance', 'landlords', 'teamchat'],
     // Sales staff follow up inspections and bookings; nothing else.
     sales_staff: ['inspections', 'teamchat'],
-    legal:       ['signups', 'legalreview', 'members', 'teamchat'],
+    legal:       ['signups', 'users', 'legalreview', 'members', 'teamchat'],
     // Least privilege: support sees customer requests and the inspection/booking schedule,
     // never finance, sign-up (KYC) documents, listings admin or staff access.
-    customer_service: ['support', 'supportchat', 'quickfix', 'inspections', 'teamchat'],
+    customer_service: ['support', 'supportchat', 'users', 'quickfix', 'inspections', 'teamchat'],
     // Content team: writes Explore / Housing Updates posts and nothing else.
     media_editor: ['explore', 'teamchat'],
   };
   const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal', customer_service: 'Customer Service', media_editor: 'Media', sales_staff: 'Sales Staff' };
-  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspection Logs', transactions: 'Transactions', teamchat: 'Team Chat', legalreview: 'Legal Review', members: 'Members & Upgrades', landlords: 'Managed Landlords', finance: 'Finance', staff: 'Staff Access' };
+  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspection Logs', transactions: 'Transactions', teamchat: 'Team Chat', legalreview: 'Legal Review', members: 'Members & Upgrades', users: 'All Users', landlords: 'Managed Landlords', finance: 'Finance', staff: 'Staff Access' };
   let currentStaffRole = null;
   let currentStaffName = null;
   let currentView = null;
@@ -1146,6 +1162,7 @@
     if (view === 'landlords') loadManagedLandlords();
     if (view === 'legalreview') loadLegalReview();
     if (view === 'members') loadMembers();
+    if (view === 'users') loadAllUsers();
     if (view === 'partners') loadPartners();
     if (view === 'signups') loadSignups();
     if (view === 'support') loadSupport();
@@ -3578,6 +3595,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const el = document.getElementById('mbList'); if (!el) return;
     el.innerHTML = '<p class="text-sm text-slate-500">Loading…</p>';
     document.querySelectorAll('[data-mbtab]').forEach(b => b.classList.toggle('active', b.dataset.mbtab === mbTab));
+    const ot = document.getElementById('mbOnbTab'); if (ot) ot.classList.toggle('hidden', currentStaffRole !== 'super_admin'); if (currentStaffRole !== 'super_admin') mbTab = 'upgrades';
     if (mbTab === 'upgrades') {
       const r = await sb.rpc('admin_enterprise_accounts');
       if (r.error) { el.innerHTML = '<p class="text-sm text-red-400">Could not load: ' + escHtml(r.error.message) + '</p>'; return; }
@@ -3596,7 +3614,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       const r = await sb.rpc('admin_onboarding_list');
       if (r.error) { el.innerHTML = '<p class="text-sm text-red-400">Could not load: ' + escHtml(r.error.message) + '</p>'; return; }
       const rows = r.data || [];
-      if (!rows.length) { el.innerHTML = '<p class="text-sm text-slate-500">No website onboarding yet.</p>'; return; }
+      if (!rows.length) { el.innerHTML = '<p class="text-sm text-slate-500">No KYC reports yet.</p>'; return; }
       el.innerHTML = rows.map(k => '<div class="card p-4"><div class="flex flex-wrap items-start justify-between gap-2"><div><p class="font-semibold text-white">' + escHtml(k.name || 'Member') + ' <span class="text-xs text-slate-500">(' + escHtml(k.role || '') + ')</span></p><p class="text-xs text-slate-400">' + escHtml(k.email || '') + '</p>' +
         '<p class="text-xs text-slate-500">NIN ending ' + escHtml(k.nin_last4) + ' · ' + mbDate(k.created_at) + ' · via ' + escHtml(k.source) + '</p></div><span class="chip ' + (k.status === 'verified' ? 'active' : '') + '">' + escHtml(k.status) + '</span></div>' +
         '<div class="flex flex-wrap gap-2 mt-3">' + (k.selfie_path ? '<button type="button" class="btn-secondary !py-1 !text-xs" data-mbselfie="' + escHtml(k.selfie_path) + '">View selfie</button>' : '') +
@@ -3616,6 +3634,40 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       if (r.error) return showToast(r.error.message, true); showToast('Saved.'); loadMembers();
     }
   });
+
+  // ---------- All Users ----------
+  let auRows = [], auSource = 'all';
+  const auRoleLabel = r => ({ landlord: 'Landlord', agent: 'Agent', tenant: 'Tenant / Customer' }[r] || r || '—');
+  const auSrcChip = s => '<span class="chip ' + (s === 'app' ? 'active' : '') + '" style="pointer-events:none">' + (s === 'app' ? 'App' : s === 'website' ? 'Website' : 'Unknown') + '</span>';
+  async function loadAllUsers() {
+    const el = document.getElementById('auList'); if (!el) return;
+    document.getElementById('auSub').textContent = currentStaffRole === 'super_admin'
+      ? 'Everyone who signed up, with full KYC detail (Super Admin only). Only the last 4 digits of a NIN are stored.'
+      : 'Full name, Host ID and role of every user, and whether they signed up on the app or the website. Contact and KYC details are Super Admin only.';
+    el.innerHTML = '<p class="text-sm text-slate-500">Loading…</p>';
+    const r = await sb.rpc('admin_users_list');
+    if (r.error) { el.innerHTML = '<p class="text-sm text-red-400">Could not load: ' + escHtml(r.error.message) + ' (run 41_kyc_reporting_and_all_users.sql)</p>'; return; }
+    auRows = r.data || []; renderAllUsers();
+  }
+  function renderAllUsers() {
+    const el = document.getElementById('auList'); if (!el) return;
+    const q = (document.getElementById('auSearch').value || '').trim().toLowerCase(), role = document.getElementById('auRole').value, full = currentStaffRole === 'super_admin';
+    document.querySelectorAll('[data-aufilter]').forEach(b => b.classList.toggle('active', b.dataset.aufilter === auSource));
+    const rows = auRows.filter(u => (auSource === 'all' || u.source === auSource) && (!role || u.role === role) && (!q || String(u.name).toLowerCase().includes(q) || String(u.host_id).toLowerCase().includes(q) || (full && String(u.email || '').toLowerCase().includes(q))));
+    document.getElementById('auCount').textContent = rows.length + ' of ' + auRows.length;
+    if (!rows.length) { el.innerHTML = '<p class="text-sm text-slate-500">No users match.</p>'; return; }
+    el.innerHTML = rows.slice(0, 500).map(u => '<div class="card p-3"><div class="flex flex-wrap items-center justify-between gap-2"><div><p class="font-semibold text-white">' + escHtml(u.name) + ' <span class="text-xs text-slate-500">' + escHtml(u.host_id) + '</span></p><p class="text-xs text-slate-400">' + auRoleLabel(u.role) + '</p></div><div class="flex items-center gap-2">' + auSrcChip(u.source) + (full ? '<span class="chip ' + (u.kyc_status === 'verified' ? 'active' : '') + '" style="pointer-events:none">KYC: ' + escHtml(u.kyc_status || 'not submitted') + '</span>' : '') + '</div></div>' +
+      (full ? '<div class="grid sm:grid-cols-4 gap-2 mt-2 text-xs"><div><span class="text-slate-500">Email</span><br>' + escHtml(u.email || '—') + '</div><div><span class="text-slate-500">Phone</span><br>' + escHtml(u.phone || '—') + '</div><div><span class="text-slate-500">NIN ending</span><br>' + escHtml(u.nin_last4 || '—') + '</div><div><span class="text-slate-500">Joined · sign-in</span><br>' + mbDate(u.joined) + ' · ' + escHtml(u.provider || '') + '</div></div>' +
+        '<div class="flex flex-wrap gap-2 mt-2">' + (u.selfie_path ? '<button type="button" class="btn-secondary !py-1 !text-xs" data-mbselfie="' + escHtml(u.selfie_path) + '">View selfie</button><button type="button" class="btn-secondary !py-1 !text-xs" data-auset="verified" data-uid="' + u.user_uid + '">Mark verified</button><button type="button" class="btn-secondary !py-1 !text-xs" data-auset="failed" data-uid="' + u.user_uid + '">Failed</button>' : '') + '</div>' : '') + '</div>').join('');
+  }
+  document.addEventListener('click', async e => {
+    const t = e.target.closest && e.target.closest('[data-aufilter],[data-auset],#auRefresh'); if (!t) return;
+    if (t.dataset.aufilter) { auSource = t.dataset.aufilter; renderAllUsers(); }
+    else if (t.id === 'auRefresh') loadAllUsers();
+    else if (t.dataset.auset) { const r = await sb.rpc('admin_set_kyc_status', { p_user: t.dataset.uid, p_status: t.dataset.auset }); if (r.error) return showToast(r.error.message, true); showToast('Saved.'); loadAllUsers(); }
+  });
+  document.getElementById('auSearch').addEventListener('input', renderAllUsers);
+  document.getElementById('auRole').addEventListener('change', renderAllUsers);
 
   async function loadLegalReview() {
     await lrLoadPendingListings();

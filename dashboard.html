@@ -631,6 +631,7 @@
         const sess = await mtGetSession(sb), uid = sess.user.id, path = uid + '/kyc-selfie-' + Date.now() + '.jpg';
         const up = await sb.storage.from('listing-docs').upload(path, small, { contentType: 'image/jpeg', upsert: false }); if (up.error) throw up.error;
         const r = await sb.rpc('dashboard_complete_onboarding', { p_nin: nin, p_selfie_path: path }); if (r.error) throw r.error;
+        try { await sb.rpc('member_mark_source', { p_source: 'website' }); } catch (e) {}
         location.reload();
       } catch (err) { b.disabled = false; b.textContent = 'Finish and open my dashboard'; toast((err && err.message) || 'Could not finish. Please try again.'); }
     }
