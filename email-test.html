@@ -32,6 +32,10 @@
 <input id="e3" type="email" placeholder="email of an existing account" autocomplete="email">
 <button id="b3">Send reset email</button><pre id="o3">Not run yet.</pre></div>
 
+<div class="card"><h2>4. Staff temporary-login email</h2>
+<p>Sends a sample “Your MainTown team login” email (with a dummy password) to the account you are signed in with. This is the same email a landlord's team member receives when you create their login. If it arrives, staff login emails are working.</p>
+<button id="b4">Send test staff login email</button><pre id="o4">Not run yet.</pre></div>
+
 <p class="sub">Common answers: <b>404</b> = the function is not deployed yet. <b>401</b> = deploy email-otp with “Verify JWT” turned off. <b>500</b> with a detail = the sender login or sender address is not accepted by the email service.</p>
 </main>
 <script>
@@ -57,4 +61,8 @@ $('b2').onclick=async()=>{const s=(await sb.auth.getSession()).data.session;if(!
 $('b3').onclick=async()=>{const email=$('e3').value.trim().toLowerCase();if(!email)return;$('b3').disabled=true;show('o3',true,'Sending…');
   const r=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/login.html'});
   show('o3',!r.error,r.error?'Failed: '+r.error.message+(r.error.status?' (HTTP '+r.error.status+')':''):'Request accepted. If the email has an account, a reset message should arrive. Check inbox and spam.');$('b3').disabled=false;};
+$('b4').onclick=async()=>{const s=(await sb.auth.getSession()).data.session;if(!s)return show('o4',false,'Sign in at login.html first, then come back to this page.');
+  $('b4').disabled=true;show('o4',true,'Sending…');
+  const x=await fn('send-email',{type:'staff_invite',data:{name:'Test Staff',company:'MainTown test company',email:s.user.email,password:'Test-1234-xyz',url:location.origin+'/staff.html'},debug:true},s.access_token);
+  show('o4',x.status===200,(x.status===200?'Sent to '+s.user.email+'. Check your inbox and spam folder. (The password in it is a dummy.)\n\n':'Failed.\n\n')+fmt(x));$('b4').disabled=false;};
 </script></body></html>
