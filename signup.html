@@ -463,6 +463,7 @@
     </div>
 
     <p id="join-status" class="join-status"></p>
+    <p style="text-align:center;margin:10px 0 0;font-size:13.5px">Already have an account? <a href="./login.html" class="join-link" style="font-weight:600">Log in with email and password</a></p>
     <p class="join-consent">By continuing you agree to the MainTown Realty <a href="./terms.html" target="_blank" rel="noopener" class="join-link">Terms of Service</a> and <a href="./privacy.html" target="_blank" rel="noopener" class="join-link">Privacy Policy</a>, and that we may contact you on WhatsApp and by email about your request.</p>
   </div>
 
@@ -888,7 +889,7 @@
 
     joinEmailSubmit.disabled = true; joinEmailSubmit.textContent = 'Creating your account…';
     setJoinStatus('');
-    const exists = 'That email already has an account. Sign in with Google, use the right password, or try a different email.';
+    const exists = 'That email already has an account. Please use "Log in" below (or Continue with Google) instead of creating another one.';
     try {
       let { data, error } = await sb.auth.signUp({
         email, password,

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · MainTown Realty</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0E0E10; --panel:#151518; --line:#2A2A30; --fg:#F4F4F5; --muted:#A1A1AA; --brand:#7C3AED; --bad:#F87171; --ok:#34D399; }
+  @media (prefers-color-scheme: light) { :root { --bg:#F6F6F8; --panel:#fff; --line:#E3E3E8; --fg:#0E0E10; --muted:#52525B; } }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; padding:16px; background:var(--bg); color:var(--fg); font:15px/1.5 Inter, sans-serif; }
+  .card { width:100%; max-width:400px; background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:26px; }
+  h1 { font:700 22px 'Space Grotesk', sans-serif; margin:0 0 4px; }
+  p.sub { margin:0 0 18px; color:var(--muted); font-size:13.5px; }
+  label { display:block; font-size:12.5px; color:var(--muted); margin-bottom:12px; }
+  input { width:100%; margin-top:5px; padding:12px; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--fg); font:inherit; }
+  input:focus { outline:2px solid var(--brand); border-color:transparent; }
+  button.main { width:100%; padding:13px; border:0; border-radius:10px; background:var(--brand); color:#fff; font:600 15px Inter, sans-serif; cursor:pointer; }
+  button.main:disabled { opacity:.6; cursor:default; }
+  button.link { background:none; border:0; color:var(--muted); font:inherit; font-size:13px; text-decoration:underline; cursor:pointer; padding:0; }
+  .msg { min-height:20px; margin:10px 0 0; font-size:13px; }
+  .msg.bad { color:var(--bad); } .msg.ok { color:var(--ok); }
+  .row { display:flex; justify-content:space-between; margin-top:14px; }
+  .brand { display:flex; align-items:center; gap:8px; margin-bottom:16px; font:700 15px 'Space Grotesk', sans-serif; }
+  .brand i { width:26px; height:26px; border-radius:8px; background:var(--brand); display:inline-block; }
+  .brand img{width:28px;height:28px;object-fit:contain;border-radius:6px;flex-shrink:0}
+  .or{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+  button.g{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--fg);font:600 14.5px Inter,sans-serif;cursor:pointer}
+  a.link{color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand"><img src="./logo.webp" alt="MainTown Realty" onerror="this.outerHTML='<i></i>'">MainTown Realty</div>
+  <div id="v-login">
+    <h1>Sign in</h1>
+    <p class="sub">Landlords, agents and team members: sign in with your email and password, or with Google.</p>
+    <form id="f-login" novalidate>
+      <label>Email<input id="l-email" type="email" autocomplete="username" inputmode="email"></label>
+      <label>Password<input id="l-pass" type="password" autocomplete="current-password"></label>
+      <button class="main" id="l-btn" type="submit">Sign in</button>
+    </form>
+    <div class="or">or</div>
+    <button class="g" id="g-btn" type="button">Continue with Google</button>
+    <div class="row"><button class="link" id="go-forgot" type="button">Forgot password?</button><a class="link" href="./signup.html">Create an account</a></div>
+  </div>
+  <div id="v-forgot" hidden>
+    <h1>Reset your password</h1>
+    <p class="sub">We will email you a link to choose a new password.</p>
+    <form id="f-forgot" novalidate>
+      <label>Email<input id="f-email" type="email" autocomplete="username" inputmode="email"></label>
+      <button class="main" id="f-btn" type="submit">Send reset link</button>
+    </form>
+    <div class="row"><button class="link" id="back-login" type="button">Back to sign in</button></div>
+  </div>
+  <div id="v-change" hidden>
+    <h1 id="c-title">Choose a new password</h1>
+    <p class="sub" id="c-sub">Pick a password only you know. At least 8 characters.</p>
+    <form id="f-change" novalidate>
+      <label>New password<input id="c-pass" type="password" autocomplete="new-password"></label>
+      <label>Confirm password<input id="c-pass2" type="password" autocomplete="new-password"></label>
+      <button class="main" id="c-btn" type="submit">Save and continue</button>
+    </form>
+  </div>
+  <p class="msg" id="msg" role="status"></p>
+</div>
+<script>
+(function () {
+  const sb = window.supabase.createClient('https://obtggomfwvravjcnypid.supabase.co', 'sb_publishable_GaTnU4FmPc2slbn8BisXXg_DmxH1vl8',
+    { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  const $ = id => document.getElementById(id);
+  const msg = (t, k) => { $('msg').textContent = t || ''; $('msg').className = 'msg ' + (k || ''); };
+  const show = v => { ['login', 'forgot', 'change'].forEach(n => { $('v-' + n).hidden = n !== v; }); msg(''); };
+  let recovery = /type=recovery/.test(location.hash) || /type=recovery/.test(location.search);
+  const emailOk = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+  // Sends the person where they belong: team members to their company dashboard, landlords and agents to theirs,
+  // tenants to the app message, anyone without a role to finish choosing one.
+  async function afterSignIn() {
+    const sc = await sb.rpc('staff_context');
+    if (!sc.error && sc.data) { location.replace(sc.data.must_change ? './staff.html?change=1' : './dashboard.html'); return; }
+    let role = '';
+    try { const c = await sb.rpc('get_my_profile_card'); if (!c.error && c.data && c.data.role) role = String(c.data.role); } catch (e) {}
+    if (!role) { const u = (await sb.auth.getUser()).data.user; role = String((u && u.user_metadata && u.user_metadata.role) || ''); }
+    role = role.toLowerCase();
+    if (role === 'landlord' || role === 'agent') { location.replace('./dashboard.html'); return; }
+    if (role === 'tenant') { show('login'); msg('Your account is a tenant account. Tenants use the MainTown app and the listings on the main site.', 'ok'); return; }
+    location.replace('./signup.html');
+  }
+
+  $('f-login').addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = $('l-email').value.trim().toLowerCase(), password = $('l-pass').value;
+    if (!emailOk(email) || !password) return msg('Enter your email and password.', 'bad');
+    $('l-btn').disabled = true; msg('Signing in…');
+    try {
+      const r = await sb.auth.signInWithPassword({ email, password });
+      if (r.error) throw new Error(/invalid|credentials/i.test(r.error.message) ? 'Wrong email or password. If you signed up with Google, use the Google button.' : (/confirm/i.test(r.error.message) ? 'Please confirm your email first: open the message we sent you.' : r.error.message));
+      await afterSignIn();
+    } catch (err) { msg(err.message || 'Could not sign in.', 'bad'); }
+    $('l-btn').disabled = false;
+  });
+  $('g-btn').addEventListener('click', async () => {
+    msg('Opening Google…');
+    const r = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname, queryParams: { prompt: 'select_account' } } });
+    if (r.error) msg('Could not open Google sign-in. Use your email and password instead.', 'bad');
+  });
+  $('go-forgot').onclick = () => { $('f-email').value = $('l-email').value; show('forgot'); };
+  $('back-login').onclick = () => show('login');
+  $('f-forgot').addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = $('f-email').value.trim().toLowerCase();
+    if (!emailOk(email)) return msg('Enter your email address.', 'bad');
+    $('f-btn').disabled = true;
+    try {
+      const r = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      if (r.error) throw r.error;
+      msg('If that email has an account, a reset link is on its way. Check your inbox and spam folder.', 'ok');
+    } catch (err) { msg('Could not send the email just now. Please try again in a minute.', 'bad'); }
+    $('f-btn').disabled = false;
+  });
+  $('f-change').addEventListener('submit', async e => {
+    e.preventDefault();
+    const a = $('c-pass').value, b = $('c-pass2').value;
+    if (a.length < 8) return msg('Use at least 8 characters.', 'bad');
+    if (a !== b) return msg('The two passwords do not match.', 'bad');
+    $('c-btn').disabled = true; msg('Saving…');
+    try {
+      const u = await sb.auth.updateUser({ password: a });
+      if (u.error) throw u.error;
+      msg('Password saved.', 'ok'); setTimeout(afterSignIn, 500);
+    } catch (err) { $('c-btn').disabled = false; msg(/same|different/i.test(err.message || '') ? 'Choose a password different from the old one.' : (err.message || 'Could not save.'), 'bad'); }
+  });
+  sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { recovery = true; show('change'); } });
+  (async () => {
+    const { data } = await sb.auth.getSession();
+    if (recovery && data.session) { show('change'); return; }
+    if (data.session) { await afterSignIn(); return; }
+    show('login');
+  })();
+})();
+</script>
+</body>
+</html>

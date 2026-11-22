@@ -573,7 +573,7 @@
       PROFILE = { name: STAFF ? STAFF.full_name : (row && row.full_name) || meta.full_name || meta.name || String(u.email || '').split('@')[0] || 'Member', email: u.email || '', role, avatar: (row && row.avatar_url) || '', phone: (row && row.phone) || '' };
       if (!['landlord', 'agent'].includes(role)) return showGate(role === 'tenant' ? 'tenant' : 'norole');
       ROLE = role; IS_DEMO = false;
-      if (!STAFF) try { const cr = await sb.rpc('get_my_profile_card'); if (!cr.error && cr.data) { if (cr.data.avatar_url) PROFILE.avatar = cr.data.avatar_url; if (cr.data.phone && !PROFILE.phone) PROFILE.phone = cr.data.phone; if (cr.data.onboarding_completed === false) return showOnboarding(role); } } catch (e) {}
+      if (!STAFF) try { const cr = await sb.rpc('get_my_profile_card'); if (!cr.error && cr.data) { if (cr.data.avatar_url) PROFILE.avatar = cr.data.avatar_url; if (cr.data.phone && !PROFILE.phone) PROFILE.phone = cr.data.phone; if (cr.data.onboarding_completed !== true) return showOnboarding(role); } } catch (e) {}
       try { localStorage.setItem(MEMBER_CACHE, JSON.stringify({ id: u.id, email: u.email || '', name: PROFILE.name, role, avatar: PROFILE.avatar || '' })); } catch (e) {}
       if (sb) mtKeepAlive(sb);
       setTimeout(() => { try { refreshThreads(); } catch (e) {} }, 2500); setInterval(() => { if (document.visibilityState === 'visible') { try { refreshThreads(); } catch (e) {} } }, 30000);
@@ -640,7 +640,7 @@
     $('#shell').classList.add('hidden'); $('#tbRight').innerHTML = '';
     const g = $('#gate'); g.classList.remove('hidden');
     const m = {
-      signin: ['lock', 'Sign in to open your dashboard', 'Landlords and agents manage listings, inspections, bookings and payouts here. Sign in with the account you created on MainTown.', '<a class="btn primary" href="./signup.html?role=landlord">Sign in or sign up as a Landlord</a> <a class="btn" href="./signup.html?role=agent">Agent</a>'],
+      signin: ['lock', 'Sign in to open your dashboard', 'Landlords and agents manage listings, inspections, bookings and payouts here. Sign in with the account you created on MainTown.', '<a class="btn primary" href="./login.html">Sign in</a> <a class="btn" href="./signup.html?role=landlord">Create a Landlord account</a> <a class="btn" href="./signup.html?role=agent">Create an Agent account</a>'],
       tenant: ['home', 'This dashboard is for landlords and agents', 'Your account is a tenant account. Tenants search, inspect and pay from the listings on the main site and the MainTown app.', '<a class="btn primary" href="./index.html#listings">Browse listings</a>'],
       norole: ['user', 'Finish choosing your role', 'We couldn’t find a landlord or agent role on your account yet. Choose one to continue.', '<a class="btn primary" href="./signup.html?role=landlord">Landlord</a> <a class="btn primary" href="./signup.html?role=agent">Agent</a>']
     }[kind];
@@ -1265,7 +1265,7 @@
       const m = S.profile.enterprise.staff.find(x => x.id === id), pw = ($('#rsPass').value || '').trim();
       if (pw.length < 8) return toast('Use at least 8 characters.');
       if (IS_DEMO) { closeModal(); toast('Password reset (sample preview).'); return; }
-      try { await staffCall({ action: 'reset', id, password: pw }); closeModal(); credsModal('Password reset', m.name, m.email, pw); await Api.load(); } catch (e) { toast(e.message); }
+      try { await staffCall({ action: 'reset', id, password: pw, signinUrl: location.origin + location.pathname.replace(/[^/]*$/, '') + 'staff.html', company: (S.profile.enterprise && S.profile.enterprise.company) || '' }); closeModal(); credsModal('Password reset', m.name, m.email, pw); await Api.load(); } catch (e) { toast(e.message); }
     },
     'invite-send': async () => {
       const n = $('#ivName').value.trim(), em = $('#ivEmail').value.trim(), ph = $('#ivPhone').value.trim();
@@ -1273,7 +1273,7 @@
       const pw = ($('#ivPass').value || '').trim(); if (pw.length < 8) return toast('The temporary password needs at least 8 characters.');
       if (IS_DEMO) { S.profile.enterprise.staff.push({ id: 'S' + Date.now(), name: n, email: em, phone: ph, role: $('#ivRole').value, status: 'Invited' }); closeModal(); toast('Added (sample preview).'); rerender(); return; }
       const bt = $('[data-act="invite-send"]'); if (bt) bt.disabled = true; { const er0 = $('#ivErr'); if (er0) er0.remove(); }
-      try { await staffCall({ action: 'create', name: n, email: em, phone: ph, role: $('#ivRole').value, password: pw }); closeModal(); credsModal('Login created', n, em.toLowerCase(), pw); await Api.load(); rerender(); }
+      try { const rr = await staffCall({ action: 'create', name: n, email: em, phone: ph, role: $('#ivRole').value, password: pw, signinUrl: location.origin + location.pathname.replace(/[^/]*$/, '') + 'staff.html', company: (S.profile.enterprise && S.profile.enterprise.company) || '' }); closeModal(); credsModal(rr && rr.emailed ? 'Login created and emailed' : 'Login created', n, em.toLowerCase(), pw); await Api.load(); rerender(); }
       catch (e) { if (bt) bt.disabled = false; toast(e.message); let er = $('#ivErr'); if (!er) { er = document.createElement('div'); er.id = 'ivErr'; er.style.cssText = 'margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(248,113,113,.12);color:#b91c1c;font-size:13px;font-weight:600'; const f = $('#ivPass'); if (f && f.closest('.f')) f.closest('.f').appendChild(er); } if (er) er.textContent = (/Failed to send|non-2xx|NetworkError|Failed to fetch/i.test(e.message) ? 'Could not reach the team service. It may not be deployed yet. ' : '') + e.message; }
     },
     'staff-remove': id => { const m = S.profile.enterprise.staff.find(x => x.id === id); modal({ title: 'Remove ' + m.name + '?', body: '<p style="margin:0;color:var(--muted)">They lose access to the ' + (isAgent() ? 'agency' : 'company') + ' workspace straight away.</p>', foot: '<button class="btn" data-act="modal-close">Keep</button><button class="btn bad" data-act="staff-remove-ok" data-id="' + id + '">Remove</button>' }); },
