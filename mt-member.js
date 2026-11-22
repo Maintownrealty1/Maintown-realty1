@@ -34,7 +34,7 @@
       if (!card) { try { var q = await sb.from('signups').select('full_name, avatar_url, phone').eq('user_id', s.user.id).order('created_at', { ascending: false }).limit(1); if (q.data && q.data[0]) card = q.data[0]; } catch (e) {} }
       var next = Object.assign({}, cur, { id: s.user.id, email: s.user.email || cur.email || '' });
       if (card) {
-        if (card.avatar_url !== undefined) next.avatar = card.avatar_url || '';
+        if (card.avatar_url) next.avatar = card.avatar_url; /* an empty server value never wipes a photo already known */
         if (card.full_name) next.name = card.full_name;
         if (card.phone !== undefined) next.phone = card.phone || '';
       }

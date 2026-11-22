@@ -573,7 +573,7 @@
       PROFILE = { name: STAFF ? STAFF.full_name : (row && row.full_name) || meta.full_name || meta.name || String(u.email || '').split('@')[0] || 'Member', email: u.email || '', role, avatar: (row && row.avatar_url) || '', phone: (row && row.phone) || '' };
       if (!['landlord', 'agent'].includes(role)) return showGate(role === 'tenant' ? 'tenant' : 'norole');
       ROLE = role; IS_DEMO = false;
-      if (!STAFF) try { const cr = await sb.rpc('get_my_profile_card'); if (!cr.error && cr.data && cr.data.onboarding_completed === false) return showOnboarding(role); } catch (e) {}
+      if (!STAFF) try { const cr = await sb.rpc('get_my_profile_card'); if (!cr.error && cr.data) { if (cr.data.avatar_url) PROFILE.avatar = cr.data.avatar_url; if (cr.data.phone && !PROFILE.phone) PROFILE.phone = cr.data.phone; if (cr.data.onboarding_completed === false) return showOnboarding(role); } } catch (e) {}
       try { localStorage.setItem(MEMBER_CACHE, JSON.stringify({ id: u.id, email: u.email || '', name: PROFILE.name, role, avatar: PROFILE.avatar || '' })); } catch (e) {}
       if (sb) mtKeepAlive(sb);
       setTimeout(() => { try { refreshThreads(); } catch (e) {} }, 2500); setInterval(() => { if (document.visibilityState === 'visible') { try { refreshThreads(); } catch (e) {} } }, 30000);
@@ -1232,7 +1232,7 @@
       const path = 'host/' + USER.id + '/avatar-' + Date.now() + '.jpg';
       const up = await sb.storage.from('listing-media').upload(path, small, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false }); if (up.error) throw up.error;
       const url = sb.storage.from('listing-media').getPublicUrl(path).data.publicUrl;
-      const r = await sb.rpc('sync_my_profile', { p_avatar_url: url, p_phone: null }); if (r.error) throw r.error;
+      const r = await sb.rpc('sync_my_profile', { p_avatar_url: url, p_phone: null }); if (r.error) throw r.error; if (r.data === false) throw new Error('your account record was not found');
       S.profile.avatar = url; PROFILE.avatar = url; if (window.MtMember) MtMember.setAvatar(url); toast('Photo saved. It now shows in the app too.'); rerender(); refreshNav();
     } catch (err) { toast('Could not save the photo: ' + (err && err.message ? err.message : 'please try again')); }
   });
