@@ -74,11 +74,15 @@
   const msg = (t, k) => { $('msg').textContent = t || ''; $('msg').className = 'msg ' + (k || ''); };
   const show = v => { ['login', 'forgot', 'change'].forEach(n => { $('v-' + n).hidden = n !== v; }); msg(''); };
   let recovery = /type=recovery/.test(location.hash) || /type=recovery/.test(location.search);
+  let mustChange = false;
   const emailOk = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
   // Sends the person where they belong: team members to their company dashboard, landlords and agents to theirs,
   // tenants to the app message, anyone without a role to finish choosing one.
   async function afterSignIn() {
+    // A landlord an agent onboarded signs in with a temporary password and must choose their own first.
+    try { const cu = (await sb.auth.getUser()).data.user; if (cu && cu.user_metadata && cu.user_metadata.must_change_password && !recovery) {
+      const sc0 = await sb.rpc('staff_context'); if (sc0.error || !sc0.data) { mustChange = true; $('c-title').textContent = 'Choose your own password'; $('c-sub').textContent = 'The temporary password will stop working. At least 8 characters.'; show('change'); return; } } } catch (e) {}
     const sc = await sb.rpc('staff_context');
     if (!sc.error && sc.data) { location.replace(sc.data.must_change ? './staff.html?change=1' : './dashboard.html'); return; }
     let role = '';
@@ -128,9 +132,9 @@
     if (a !== b) return msg('The two passwords do not match.', 'bad');
     $('c-btn').disabled = true; msg('Saving…');
     try {
-      const u = await sb.auth.updateUser({ password: a });
+      const u = await sb.auth.updateUser(mustChange ? { password: a, data: { must_change_password: false } } : { password: a });
       if (u.error) throw u.error;
-      msg('Password saved.', 'ok'); setTimeout(afterSignIn, 500);
+      mustChange = false; msg('Password saved.', 'ok'); setTimeout(afterSignIn, 500);
     } catch (err) { $('c-btn').disabled = false; msg(/same|different/i.test(err.message || '') ? 'Choose a password different from the old one.' : (err.message || 'Could not save.'), 'bad'); }
   });
   sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { recovery = true; show('change'); } });

@@ -515,6 +515,7 @@
         S.notificationsLive = true;
       } catch (e) { S.notificationsLive = false; }
       S.profile = { name: PROFILE.name, email: PROFILE.email, phone: PROFILE.phone || '', avatar: PROFILE.avatar || '', bank: '', kyc: '', managed: false, activated: true, enterprise: null };
+      try { const rm = await sb.rpc('my_agent_link'); if (!rm.error && rm.data && rm.data.managed) { S.profile.managed = true; S.profile.activated = true; S.profile.managerName = rm.data.manager_name || ''; S.profile.managedStatus = rm.data.status; } } catch (e) {}
       try { const re = await sb.rpc('dashboard_my_enterprise'); if (!re.error && re.data) S.profile.enterprise = entFromRow(re.data); } catch (e) {}
       if (STAFF) S.profile.enterprise = { kind: STAFF.kind || 'developer', name: STAFF.company || '', staff: [], status: 'active', plan: 'staff' };
       else if (S.profile.enterprise) { try { const rs = await sb.rpc('staff_list'); if (!rs.error) S.profile.enterprise.staff = (rs.data || []).map(m => ({ id: m.id, name: m.name, email: m.email, phone: m.phone || '', role: m.role, status: m.must_change ? 'Invited' : 'Active' })); } catch (e) {} }
@@ -565,6 +566,7 @@
       const u = session.user; let row = null;
       try { const sc = await sb.rpc('staff_context'); if (!sc.error && sc.data) STAFF = sc.data; } catch (e) {}
       if (STAFF && STAFF.must_change) { location.replace('./staff.html?change=1'); return; }
+      if (!STAFF && u.user_metadata && u.user_metadata.must_change_password) { location.replace('./login.html'); return; }
       try { const r = await sb.from('signups').select('full_name, role, avatar_url, phone').eq('user_id', u.id).order('created_at', { ascending: false }).limit(1); row = r.data && r.data[0]; } catch (e) {}
       let cached = null; try { cached = JSON.parse(localStorage.getItem(MEMBER_CACHE) || 'null'); } catch (e) {}
       const meta = u.user_metadata || {};
@@ -1299,7 +1301,7 @@
       });
       closeModal(); toast(n + ' listing' + (n === 1 ? '' : 's') + ' imported for review.'); TAB.listings = 'pending'; go('listings'); rerender();
     },
-    'new-listing': () => { if (STAFF && STAFF.role !== 'sales') return toast('Only sales officers can add listings.'); if (!S.profile.activated && S.profile.managed && !isAgent()) return toast('Activate your account first.'); newListingForm(); },
+    'new-listing': () => { if (S.profile.managed && !isAgent()) return toast((S.profile.managerName || 'Your agent or company') + ' lists your properties for you. You review each one, upload your title documents and approve it for legal review.'); if (STAFF && STAFF.role !== 'sales') return toast('Only sales officers can add listings.'); if (!S.profile.activated && S.profile.managed && !isAgent()) return toast('Activate your account first.'); newListingForm(); },
     'lf-submit': submitListing,
     'add-docs': id => { const l = getL(id); if (!l) return; modal({ title: 'Add documents', sub: l.title, body: (l.note ? '<div class="notice" style="margin-bottom:12px">MainTown’s note: ' + esc(l.note) + '</div>' : '') + '<label class="fld">Title / ownership documents <span class="hint">(PDF or photo. Shown only to MainTown’s legal team)</span><input type="file" id="adDocs" accept=".pdf,image/*" multiple></label><p style="color:var(--muted);font-size:12px;margin:8px 0 0">' + (l.status === 'Declined' ? 'Sending documents puts this listing back in review.' : 'These are added to the listing already in review.') + '</p>', foot: '<button class="btn" data-act="modal-close">Cancel</button><button class="btn primary" data-act="add-docs-go" data-id="' + id + '">Send documents</button>' }); },
     'add-docs-go': async id => {
