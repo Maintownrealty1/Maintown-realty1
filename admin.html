@@ -3574,7 +3574,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   function lrPendingHtml() {
     if (lrPendingErr) return '<div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3 text-xs text-amber-200">Could not load listings waiting for approval: ' + escapeQuickFix(lrPendingErr.message) + '. Run 14_legal_listing_review.sql in the Supabase SQL Editor.</div>';
     const f = (document.getElementById('lrFilter') || {}).value || 'open';
-    const orphans = lrPending.filter(x => !lrReviewForListing(x.listing));   // listings with a document review are decided from that card only
+    const orphans = lrPending.filter(x => { const rv = lrReviewForListing(x.listing); return !rv || rv.status !== 'pending'; });   // a listing still pending whose document review is already decided (or missing) must still be shown   // listings with a document review are decided from that card only
     const decidedHtml = (f === 'closed' || f === 'rejected' || f === 'all') ? lrDecidedHtml(f) : '';
     if (!(f === 'open' || f === 'all') || !orphans.length) return decidedHtml;
     const cat = { rent: 'Rent', land: 'Land & property', 'short-let': 'Short-let', 'event-center': 'Event center' };
