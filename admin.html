@@ -3451,11 +3451,13 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       return;
     }
     // fallback for roles that can read the tables directly (Super Admin)
-    const ls = await sb.from('listings').select('*').eq('source', 'app_prototype').eq('status', 'pending').order('created_at', { ascending: false });
+    const ls0 = await sb.from('listings').select('*').in('source', ['app_prototype', 'web_manual']).eq('status', 'pending').order('created_at', { ascending: false });
+    const ls = ls0.error ? ls0 : { data: (ls0.data || []).filter(l => l.source === 'app_prototype' || /^(Agt|LnLd)-[0-9]+$/.test(String(l.prototype_ref || ''))) };
     if (ls.error) { lrPendingErr = r.error; return; }
     const ids = ls.data.map(l => l.id); let subs = [];
     if (ids.length) { const sr = await sb.from('listing_submissions').select('*').in('listing_id', ids); subs = sr.error ? [] : sr.data; }
-    lrPending = ls.data.map(l => ({ listing: l, submission: subs.find(x => String(x.listing_id) === String(l.id)) || null }));
+    lrPending = ls.data.map(l => ({ listing: l, submission: subs.find(x => String(x.listing_id) === String(l.id)) || null })).filter(x => !(x.submission && x.submission.host && x.submission.host.verification === 'awaiting_landlord'));
+    window.lrRpcWhy = r.error.message;
   }
   // Photos (tap to enlarge) and video (plays in place) a host uploaded with the listing.
   function lrMediaHtml(l) {
