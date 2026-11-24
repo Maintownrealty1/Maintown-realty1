@@ -1904,7 +1904,18 @@
     }
     listingsCache = data || [];
     renderExistingListings();
+    // Find out which pending host listings are really in Legal Review and why the others are not (e.g. still awaiting the landlord's verification).
+    try {
+      await lrLoadPendingListings();
+      const inQ = new Set(lrPending.map(x => String((x.listing || {}).id)));
+      const stuck = listingsCache.filter(l => l.status === 'pending' && !inQ.has(String(l.id))).map(l => l.id);
+      lrStuckWhy = {};
+      if (stuck.length) { const sr = await sb.from('listing_submissions').select('listing_id,host').in('listing_id', stuck); (sr.data || []).forEach(x => { lrStuckWhy[String(x.listing_id)] = (x.host && x.host.verification) || ''; }); }
+      lrQueueKnown = inQ;
+      renderExistingListings();
+    } catch (e) {}
   }
+  let lrStuckWhy = {}, lrQueueKnown = null;
 
   function renderExistingListings() {
     const listEl = document.getElementById('existingList');
@@ -1947,7 +1958,9 @@
       const reviewBtn = '';   // host and document records live in Legal Review only, not in this feed
       let controls;
       if (isPending && isProto) {
-        controls = `${reviewBtn}<span class="shrink-0 text-[11px] px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">Approve in Legal Review</span>`;
+        const _inQ = !lrQueueKnown || lrQueueKnown.has(String(l.id)), _why = lrStuckWhy[String(l.id)];
+        controls = _inQ ? `${reviewBtn}<span class="shrink-0 text-[11px] px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">Approve in Legal Review</span>`
+          : `${reviewBtn}<span class="shrink-0 text-[11px] px-2 py-1 rounded-lg bg-slate-700/40 border border-slate-600 text-slate-300 max-w-[150px] leading-tight">${_why === 'awaiting_landlord' ? 'Waiting for the landlord to verify. Not in Legal Review yet' : 'Not in Legal Review: no submission record'}</span>`;
       } else if (isClosed) {
         controls = `${reviewBtn}
           <button class="reopen-listing-btn btn-secondary shrink-0" data-id="${l.id}">Re-review</button>
@@ -3420,7 +3433,23 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     lrPending = []; lrPendingErr = null; lrDecidedWeb = [];
     try { const dr = await sb.rpc('legal_decided_web_listings'); if (!dr.error && Array.isArray(dr.data)) lrDecidedWeb = dr.data; } catch (e) {}
     const r = await sb.rpc('legal_pending_listings');
-    if (!r.error) { lrPending = Array.isArray(r.data) ? r.data : []; return; }
+    if (!r.error) {
+      lrPending = Array.isArray(r.data) ? r.data : [];
+      // Safety net: also read the pending host listings straight from the table (Super Admin / Legal can), so none can be missed by the server's filter.
+      try {
+        const ls2 = await sb.from('listings').select('*').eq('status', 'pending').in('source', ['app_prototype', 'web_manual']).order('created_at', { ascending: false });
+        if (!ls2.error && Array.isArray(ls2.data)) {
+          const have = new Set(lrPending.map(x => String((x.listing || {}).id)));
+          const extra = ls2.data.filter(l => !have.has(String(l.id)) && (l.source === 'app_prototype' || /^(Agt|LnLd)-[0-9]+$/.test(String(l.prototype_ref || ''))));
+          if (extra.length) {
+            const sr = await sb.from('listing_submissions').select('*').in('listing_id', extra.map(l => l.id));
+            const subs = sr.error ? [] : (sr.data || []);
+            extra.forEach(l => { const sub = subs.find(x => String(x.listing_id) === String(l.id)) || null; if (!(sub && sub.host && sub.host.verification === 'awaiting_landlord')) lrPending.push({ listing: l, submission: sub }); });
+          }
+        }
+      } catch (e) {}
+      return;
+    }
     // fallback for roles that can read the tables directly (Super Admin)
     const ls = await sb.from('listings').select('*').eq('source', 'app_prototype').eq('status', 'pending').order('created_at', { ascending: false });
     if (ls.error) { lrPendingErr = r.error; return; }
@@ -3549,7 +3578,7 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
     const decidedHtml = (f === 'closed' || f === 'rejected' || f === 'all') ? lrDecidedHtml(f) : '';
     if (!(f === 'open' || f === 'all') || !orphans.length) return decidedHtml;
     const cat = { rent: 'Rent', land: 'Land & property', 'short-let': 'Short-let', 'event-center': 'Event center' };
-    return '<p class="text-sm font-semibold text-white mb-1">Listings without a document review (' + orphans.length + ')</p><p class="text-xs text-slate-500 mb-2">These came in with no title-document submission.</p><div class="space-y-3 mb-6">' + orphans.map(x => {
+    return '<p class="text-sm font-semibold text-white mb-1">Listings waiting for approval (' + orphans.length + ')</p><p class="text-xs text-slate-500 mb-2">Submitted from the website dashboard or the app. The documents the host uploaded are attached to each listing below; tap a document to open it.</p><div class="space-y-3 mb-6">' + orphans.map(x => {
       const l = x.listing || {}, sub = x.submission || {}, host = sub.host || {};
       const imgs = (Array.isArray(l.images) ? l.images : []).filter(u => typeof u === 'string' && /^https?:/.test(u)).slice(0, 4);
       const fees = (Array.isArray(l.fees) ? l.fees : []).slice(0, 14);
