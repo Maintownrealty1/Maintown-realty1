@@ -847,6 +847,33 @@
       </div>
     </section>
 
+    <!-- ---- Legal Chat (Legal team replies; Super Admin read-only) ----
+         Users ask for a legal expert in the app or on the website. Tables and functions: 48_legal_chat.sql -->
+    <section data-view="legalchat">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-4">
+        <div>
+          <h2 class="font-display font-semibold text-lg text-white mb-1">Legal Chat</h2>
+          <p id="lcSub" class="text-sm text-slate-500">Live conversations with users who asked to speak to a legal expert.</p>
+        </div>
+        <button type="button" id="refreshLcBtn" class="btn-secondary">Refresh</button>
+      </div>
+      <div class="grid lg:grid-cols-[22rem_1fr] gap-4">
+        <div id="lcListPane">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <select id="lcStatus" class="!w-auto !py-1.5 !text-xs">
+              <option value="">All statuses</option>
+              <option value="open">Waiting for legal</option>
+              <option value="pending">Legal replied</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+          <input type="search" id="lcSearch" placeholder="Ticket no., name or email" class="!py-1.5 !text-xs mb-3" />
+          <div id="lcList" class="space-y-2"></div>
+        </div>
+        <div id="lcChatPane" class="max-lg:hidden min-w-0"><div id="lcChat"></div></div>
+      </div>
+    </section>
+
     <!-- ---- Inspections & Schedules (Super Admin / Developer / Customer Service) ----
          Read-only monitoring of every inspection, shortlet booking, land allocation and
          move-in reported by the app (table: inspection_events, see inspection_events_migration.sql). -->
@@ -1110,13 +1137,13 @@
   // Which dashboard tabs each role gets. Edit these arrays to change who
   // sees what — the tab bar and every data load below all key off this.
   const ROLE_VIEWS = {
-    super_admin: ['support', 'supportchat', 'explore', 'listings', 'partners', 'signups', 'users', 'legalreview', 'members', 'quickfix', 'inspections', 'landlords', 'finance', 'teamchat', 'staff'],
+    super_admin: ['support', 'supportchat', 'legalchat', 'explore', 'listings', 'partners', 'signups', 'users', 'legalreview', 'members', 'quickfix', 'inspections', 'landlords', 'finance', 'teamchat', 'staff'],
     // Developer: monitors transactions only (read-only, last 7 days, no names, no revenue totals) and has no finance controls.
     developer:   ['support', 'explore', 'listings', 'partners', 'signups', 'users', 'quickfix', 'inspections', 'finance', 'teamchat'],
     finance:     ['finance', 'landlords', 'teamchat'],
     // Sales staff follow up inspections and bookings; nothing else.
     sales_staff: ['inspections', 'teamchat'],
-    legal:       ['signups', 'users', 'legalreview', 'members', 'teamchat'],
+    legal:       ['signups', 'users', 'legalreview', 'legalchat', 'members', 'teamchat'],
     // Least privilege: support sees customer requests and the inspection/booking schedule,
     // never finance, sign-up (KYC) documents, listings admin or staff access.
     customer_service: ['support', 'supportchat', 'users', 'quickfix', 'inspections', 'teamchat'],
@@ -1124,7 +1151,7 @@
     media_editor: ['explore', 'teamchat'],
   };
   const ROLE_LABELS_STAFF = { super_admin: 'Super Admin', developer: 'Developer', finance: 'Finance', legal: 'Legal', customer_service: 'Customer Service', media_editor: 'Media', sales_staff: 'Sales Staff' };
-  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspection Logs', transactions: 'Transactions', teamchat: 'Team Chat', legalreview: 'Legal Review', members: 'Members & Upgrades', users: 'All Users', landlords: 'Managed Landlords', finance: 'Finance', staff: 'Staff Access' };
+  const VIEW_LABELS = { support: 'Support Dashboard', supportchat: 'Support Chat', legalchat: 'Legal Chat', explore: 'Explore Content', listings: 'Listings', partners: 'Partners', signups: 'Sign-Ups', quickfix: 'Quick Fix Requests', inspections: 'Inspection Logs', transactions: 'Transactions', teamchat: 'Team Chat', legalreview: 'Legal Review', members: 'Members & Upgrades', users: 'All Users', landlords: 'Managed Landlords', finance: 'Finance', staff: 'Staff Access' };
   let currentStaffRole = null;
   let currentStaffName = null;
   let currentView = null;
@@ -1178,6 +1205,7 @@
     if (view === 'signups') loadSignups();
     if (view === 'support') loadSupport();
     if (view === 'supportchat') loadSupportChat();
+    if (view === 'legalchat') loadLegalChat();
     if (view === 'explore') loadExplore();
     if (view === 'quickfix') loadQuickFixRequests();
     if (view === 'inspections') loadInspections();
@@ -4691,6 +4719,82 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
       return `<a href="${u}" target="_blank" rel="noopener noreferrer" class="underline text-xs break-all">${escapeQuickFix(m.name || 'Document')}</a>`;
     }).join('') + '</div>';
   }
+
+
+  // ---- Legal Chat: users who asked for a legal expert (Legal replies, Super Admin reads) ----
+  let lcThreads = [], lcSel = null, lcOpen = null, lcBusy = false, lcTimer = null;
+  const lcPad = n => 'LG-' + String(n).padStart(6, '0');
+  const lcLabel = { open: 'Waiting for legal', pending: 'Legal replied', resolved: 'Resolved' };
+  async function loadLegalChat() {
+    const sub = document.getElementById('lcSub');
+    if (sub) sub.textContent = currentStaffRole === 'legal' ? 'Reply to users who asked for a legal expert. Every message and file is saved.' : 'Read-only view for oversight. Only the Legal team can reply.';
+    const r = await sb.rpc('legal_staff_tickets', { p_status: document.getElementById('lcStatus').value || null });
+    const list = document.getElementById('lcList');
+    if (r.error) { list.innerHTML = '<div class="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-xl p-3">Could not load Legal Chat. ' + escapeQuickFix(r.error.message || '') + ' (Has 48_legal_chat.sql been run?)</div>'; return; }
+    lcThreads = r.data || []; lcRenderList();
+    clearInterval(lcTimer);
+    lcTimer = setInterval(async () => {
+      if (currentView !== 'legalchat' || document.hidden || lcBusy) { if (currentView !== 'legalchat') clearInterval(lcTimer); return; }
+      const x = await sb.rpc('legal_staff_tickets', { p_status: document.getElementById('lcStatus').value || null });
+      if (!x.error) { lcThreads = x.data || []; lcRenderList(); if (lcSel) lcLoadChat(false); }
+    }, 5000);
+  }
+  function lcRenderList() {
+    const q = (document.getElementById('lcSearch').value || '').trim().toLowerCase();
+    const rows = lcThreads.filter(t => !q || [lcPad(t.ticket_no), t.user_name, t.user_email, t.user_role].join(' ').toLowerCase().includes(q));
+    document.getElementById('lcList').innerHTML = rows.length ? rows.map(t => {
+      const hot = Number(t.unread) > 0;
+      return '<button type="button" data-lc="' + escapeQuickFix(t.id) + '" class="w-full text-left bg-slate-900 border ' + (lcSel === t.id ? 'border-violet-500' : 'border-slate-800') + ' rounded-xl px-3 py-2.5 hover:border-slate-600">'
+        + '<div class="flex items-center justify-between gap-2"><span class="text-sm text-white font-medium truncate">' + escapeQuickFix(t.user_name || t.user_email || 'User') + '</span>' + (hot ? '<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-300">' + t.unread + ' new</span>' : '') + '</div>'
+        + '<div class="text-[11px] text-slate-400 truncate">' + escapeQuickFix((t.last_body || '').slice(0, 80)) + '</div>'
+        + '<div class="flex items-center gap-2 mt-1 text-[10.5px] text-slate-500"><span>' + lcPad(t.ticket_no) + '</span><span>' + escapeQuickFix(t.user_role || '') + '</span><span>' + escapeQuickFix(lcLabel[t.status] || t.status) + '</span></div></button>';
+    }).join('') : '<div class="text-sm text-slate-500 p-3">No legal conversations yet.</div>';
+  }
+  async function lcLoadChat(scroll) {
+    if (!lcSel) { document.getElementById('lcChat').innerHTML = '<div class="hidden lg:block bg-slate-900 border border-slate-800 rounded-xl p-8 text-sm text-slate-500 text-center">Select a conversation to read it.</div>'; return; }
+    const r = await sb.rpc('legal_staff_fetch', { p_ticket: lcSel });
+    if (r.error) { document.getElementById('lcChat').innerHTML = '<div class="text-sm text-red-300 p-3">' + escapeQuickFix(r.error.message || 'Could not open this conversation.') + '</div>'; return; }
+    const d = r.data, t = d.ticket, sig = JSON.stringify((d.messages || []).map(m => m.id)) + t.status;
+    if (lcOpen === lcSel + sig && !scroll) return; lcOpen = lcSel + sig;
+    const typing = document.getElementById('lcInput'), draft = typing ? typing.value : '';
+    const msgs = (d.messages || []).map(m => {
+      if (m.sender_type === 'system') return '<div class="text-center text-[11px] text-slate-500 my-2">' + escapeQuickFix(m.body) + '</div>';
+      const mine = m.sender_type === 'staff';
+      return '<div class="flex ' + (mine ? 'justify-end' : 'justify-start') + ' my-1.5"><div class="max-w-[80%] rounded-2xl px-3 py-2 text-sm ' + (mine ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-100') + '">'
+        + '<div class="text-[10.5px] opacity-70 mb-0.5">' + escapeQuickFix(m.sender_name || (mine ? 'Legal team' : 'User')) + '</div>'
+        + (m.body ? '<div class="whitespace-pre-wrap break-words">' + escapeQuickFix(m.body) + '</div>' : '') + scMedia(m.media)
+        + '<div class="text-[10px] opacity-60 mt-1 text-right">' + escapeQuickFix(new Date(m.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })) + '</div></div></div>';
+    }).join('');
+    const canReply = d.can_reply;
+    document.getElementById('lcListPane').classList.add('max-lg:hidden'); document.getElementById('lcChatPane').classList.remove('max-lg:hidden');
+    document.getElementById('lcChat').innerHTML = '<div class="bg-slate-900 border border-slate-800 rounded-xl flex flex-col" style="height:min(72vh,680px)">'
+      + '<div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between gap-2 flex-wrap"><div><button type="button" id="lcBack" class="lg:hidden text-xs text-violet-300 mb-1">&larr; Back</button><div class="text-sm text-white font-semibold">' + escapeQuickFix(t.user_name || 'User') + ' <span class="text-slate-500 font-normal">' + escapeQuickFix(t.user_role || '') + '</span></div><div class="text-[11px] text-slate-400">' + escapeQuickFix(t.user_email || '') + ' · ' + lcPad(t.ticket_no) + ' · ' + escapeQuickFix(lcLabel[t.status] || t.status) + '</div></div>'
+      + (canReply ? '<div class="flex gap-2">' + (t.status === 'resolved' ? '<button type="button" data-lcstat="open" class="btn-secondary !py-1 !text-xs">Reopen</button>' : '<button type="button" data-lcstat="resolved" class="btn-secondary !py-1 !text-xs">Mark resolved</button>') + '</div>' : '')
+      + '</div><div id="lcLog" class="flex-1 overflow-y-auto px-4 py-3">' + msgs + '</div>'
+      + (canReply ? '<div class="border-t border-slate-800 p-3 flex gap-2 items-end"><textarea id="lcInput" rows="2" placeholder="Reply to ' + escapeQuickFix(t.user_name || 'the user') + '..." class="flex-1 !text-sm"></textarea><button type="button" id="lcSend" class="btn-primary">Send</button></div>'
+        : '<div class="border-t border-slate-800 p-3 text-xs text-slate-500">Read-only: only the Legal team can reply.</div>') + '</div>';
+    const log = document.getElementById('lcLog'); if (log) log.scrollTop = log.scrollHeight;
+    const ni = document.getElementById('lcInput'); if (ni && draft) ni.value = draft;
+  }
+  async function lcSend() {
+    if (lcBusy) return; const inp = document.getElementById('lcInput'); const body = (inp.value || '').trim(); if (!body || !lcSel) return;
+    lcBusy = true; document.getElementById('lcSend').disabled = true;
+    const r = await sb.rpc('legal_staff_reply', { p_ticket: lcSel, p_body: body, p_media: [] });
+    lcBusy = false;
+    if (r.error) { showToast('Could not send: ' + (r.error.message || 'try again'), true); document.getElementById('lcSend').disabled = false; return; }
+    inp.value = ''; lcOpen = null; await lcLoadChat(true); loadLegalChat();
+  }
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest && e.target.closest('[data-lc]');
+    if (b && currentView === 'legalchat') { lcSel = b.getAttribute('data-lc'); lcOpen = null; lcRenderList(); lcLoadChat(true); return; }
+    if (e.target.id === 'lcBack') { lcSel = null; lcOpen = null; document.getElementById('lcListPane').classList.remove('max-lg:hidden'); document.getElementById('lcChatPane').classList.add('max-lg:hidden'); lcLoadChat(); return; }
+    if (e.target.id === 'lcSend') { lcSend(); return; }
+    const st = e.target.closest && e.target.closest('[data-lcstat]');
+    if (st) { const r = await sb.rpc('legal_staff_set_status', { p_ticket: lcSel, p_status: st.getAttribute('data-lcstat') }); if (r.error) return showToast(r.error.message || 'Could not update', true); lcOpen = null; await lcLoadChat(true); loadLegalChat(); }
+  });
+  document.getElementById('refreshLcBtn').addEventListener('click', loadLegalChat);
+  document.getElementById('lcStatus').addEventListener('change', loadLegalChat);
+  document.getElementById('lcSearch').addEventListener('input', lcRenderList);
 
   function scRenderChat() {
     const pane = document.getElementById('scChat');
