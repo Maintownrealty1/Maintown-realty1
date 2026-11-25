@@ -860,7 +860,7 @@
       <div class="grid lg:grid-cols-[22rem_1fr] gap-4">
         <div id="lcListPane">
           <div class="flex flex-wrap items-center gap-2 mb-3">
-            <select id="lcStatus" class="!w-auto !py-1.5 !text-xs">
+            <select id="lcStatus" autocomplete="off" class="!w-auto !py-1.5 !text-xs">
               <option value="">All statuses</option>
               <option value="open">Waiting for legal</option>
               <option value="pending">Legal replied</option>
@@ -4725,7 +4725,9 @@ ${s.agreementSignedUrl ? `<a href="${s.agreementSignedUrl}" target="_blank" rel=
   let lcThreads = [], lcSel = null, lcOpen = null, lcBusy = false, lcTimer = null;
   const lcPad = n => 'LG-' + String(n).padStart(6, '0');
   const lcLabel = { open: 'Waiting for legal', pending: 'Legal replied', resolved: 'Resolved' };
+  let lcFirst = true;
   async function loadLegalChat() {
+    if (lcFirst) { lcFirst = false; const st = document.getElementById('lcStatus'); if (st) st.value = ''; }
     const sub = document.getElementById('lcSub');
     if (sub) sub.textContent = currentStaffRole === 'legal' ? 'Reply to users who asked for a legal expert. Every message and file is saved.' : 'Read-only view for oversight. Only the Legal team can reply.';
     const r = await sb.rpc('legal_staff_tickets', { p_status: document.getElementById('lcStatus').value || null });
