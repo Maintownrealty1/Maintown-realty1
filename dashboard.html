@@ -566,7 +566,7 @@
       const u = session.user; let row = null;
       try { const sc = await sb.rpc('staff_context'); if (!sc.error && sc.data) STAFF = sc.data; } catch (e) {}
       try { const un = await sb.rpc('team_chat_unread'); if (!un.error) TC.unread = Number(un.data) || 0; } catch (e) {}
-      if (STAFF && STAFF.must_change) { location.replace('./staff.html?change=1'); return; }
+      if (STAFF && STAFF.must_change) { location.replace('./login.html?change=1'); return; }
       if (!STAFF && u.user_metadata && u.user_metadata.must_change_password) { location.replace('./login.html'); return; }
       try { const r = await sb.from('signups').select('full_name, role, avatar_url, phone').eq('user_id', u.id).order('created_at', { ascending: false }).limit(1); row = r.data && r.data[0]; } catch (e) {}
       let cached = null; try { cached = JSON.parse(localStorage.getItem(MEMBER_CACHE) || 'null'); } catch (e) {}
@@ -1196,7 +1196,7 @@
     return r.data;
   }
   function credsModal(title, name, email, pass) {
-    const url = location.origin + location.pathname.replace(/[^/]*$/, '') + 'staff.html';
+    const url = location.origin + location.pathname.replace(/[^/]*$/, '') + 'login.html';
     const txt = 'MainTown team login for ' + name + '\nSign in: ' + url + '\nEmail: ' + email + '\nTemporary password: ' + pass + '\nYou will be asked to choose your own password.';
     modal({ title, sub: 'Send these details to ' + name + '. The password is only shown now.', body: '<div class="card pad" style="font-size:13.5px;line-height:1.7;word-break:break-all"><div>Sign in page: <b>' + esc(url) + '</b></div><div>Email: <b>' + esc(email) + '</b></div><div>Temporary password: <b class="mono">' + esc(pass) + '</b></div></div>', foot: '<button class="btn" data-act="modal-close">Done</button><button class="btn primary" data-act="copy-creds" data-txt="' + esc(txt) + '">Copy details</button>' });
   }
@@ -1451,7 +1451,7 @@
       const m = S.profile.enterprise.staff.find(x => x.id === id), pw = ($('#rsPass').value || '').trim();
       if (pw.length < 8) return toast('Use at least 8 characters.');
       if (IS_DEMO) { closeModal(); toast('Password reset (sample preview).'); return; }
-      try { await staffCall({ action: 'reset', id, password: pw, signinUrl: location.origin + location.pathname.replace(/[^/]*$/, '') + 'staff.html', company: (S.profile.enterprise && S.profile.enterprise.company) || '' }); closeModal(); credsModal('Password reset', m.name, m.email, pw); await Api.load(); } catch (e) { toast(e.message); }
+      try { await staffCall({ action: 'reset', id, password: pw, signinUrl: location.origin + location.pathname.replace(/[^/]*$/, '') + 'login.html', company: (S.profile.enterprise && S.profile.enterprise.company) || '' }); closeModal(); credsModal('Password reset', m.name, m.email, pw); await Api.load(); } catch (e) { toast(e.message); }
     },
     'invite-send': async () => {
       const n = $('#ivName').value.trim(), em = $('#ivEmail').value.trim(), ph = $('#ivPhone').value.trim();
@@ -1459,7 +1459,7 @@
       const pw = ($('#ivPass').value || '').trim(); if (pw.length < 8) return toast('The temporary password needs at least 8 characters.');
       if (IS_DEMO) { S.profile.enterprise.staff.push({ id: 'S' + Date.now(), name: n, email: em, phone: ph, role: $('#ivRole').value, status: 'Invited' }); closeModal(); toast('Added (sample preview).'); rerender(); return; }
       const bt = $('[data-act="invite-send"]'); if (bt) bt.disabled = true; { const er0 = $('#ivErr'); if (er0) er0.remove(); }
-      try { const rr = await staffCall({ action: 'create', name: n, email: em, phone: ph, role: $('#ivRole').value, password: pw, signinUrl: location.origin + location.pathname.replace(/[^/]*$/, '') + 'staff.html', company: (S.profile.enterprise && S.profile.enterprise.company) || '' }); closeModal(); credsModal(rr && rr.emailed ? 'Login created and emailed' : 'Login created', n, em.toLowerCase(), pw); await Api.load(); rerender(); }
+      try { const rr = await staffCall({ action: 'create', name: n, email: em, phone: ph, role: $('#ivRole').value, password: pw, signinUrl: location.origin + location.pathname.replace(/[^/]*$/, '') + 'login.html', company: (S.profile.enterprise && S.profile.enterprise.company) || '' }); closeModal(); credsModal(rr && rr.emailed ? 'Login created and emailed' : 'Login created', n, em.toLowerCase(), pw); await Api.load(); rerender(); }
       catch (e) { if (bt) bt.disabled = false; toast(e.message); let er = $('#ivErr'); if (!er) { er = document.createElement('div'); er.id = 'ivErr'; er.style.cssText = 'margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(248,113,113,.12);color:#b91c1c;font-size:13px;font-weight:600'; const f = $('#ivPass'); if (f && f.closest('.f')) f.closest('.f').appendChild(er); } if (er) er.textContent = (/Failed to send|non-2xx|NetworkError|Failed to fetch/i.test(e.message) ? 'Could not reach the team service. It may not be deployed yet. ' : '') + e.message; }
     },
     'staff-remove': id => { const m = S.profile.enterprise.staff.find(x => x.id === id); modal({ title: 'Remove ' + m.name + '?', body: '<p style="margin:0;color:var(--muted)">They lose access to the ' + (isAgent() ? 'agency' : 'company') + ' workspace straight away.</p>', foot: '<button class="btn" data-act="modal-close">Keep</button><button class="btn bad" data-act="staff-remove-ok" data-id="' + id + '">Remove</button>' }); },
